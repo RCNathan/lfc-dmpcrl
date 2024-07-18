@@ -1,0 +1,30 @@
+Testing some stuff:
+
+%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy ByPass -NoExit -Command "& 'C:\Users\Natha\anaconda3\shell\condabin\conda-hook.ps1' ; conda activate 'C:\Users\Natha\anaconda3' "
+%windir%\System32\cmd.exe "/K" C:\Users\Natha\anaconda3\Scripts\activate.bat C:\Users\Natha\anaconda3
+
+cmd.exe /K C:\Users\Natha\anaconda3\Scripts\activate.bat C:\Users\Natha\anaconda3
+powershell.exe -ExecutionPolicy ByPass -NoExit -Command "& 'C:\Users\Natha\anaconda3\shell\condabin\conda-hook.ps1' ; conda activate 'C:\Users\Natha\anaconda3' "
+
+cmd.exe /K C:\Users\Natha\anaconda3\Scripts\activate.bat "& powershell.exe -ExecutionPolicy ByPass -NoExit -Command "& 'C:\Users\Natha\anaconda3\shell\condabin\conda-hook.ps1' ; conda activate 'C:\Users\Natha\anaconda3' ""& 'C:\Users\Natha\anaconda3\shell\condabin\conda-hook.ps1' ; conda activate 'C:\Users\Natha\anaconda3' " "
+
+
+cmd.exe /K "echo hello world!"
+
+=========================================================================================================
+Adding to Background (rightlcick), from video: https://www.youtube.com/watch?v=yLOvx4T8TMo
+Except, now I change it to open powershell instead. To do so, I asked ChatGPT and he recommended to use a batch file (which is the same as pasting the code but more convenient)
+
+1. in 'Thesis Software'\lfc-dmpcrl I have a anacondapowershelltest.bat, with the following code in it:
+
+@echo off
+setlocal
+set ANACONDA_PATH_TEST=C:\Users\Natha\anaconda3
+powershell.exe -ExecutionPolicy ByPass -NoExit -Command "& '%ANACONDA_PATH_TEST%\shell\condabin\conda-hook.ps1' ; conda activate '%ANACONDA_PATH_TEST%' ; conda activate lfc-dmpcrl"
+endlocal
+
+2. Save the file in C: (requires administrator rights)
+3. in registor-editor, go to: Computer\HKEY_CLASSES_ROOT\Directory\Background\shell\
+4. Add key: AnacondaPowershell
+5. highlighting that directory, add another key: command (I guess just watch the vid it makes it clear)
+6. change command to cmd.exe /K "C:\anacondapowershelltest.bat \"%V\""
