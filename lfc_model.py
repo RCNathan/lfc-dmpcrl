@@ -4,13 +4,15 @@ import casadi as cs
 import numpy as np
 
 
-class Model:
+
+class Model():
     """Class to store model information for the system."""
 
-    n: ClassVar[int] = 3  # number of agents
-    nx_l: ClassVar[int] = 2  # local state dimension
+    n: ClassVar[int] = 1  # number of agents
+    nx_l: ClassVar[int] = 4  # local state dimension
     nu_l: ClassVar[int] = 1  # local control dimension
 
+    # note: unchanged as of 24-7
     x_bnd_l: ClassVar[np.ndarray] = np.array(
         [[0, -1], [1, 1]]
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
@@ -18,8 +20,9 @@ class Model:
         [[-1], [1]]
     )  # local control bounds u_bnd[0] <= u <= u_bnd[1]
 
+    
     adj: ClassVar[np.ndarray] = np.array(
-        [[0, 1, 0], [1, 0, 1], [0, 1, 0]], dtype=np.int32
+        [[0, 1, 0], [1, 0, 1], [0, 1, 0]], dtype=np.int32 #  [1, 0, 1]: connected to 1st and 3rd.
     )  # adjacency matrix of coupling in network
 
     A_l: ClassVar[np.ndarray] = np.array(
@@ -45,7 +48,7 @@ class Model:
     def __init__(self):
         """Initializes the model."""
         self.A, self.B = self.centralized_dynamics_from_local(
-            [self.A_l] * self.n, # n: number of agents
+            [self.A_l] * self.n,
             [self.B_l] * self.n,
             [[self.A_c_l for _ in range(np.sum(self.adj[i]))] for i in range(self.n)],
         )
@@ -120,3 +123,5 @@ class Model:
 
 
 m = Model()
+
+print("dot is for debugging :)")

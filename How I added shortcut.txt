@@ -27,4 +27,7 @@ endlocal
 3. in registor-editor, go to: Computer\HKEY_CLASSES_ROOT\Directory\Background\shell\
 4. Add key: AnacondaPowershell
 5. highlighting that directory, add another key: command (I guess just watch the vid it makes it clear)
-6. change command to cmd.exe /K "C:\anacondapowershelltest.bat \"%V\""
+6. change command to 
+
+cmd.exe /K "C:\anacondapowershelltest.bat \"%V\""
+
