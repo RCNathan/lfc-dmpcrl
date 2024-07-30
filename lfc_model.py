@@ -31,14 +31,14 @@ class Model():
     H3 = 0.0750 # synchronous machine inertia
     D3 = 0.0010 # damping coefficient
     R3 = 0.40 # speed drop
-    # interconnection between area's 
+    # interconnection between area's (note T12 = T21)
     T12 = 0.015 
     T13 = 0.02 
     T23 = 0.01 
 
-    # note: unchanged as of 24-7
+    # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(
-        [[0, -1], [1, 1]]
+        [[0, 0, 0, -1], [1, 1, 1, 1]]
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1] 
     u_bnd_l: ClassVar[np.ndarray] = np.array(
         [[-1], [1]]
@@ -49,7 +49,7 @@ class Model():
         [[0, 1, 1], [1, 0, 1], [1, 1, 0]], dtype=np.int32 #  [1, 0, 1]: connected to 1st and 3rd.
     )  # adjacency matrix of coupling in network
 
-    # TRUE/REAL (unknown) dynamics
+    # TRUE/REAL (unknown) dynamics (from Liao et al.)
     # Area 1
     A_l_1: ClassVar[np.ndarray] = np.array(
         [[-D1/(2*H1), 1/(2*H1), 0, -1/(2*H1)], 
@@ -117,14 +117,14 @@ class Model():
     )  # inaccurate local coupling matrix A_c
 
     # testing/debugging:
-    nx_l = 2
-    A_l_1 = np.reshape(np.arange(4),(2,2))
-    A_l_2 = np.reshape(np.arange(4,8),(2,2))
-    A_l_3 = np.reshape(np.arange(8,12),(2,2))
-    A_c_l = np.reshape(np.arange(20, 20+36), (3,3,2,2)) # list of lists; 3x3 with matrices Aij which are 2x2 for the example
-    B_l_1 = np.array([[0],[1]])
-    B_l_2 = np.array([[0],[2]])
-    B_l_3 = np.array([[0],[3]])
+    # nx_l = 2
+    # A_l_1 = np.reshape(np.arange(4),(2,2))
+    # A_l_2 = np.reshape(np.arange(4,8),(2,2))
+    # A_l_3 = np.reshape(np.arange(8,12),(2,2))
+    # A_c_l = np.reshape(np.arange(20, 20+36), (3,3,2,2)) # list of lists; 3x3 with matrices Aij which are 2x2 for the example
+    # B_l_1 = np.array([[0],[1]])
+    # B_l_2 = np.array([[0],[2]])
+    # B_l_3 = np.array([[0],[3]])
 
 
     def __init__(self):

@@ -4,7 +4,7 @@ import casadi as cs
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
-from model import Model
+from lfc_model import Model
 
 
 class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # underlying system/simulation/ground truth

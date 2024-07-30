@@ -4,10 +4,10 @@ from copy import deepcopy
 
 import casadi as cs
 import numpy as np
-from env import LtiSystem # change environment in env.py (= ground truth)
+from lfc_env import LtiSystem # change environment in env.py (= ground truth)
 from gymnasium.wrappers import TimeLimit
-from learnable_mpc import CentralizedMpc, LearnableMpc, LocalMpc # change learnable mpc, start with centralized 
-from model import Model # change model in model.py (own repo)
+from lfc_learnable_mpc import CentralizedMpc, LearnableMpc, LocalMpc # change learnable mpc, start with centralized 
+from lfc_model import Model # change model in model.py (own repo)
 from mpcrl import LearnableParameter, LearnableParametersDict, LstdQLearningAgent
 from mpcrl.core.experience import ExperienceReplay
 from mpcrl.core.exploration import EpsilonGreedyExploration, StepWiseExploration
