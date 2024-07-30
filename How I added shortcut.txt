@@ -23,11 +23,11 @@ set ANACONDA_PATH_TEST=C:\Users\Natha\anaconda3
 powershell.exe -ExecutionPolicy ByPass -NoExit -Command "& '%ANACONDA_PATH_TEST%\shell\condabin\conda-hook.ps1' ; conda activate '%ANACONDA_PATH_TEST%' ; conda activate lfc-dmpcrl"
 endlocal
 
-2. Save the file in C: (requires administrator rights)
+2. Save the file in C: (requires administrator rights, can be saved anywhere you like tbh)
 3. in registor-editor, go to: Computer\HKEY_CLASSES_ROOT\Directory\Background\shell\
 4. Add key: AnacondaPowershell
 5. highlighting that directory, add another key: command (I guess just watch the vid it makes it clear)
-6. change command to 
+6. change command to (or replace C:\ with your path:)
 
 cmd.exe /K "C:\anacondapowershelltest.bat \"%V\""
 
