@@ -1,4 +1,7 @@
 import numpy as np
+# from lfc_model import Model # NOTE: on importing, all code in module is executed, and an instance is created (always).
+# print("test")
+
 
 N = 6
 A = np.reshape(np.linspace(1,N,N), (2,3))

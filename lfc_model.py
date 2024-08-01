@@ -7,7 +7,7 @@ import numpy as np
 
 class Model():
     """Class to store model information for the system."""
-
+    print("Model instance created")
     n: ClassVar[int] = 3  # number of agents
     nx_l: ClassVar[int] = 4  # local state dimension
     nu_l: ClassVar[int] = 1  # local control dimension
@@ -99,11 +99,17 @@ class Model():
         np.zeros((4,4))
     )  # local coupling matrix A_23 = A_32
     A23[3,0] = -2 * np.pi * T23
+    
+    # these can be used in formulation of A_c_l
+    A21 = A12
+    A31 = A13
+    A32 = A23
+    
 
     # combine into one matrix (for ease of change later)
-    A_c_l = [[np.zeros((4,4)), A12, A13],
+    A_c_l = np.array([[np.zeros((4,4)), A12, A13],
              [A12, np.zeros((4,4)), A23],
-             [A13, A23, np.zeros((4,4))]] # zeros are placeholders/not used
+             [A13, A23, np.zeros((4,4))]]) # zeros are placeholders/not used
 
     # starting point (inaccurate guess) for learning (excluding learnable params)
     A_l_innacurate: ClassVar[np.ndarray] = np.asarray(
@@ -117,14 +123,14 @@ class Model():
     )  # inaccurate local coupling matrix A_c
 
     # testing/debugging:
-    # nx_l = 2
-    # A_l_1 = np.reshape(np.arange(4),(2,2))
-    # A_l_2 = np.reshape(np.arange(4,8),(2,2))
-    # A_l_3 = np.reshape(np.arange(8,12),(2,2))
-    # A_c_l = np.reshape(np.arange(20, 20+36), (3,3,2,2)) # list of lists; 3x3 with matrices Aij which are 2x2 for the example
-    # B_l_1 = np.array([[0],[1]])
-    # B_l_2 = np.array([[0],[2]])
-    # B_l_3 = np.array([[0],[3]])
+    nx_l = 2
+    A_l_1 = np.reshape(np.arange(4),(2,2))
+    A_l_2 = np.reshape(np.arange(4,8),(2,2))
+    A_l_3 = np.reshape(np.arange(8,12),(2,2))
+    A_c_l = np.reshape(np.arange(20, 20+36), (3,3,2,2)) # list of lists; 3x3 with matrices Aij which are 2x2 for the example
+    B_l_1 = np.array([[0],[1]])
+    B_l_2 = np.array([[0],[2]])
+    B_l_3 = np.array([[0],[3]])
 
 
     def __init__(self):
@@ -132,7 +138,10 @@ class Model():
         self.A, self.B = self.centralized_dynamics_from_local(
             [self.A_l_1, self.A_l_2, self.A_l_3], # change to [self.A_1, slef.A_2, self.A_3] I think works
             [self.B_l_1, self.B_l_2, self.B_l_3], # similarly for these
-            self.A_c_l # n by n matrix with coupling matrices (which are nx_l by nx_l)
+            # [[self.A_c_l for _ in range(np.sum(self.adj[i]))] for i in range(self.n)], # original from model.py
+            self.A_c_l # n by n matrix with coupling matrices (which are nx_l by nx_l) # works for model but not with learnable_mpc...
+            # [getattr(self, f"A{i+1}{j+1}") for i in range(self.n) for j in range(self.n) if self.adj[i, j]] # similar structure to learnable_mpc but still issues
+
         )
 
     def centralized_dynamics_from_local(

@@ -4,7 +4,7 @@ import casadi as cs
 import numpy as np
 from csnlp import Nlp
 from csnlp.wrappers import Mpc
-from model import Model
+from lfc_model import Model
 
 from dmpcrl.mpc.mpc_admm import MpcAdmm
 from dmpcrl.utils.solver_options import SolverOptions
@@ -40,7 +40,7 @@ class LearnableMpc(Mpc[cs.SX]):
         # standard learnable parameters dictionary for local agent
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
-            "x_lb": np.reshape([0, 0], (-1, 1)),
+            "x_lb": np.reshape([0, 0], (-1, 1)), # I think this needs changing to accomodate new dimensions
             "x_ub": np.reshape([1, 0], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
@@ -125,7 +125,7 @@ class CentralizedMpc(LearnableMpc):
         f = cs.vcat(f_list)
 
         # get centralized symbolic dynamics
-        A, B = model.centralized_dynamics_from_local(A_list, B_list, A_c_list)
+        A, B = model.centralized_dynamics_from_local(A_list, B_list, A_c_list) # this gives error due to change in lfc_model
 
         # variables (state, action, slack)
         x, _ = self.state("x", self.nx)
