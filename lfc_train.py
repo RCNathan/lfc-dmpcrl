@@ -26,7 +26,7 @@ prediction_horizon = 10
 admm_iters = 50
 rho = 0.5
 model = Model() # model class defines dynamic model
-G = AdmmCoordinator.g_map(model.adj)
+G = AdmmCoordinator.g_map(model.adj) # network topology G 
 
 # centralised mpc and params
 centralized_mpc = CentralizedMpc(model, prediction_horizon) # for comparison/debugging
@@ -71,7 +71,7 @@ base_exp = EpsilonGreedyExploration(
     strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
     seed=1,
 )
-experience = ExperienceReplay(maxlen=100, sample_size=15, include_latest=10, seed=1)
+experience = ExperienceReplay(maxlen=100, sample_size=15, include_latest=10, seed=1) # smooths learning
 agents = [
     RecordUpdates(
         LstdQLearningAgent(

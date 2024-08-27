@@ -32,7 +32,7 @@ class LearnableMpc(Mpc[cs.SX]):
             model.u_bnd_l, model.n
         )
         self.w_l = np.array(
-            [[1.2e2, 1.2e2]]
+            [[1.2e2, 1.2e2, 1.2e2, 1.2e2]] # TODO: change
         )  # penalty weight for constraint violations in cost
         self.w = np.tile(self.w_l, (1, self.n))
         self.adj = model.adj
@@ -40,8 +40,8 @@ class LearnableMpc(Mpc[cs.SX]):
         # standard learnable parameters dictionary for local agent
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
-            "x_lb": np.reshape([0, 0], (-1, 1)), # I think this needs changing to accomodate new dimensions
-            "x_ub": np.reshape([1, 0], (-1, 1)),
+            "x_lb": np.reshape([-0.2, 0, 0, 0], (-1, 1)), # I think this needs changing to accomodate new dimensions
+            "x_ub": np.reshape([0.2, 0, 0, 0], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
         }
@@ -68,25 +68,28 @@ class CentralizedMpc(LearnableMpc):
         gamma = self.discount_factor
 
         # create MPC parameters
-        # dynamics paratmeters
+        # dynamics parameters
         A_list = [
             self.parameter(f"A_{i}", (self.nx_l, self.nx_l)) for i in range(self.n)
         ]
         B_list = [
             self.parameter(f"B_{i}", (self.nx_l, self.nu_l)) for i in range(self.n)
         ]
+        F_list = [
+            self.parameter(f"F_{i}", (self.nx_l, self.nu_l)) for i in range(self.n)
+        ]
         # if no coupling between i and j, A_c_list[i, j] = None, otherwise we add a parameterized matrix
         A_c_list = [
             [
-                self.parameter(f"A_c_{i}_{j}", (self.nx_l, self.nx_l))
+                self.parameter(f"A_c_{i}_{j}", (self.nx_l, self.nx_l)) if self.adj[i, j]
+                else np.zeros((self.nx_l, self.nx_l))
                 for j in range(self.n)
-                if self.adj[i, j]
             ]
             for i in range(self.n)
         ]
-        b_list = [self.parameter(f"b_{i}", (self.nx_l, 1)) for i in range(self.n)]
+        b_list = [self.parameter(f"b_{i}", (self.nx_l, 1)) for i in range(self.n)] # learnable param =/= optimized over
         # cost parameters
-        V0_list = [self.parameter(f"V0_{i}", (1,)) for i in range(self.n)]
+        V0_list = [self.parameter(f"V0_{i}", (1,)) for i in range(self.n)] # not optimized over
         f_list = [
             self.parameter(f"f_{i}", (self.nx_l + self.nu_l, 1)) for i in range(self.n)
         ]
@@ -101,12 +104,13 @@ class CentralizedMpc(LearnableMpc):
             model.A_c_l_innacurate,
         )
 
+        # using .update: sets the initialized theta's to some values, A_l_inac for example.
         self.learnable_pars_init = {
             f"{name}_{i}": val
             for name, val in self.learnable_pars_init_local.items()
             for i in range(self.n)
-        }
-        self.learnable_pars_init.update({f"A_{i}": A_l_inac for i in range(self.n)})
+        } 
+        self.learnable_pars_init.update({f"A_{i}": A_l_inac for i in range(self.n)}) # means they all start from same initial guess
         self.learnable_pars_init.update({f"B_{i}": B_l_inac for i in range(self.n)})
         self.learnable_pars_init.update(
             {
@@ -125,9 +129,9 @@ class CentralizedMpc(LearnableMpc):
         f = cs.vcat(f_list)
 
         # get centralized symbolic dynamics
-        A, B = model.centralized_dynamics_from_local(A_list, B_list, A_c_list) # this gives error due to change in lfc_model
+        A, B, F = model.centralized_dynamics_from_local(A_list, B_list, A_c_list, F_list, ts=0.1) # A_c_list has zero's in formulation too.
 
-        # variables (state, action, slack)
+        # variables (state, action, slack) | optimized over in mpc
         x, _ = self.state("x", self.nx)
         u, _ = self.action(
             "u",
@@ -137,7 +141,20 @@ class CentralizedMpc(LearnableMpc):
         )
         s, _, _ = self.variable("s", (self.nx, N), lb=0)
 
-        # dynamics
+        #TODO: fix this to be time-dependent
+        # Pl1 = 0.5*np.sin(np.linspace(0, 6*np.pi, N))
+        # Pl2 = 0.3*np.sin(np.linspace(0, 6*np.pi, N))
+        # Pl3 = 0.2*np.sin(np.linspace(0, 6*np.pi, N))
+        # Pl =  # See Sam's reaction on my email. Also: look through the powersys example where fixed params are used
+        Pl = 0
+
+
+        # fixed params
+        # self.fixed_pars_init["Pl"] = np.zeros((self.n, 1)) # dict: these are fixed
+        # Pl = self.parameter("Pl", (3, 1)) # creates parameter obj
+
+        # dynamics | feed the dynamics: todo: add F in model, Pl as fixed parameter (over whole horizon N)
+        # self.set_dynamics(lambda x, u: A @ x + B @ u + F @ Pl + b, n_in=2, n_out=1)
         self.set_dynamics(lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1)
 
         # other constraints
@@ -263,3 +280,8 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         solver = "ipopt"
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
+
+
+# print("Debugggggin")
+# model = Model()
+# centralized_mpc = CentralizedMpc(model, prediction_horizon=10) # for comparison/debugging

@@ -2,6 +2,7 @@ from typing import ClassVar
 
 import casadi as cs
 import numpy as np
+from dmpcrl.utils.discretisation import zero_order_hold
 
 
 
@@ -11,6 +12,8 @@ class Model():
     n: ClassVar[int] = 3  # number of agents
     nx_l: ClassVar[int] = 4  # local state dimension
     nu_l: ClassVar[int] = 1  # local control dimension
+    
+    ts = 0.1 # sampling time for ZOH discretization (not sure about value)
 
     # Constants taken from Yan et al.'s three area network
     # Area 1
@@ -61,6 +64,9 @@ class Model():
     B_l_1: ClassVar[np.ndarray] = np.array(
         [[0], [0], [1/Tg1], [0]]
     )  # local state-space matrix B
+    F_l_1: ClassVar[np.ndarray] = np.array(
+        [[-1/(2*H1)], [0], [0], [0]]
+    )  # local state-space matrix F
 
     # Area 2
     A_l_2: ClassVar[np.ndarray] = np.array(
@@ -73,6 +79,9 @@ class Model():
     B_l_2: ClassVar[np.ndarray] = np.array(
         [[0], [0], [1/Tg2], [0]]
     )  # local state-space matrix B
+    F_l_2: ClassVar[np.ndarray] = np.array(
+        [[-1/(2*H2)], [0], [0], [0]]
+    )  # local state-space matrix F
 
     # Area 3
     A_l_3: ClassVar[np.ndarray] = np.array(
@@ -85,6 +94,9 @@ class Model():
     B_l_3: ClassVar[np.ndarray] = np.array(
         [[0], [0], [1/Tg3], [0]]
     )  # local state-space matrix B
+    F_l_3: ClassVar[np.ndarray] = np.array(
+        [[-1/(2*H3)], [0], [0], [0]]
+    )  # local state-space matrix F
 
     # Coupling Matrices
     A12: ClassVar[np.ndarray] = np.array(
@@ -101,10 +113,9 @@ class Model():
     A23[3,0] = -2 * np.pi * T23
     
     # these can be used in formulation of A_c_l
-    A21 = A12
-    A31 = A13
-    A32 = A23
-    
+    # A21 = A12
+    # A31 = A13
+    # A32 = A23
 
     # combine into one matrix (for ease of change later)
     A_c_l = np.array([[np.zeros((4,4)), A12, A13],
@@ -123,25 +134,25 @@ class Model():
     )  # inaccurate local coupling matrix A_c
 
     # testing/debugging:
-    nx_l = 2
-    A_l_1 = np.reshape(np.arange(4),(2,2))
-    A_l_2 = np.reshape(np.arange(4,8),(2,2))
-    A_l_3 = np.reshape(np.arange(8,12),(2,2))
-    A_c_l = np.reshape(np.arange(20, 20+36), (3,3,2,2)) # list of lists; 3x3 with matrices Aij which are 2x2 for the example
-    B_l_1 = np.array([[0],[1]])
-    B_l_2 = np.array([[0],[2]])
-    B_l_3 = np.array([[0],[3]])
+    # nx_l = 2
+    # A_l_1 = np.reshape(np.arange(4),(2,2))
+    # A_l_2 = np.reshape(np.arange(4,8),(2,2))
+    # A_l_3 = np.reshape(np.arange(8,12),(2,2))
+    # A_c_l = np.reshape(np.arange(20, 20+36), (3,3,2,2)) # list of lists; 3x3 with matrices Aij which are 2x2 for the example
+    # B_l_1 = np.array([[0],[1]])
+    # B_l_2 = np.array([[0],[2]])
+    # B_l_3 = np.array([[0],[3]])
 
 
     def __init__(self):
         """Initializes the model."""
-        self.A, self.B = self.centralized_dynamics_from_local(
-            [self.A_l_1, self.A_l_2, self.A_l_3], # change to [self.A_1, slef.A_2, self.A_3] I think works
-            [self.B_l_1, self.B_l_2, self.B_l_3], # similarly for these
+        self.A, self.B, self.F = self.centralized_dynamics_from_local(
+            [self.A_l_1, self.A_l_2, self.A_l_3], 
+            [self.B_l_1, self.B_l_2, self.B_l_3], 
             # [[self.A_c_l for _ in range(np.sum(self.adj[i]))] for i in range(self.n)], # original from model.py
-            self.A_c_l # n by n matrix with coupling matrices (which are nx_l by nx_l) # works for model but not with learnable_mpc...
-            # [getattr(self, f"A{i+1}{j+1}") for i in range(self.n) for j in range(self.n) if self.adj[i, j]] # similar structure to learnable_mpc but still issues
-
+            self.A_c_l, # n by n matrix with coupling matrices (which are nx_l by nx_l) # works for model but not with learnable_mpc...
+            [self.F_l_1, self.F_l_2, self.F_l_3],
+            self.ts
         )
 
     def centralized_dynamics_from_local(
@@ -149,7 +160,9 @@ class Model():
         A_list: list[np.ndarray | cs.SX],
         B_list: list[np.ndarray | cs.SX],
         A_c_list: list[list[np.ndarray | cs.SX]],
-    ) -> tuple[np.ndarray | cs.SX, np.ndarray | cs.SX]:
+        F_list: list[np.ndarray | cs.SX],
+        ts: float
+    ) -> tuple[np.ndarray | cs.SX, np.ndarray | cs.SX, np.ndarray | cs.SX]:
         """Creates centralized representation from a list of local dynamics matrices.
 
         Parameters
@@ -160,11 +173,15 @@ class Model():
             List of local state-space matrices B.
         A_c_list : list[list[np.ndarray | cs.SX]]
             List of local coupling matrices A_c: [[-, A12, A13], [...], [...]]
+        F_list: list[npndarray | cs.SX]
+            List of local state-space matrices F.
+        ts: float
+            sampling time for ZOH discretization.
 
         Returns
         -------
-        tuple[np.ndarray | cs.SX, np.ndarray | cs.SX]
-            Global state-space matrices A and B.
+        tuple[np.ndarray | cs.SX, np.ndarray | cs.SX, np.ndarray | cs.SX]
+            Global state-space matrices A and B and matrix F for load disturbance delta P.
         """
         # if any(len(A_c_list[i]) != np.sum(self.adj[i]) for i in range(self.n)):
         #     raise ValueError(
@@ -174,7 +191,7 @@ class Model():
             row_func = lambda x: np.hstack(x)
             col_func = lambda x: np.vstack(x)
             zero_func = np.zeros
-        else:
+        else: # for learnable params in lfc_learnable_mpc
             row_func = lambda x: cs.horzcat(*x)
             col_func = lambda x: cs.vertcat(*x)
             zero_func = cs.SX.zeros
@@ -208,7 +225,26 @@ class Model():
                 for i in range(self.n)
             ]
         )
-        return A, B
+        F = col_func(
+            [
+                row_func(
+                    [ # remember: centralized dynamics: 
+                    # [x1_dot] = [F1 0] [dP1]
+                    # [x2_dot]   [0 F2] [dP2]
+                        F_list[i] if i == j else zero_func((self.nx_l, self.nu_l)) # dim nx x nu; 4x1
+                        for j in range(self.n)
+                    ]
+                )
+                for i in range(self.n)
+            ]
+        )
+        # return A, B, F
+        # Discretization using ZOH
+        B_comb = row_func((B, F))
+        A_d, B_d_comb = zero_order_hold(A, B_comb, ts)
+        B_d = B_d_comb[:, :self.n]
+        F_d = B_d_comb[:, self.n:]
+        return A_d, B_d, F_d      
 
 
 m = Model()
