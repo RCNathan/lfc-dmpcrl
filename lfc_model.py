@@ -123,15 +123,24 @@ class Model():
              [A13, A23, np.zeros((4,4))]]) # zeros are placeholders/not used
 
     # starting point (inaccurate guess) for learning (excluding learnable params)
-    A_l_innacurate: ClassVar[np.ndarray] = np.asarray(
-        [[1, 0.25], [0, 1]]
+    np.random.seed(420) # set seed for consistency/repeatability
+    A_l_innacurate: ClassVar[np.ndarray] = 0.1*np.random.random((4,4)
     )  # inaccurate local state-space matrix A
-    B_l_innacurate: ClassVar[np.ndarray] = np.asarray(
-        [[0.0312], [0.25]]
+    B_l_innacurate: ClassVar[np.ndarray] =0.1*np.random.random((4,1)
     )  # inaccurate local state-space matrix B
-    A_c_l_innacurate: ClassVar[np.ndarray] = np.array(
-        [[0, 0], [0, 0]]
+    A_c_l_innacurate: ClassVar[np.ndarray] = 0.1*np.random.random((4,4)
     )  # inaccurate local coupling matrix A_c
+    
+    #old:
+    # # A_l_innacurate: ClassVar[np.ndarray] = np.asarray(
+    #     [[1, 0.25], [0, 1]]
+    # )  # inaccurate local state-space matrix A
+    # B_l_innacurate: ClassVar[np.ndarray] = np.asarray(
+    #     [[0.0312], [0.25]]
+    # )  # inaccurate local state-space matrix B
+    # A_c_l_innacurate: ClassVar[np.ndarray] = np.array(
+    #     [[0, 0], [0, 0]]
+    # )  # inaccurate local coupling matrix A_c
 
     # testing/debugging:
     # nx_l = 2
@@ -249,6 +258,7 @@ class Model():
 
 m = Model()
 print("\nLocal A matrix for one agent/area: \n", m.A_l_1)
+print("After discretization: \n", m.A[0:4,0:4])
 print("Local B matrix for one agent/area: \n", m.B_l_1)
 print("Local A_{ij} matrix for one agent/area: \n", m.A_c_l[0][1])
 print("dot is for debugging :)")

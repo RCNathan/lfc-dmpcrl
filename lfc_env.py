@@ -22,7 +22,7 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
         model : Model
             The model of the system."""
         super().__init__()
-        self.A, self.B = model.A, model.B
+        self.A, self.B, self.F = model.A, model.B, model.F
         self.n = model.n
         self.nx = model.n * model.nx_l
         self.nx_l = model.nx_l
@@ -53,8 +53,8 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
         super().reset(seed=seed, options=options)
         if options is not None and "x0" in options:
             self.x = options["x0"]
-        else:
-            self.x = np.tile([0, 0.15], self.n).reshape(self.nx, 1)
+        else: # Remember: n:num_agents(=3), nx_l:local_state_dim(=4), nx:n*nx_l(=12) -> reshaping is transposing
+            self.x = np.tile([0, 0, 0, 0.15], self.n).reshape(self.nx, 1) # changed to 4dimensional x0. 
         return self.x, {}
 
     def get_stage_cost(
@@ -91,7 +91,7 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
             + w @ np.maximum(0, state - ub[:, np.newaxis])
         )
 
-    def get_dist_stage_cost(
+    def get_dist_stage_cost( # distributed
         self,
         state: np.ndarray,
         action: np.ndarray,
@@ -146,7 +146,7 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
             The new state, the reward, truncated flag, terminated flag, and an info dictionary.
         """
         action = action.full()  # convert action from casadi DM to numpy array
-        x_new = self.A @ self.x + self.B @ action
+        x_new = self.A @ self.x + self.B @ action # TODO: + Pl @ F
         noise = self.np_random.uniform(*self.noise_bnd).reshape(-1, 1)
         x_new[
             np.arange(0, self.nx, self.nx_l)
@@ -160,3 +160,9 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
         )
         self.x = x_new
         return x_new, r, False, False, {"r_dist": r_dist}
+
+
+print("Remove below statements after debugging")
+m = Model()
+LtiSystem(m)
+print("End of Debugging")

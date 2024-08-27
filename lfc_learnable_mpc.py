@@ -82,7 +82,7 @@ class CentralizedMpc(LearnableMpc):
         A_c_list = [
             [
                 self.parameter(f"A_c_{i}_{j}", (self.nx_l, self.nx_l)) if self.adj[i, j]
-                else np.zeros((self.nx_l, self.nx_l))
+                else cs.SX.zeros((self.nx_l, self.nx_l)) # TODO: maybe this gives the error??
                 for j in range(self.n)
             ]
             for i in range(self.n)
