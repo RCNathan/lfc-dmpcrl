@@ -98,10 +98,11 @@ class CentralizedMpc(LearnableMpc):
         x_ub_list = [self.parameter(f"x_ub_{i}", (self.nx_l,)) for i in range(self.n)]
 
         # initial values for learnable parameters
-        A_l_inac, B_l_inac, A_c_l_inac = (
+        A_l_inac, B_l_inac, A_c_l_inac, F_l_inac = (
             model.A_l_innacurate,
             model.B_l_innacurate,
             model.A_c_l_innacurate,
+            model.F_l_innacurate
         )
 
         # using .update: sets the initialized theta's to some values, A_l_inac for example.
@@ -120,6 +121,7 @@ class CentralizedMpc(LearnableMpc):
                 if self.adj[i, j]
             }
         )
+        self.learnable_pars_init.update({f"F_{i}": F_l_inac for i in range(self.n)}) 
 
         # concat some params for use in cost and constraint expressions
         V0 = cs.vcat(V0_list)

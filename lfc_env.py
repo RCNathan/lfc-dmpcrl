@@ -28,7 +28,7 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
         self.nx_l = model.nx_l
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
         self.w = np.tile(
-            [[1.2e2, 1.2e2]], (1, self.n)
+            [[1.2e2, 1.2e2, 1.2e2, 1.2e2]], (1, self.n)
         )  # penalty weight for bound violations
 
     def reset(
