@@ -40,7 +40,7 @@ class LearnableMpc(Mpc[cs.SX]):
         # standard learnable parameters dictionary for local agent
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
-            "x_lb": np.reshape([-0.2, 0, 0, 0], (-1, 1)), # I think this needs changing to accomodate new dimensions
+            "x_lb": np.reshape([-0.2, 0, 0, 0], (-1, 1)), # TODO: how does this compare with ub/lb in model?
             "x_ub": np.reshape([0.2, 0, 0, 0], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
@@ -152,12 +152,13 @@ class CentralizedMpc(LearnableMpc):
 
 
         # fixed params
+        # self.fixed_pars_init = {}
         # self.fixed_pars_init["Pl"] = np.zeros((self.n, 1)) # dict: these are fixed
         # Pl = self.parameter("Pl", (3, 1)) # creates parameter obj
 
         # dynamics | feed the dynamics: todo: add F in model, Pl as fixed parameter (over whole horizon N)
         # self.set_dynamics(lambda x, u: A @ x + B @ u + F @ Pl + b, n_in=2, n_out=1)
-        self.set_dynamics(lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1)
+        self.set_dynamics(lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1) # TODO: b is removed, maybe return later
 
         # other constraints
         self.constraint("x_lb", self.x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])

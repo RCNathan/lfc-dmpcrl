@@ -66,8 +66,8 @@ distributed_fixed_parameters: list = [
 # learning arguments
 update_strategy = 2
 optimizer = GradientDescent(learning_rate=ExponentialScheduler(5e-5, factor=0.9996))
-base_exp = EpsilonGreedyExploration(
-    epsilon=ExponentialScheduler(0.7, factor=0.99),
+base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
+    epsilon=ExponentialScheduler(0.7, factor=0.99), # (value, decay-rate: 1 = no decay)
     strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
     seed=1,
 )
@@ -109,6 +109,7 @@ agent = Log(  # type: ignore[var-annotated]
             consensus_iters=100,
             centralized_mpc=centralized_mpc,
             centralized_learnable_parameters=centralized_learnable_pars,
+            # centralized_fixed_parameters=centralized_mpc.fixed_pars_init,
             centralized_exploration=deepcopy(base_exp),
             centralized_experience=deepcopy(experience),
             centralized_update_strategy=deepcopy(update_strategy),

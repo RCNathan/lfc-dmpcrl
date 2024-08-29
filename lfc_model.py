@@ -41,7 +41,7 @@ class Model():
 
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(
-        [[0, 0, 0, -1], [1, 1, 1, 1]]
+        [[-1, -1, -1, -1], [1, 1, 1, 1]]
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1] 
     u_bnd_l: ClassVar[np.ndarray] = np.array(
         [[-1], [1]]
@@ -124,13 +124,13 @@ class Model():
 
     # starting point (inaccurate guess) for learning (excluding learnable params)
     np.random.seed(420) # set seed for consistency/repeatability
-    A_l_innacurate: ClassVar[np.ndarray] = 0.1*np.random.random((4,4)
+    A_l_innacurate: ClassVar[np.ndarray] = A_l_1 + 0.1*np.random.random((4,4)
     )  # inaccurate local state-space matrix A
-    B_l_innacurate: ClassVar[np.ndarray] = 0.1*np.random.random((4,1)
+    B_l_innacurate: ClassVar[np.ndarray] = B_l_1 + 0.1*np.random.random((4,1)
     )  # inaccurate local state-space matrix B
     A_c_l_innacurate: ClassVar[np.ndarray] = 0.1*np.random.random((4,4)
     )  # inaccurate local coupling matrix A_c
-    F_l_innacurate: ClassVar[np.ndarray] = 0.1*np.random.random((4,1)
+    F_l_innacurate: ClassVar[np.ndarray] = F_l_1 + 0.1*np.random.random((4,1)
     ) # inaccurate local state-space matrix F TODO: maybe change name to inaccurate (optional, also for A, B, Ac, note: needs to be the same in lfc_learnable)
 
 
