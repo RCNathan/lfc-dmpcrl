@@ -31,6 +31,10 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
             [[1.2e2, 1.2e2, 1.2e2, 1.2e2]], (1, self.n)
         )  # penalty weight for bound violations
 
+        # added to demonstrate how to changed fixed parameters
+        self.load = 2.0
+        self.step_counter = 0
+
     def reset(
         self,
         *,
@@ -55,6 +59,10 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
             self.x = options["x0"]
         else: # Remember: n:num_agents(=3), nx_l:local_state_dim(=4), nx:n*nx_l(=12) -> reshaping is transposing
             self.x = np.tile([0, 0, 0, 0.15], self.n).reshape(self.nx, 1) # changed to 4dimensional x0. 
+
+        # added to demonstrate how to changed fixed parameters
+        self.step_counter = 0
+
         return self.x, {}
 
     def get_stage_cost(
@@ -159,6 +167,11 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
             self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w
         )
         self.x = x_new
+
+        # added to demonstrate how to changed fixed parameters
+        self.load += 1.0
+        self.step_counter += 1
+
         return x_new, r, False, False, {"r_dist": r_dist}
 
 

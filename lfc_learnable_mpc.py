@@ -148,13 +148,17 @@ class CentralizedMpc(LearnableMpc):
         # Pl2 = 0.3*np.sin(np.linspace(0, 6*np.pi, N))
         # Pl3 = 0.2*np.sin(np.linspace(0, 6*np.pi, N))
         # Pl =  # See Sam's reaction on my email. Also: look through the powersys example where fixed params are used
-        Pl = 0
+        # Pl = 0
 
 
         # fixed params
         # self.fixed_pars_init = {}
         # self.fixed_pars_init["Pl"] = np.zeros((self.n, 1)) # dict: these are fixed
         # Pl = self.parameter("Pl", (3, 1)) # creates parameter obj
+
+        # added to demonstrate how to change fixed parameters
+        Pl = self.parameter("Pl", (1, 1)) # creates parameter obj
+        self.fixed_pars_init = {"Pl": np.zeros((1, 1))} # initial value of 0.0 will be changed by agent on episode start, and then every env step (see lfc_agent.py)
 
         # dynamics | feed the dynamics: todo: add F in model, Pl as fixed parameter (over whole horizon N)
         # self.set_dynamics(lambda x, u: A @ x + B @ u + F @ Pl + b, n_in=2, n_out=1)
