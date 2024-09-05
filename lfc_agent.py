@@ -1,5 +1,7 @@
-from lfc_env import LtiSystem
 from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
+
+from lfc_env import LtiSystem
+
 
 class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
     """A coordinator for LSTD-Q learning agents - for the Lfc problem. This agent hence handles load changes."""
