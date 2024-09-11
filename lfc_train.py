@@ -1,6 +1,7 @@
 import logging
 import pickle
 from copy import deepcopy
+from datetime import *
 
 import casadi as cs
 import numpy as np
@@ -22,6 +23,7 @@ from dmpcrl.core.admm import AdmmCoordinator
 save_data = True
 
 centralized_flag = True
+learning_flag = False
 prediction_horizon = 10
 admm_iters = 50
 rho = 0.5
@@ -65,7 +67,10 @@ distributed_fixed_parameters: list = [
 
 # learning arguments
 update_strategy = 2
-optimizer = GradientDescent(learning_rate=ExponentialScheduler(5e-5, factor=0.9996))
+if learning_flag:
+    optimizer = GradientDescent(learning_rate=ExponentialScheduler(5e-5, factor=0.9996))
+else:
+    optimizer = GradientDescent(learning_rate=0) # start with no learning
 base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
     epsilon=ExponentialScheduler(0.7, factor=0.99), # (value, decay-rate: 1 = no decay)
     strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
@@ -95,7 +100,7 @@ agents = [
     for i in range(Model.n)
 ]
 
-env = MonitorEpisodes(TimeLimit(LtiSystem(model=model), max_episode_steps=int(1e3))) # Lti system:
+env = MonitorEpisodes(TimeLimit(LtiSystem(model=model), max_episode_steps=int(1e3+20))) # Lti system:
 agent = Log(  # type: ignore[var-annotated]
     RecordUpdates(
         LstdQLearningAgentCoordinator(
@@ -109,7 +114,7 @@ agent = Log(  # type: ignore[var-annotated]
             consensus_iters=100,
             centralized_mpc=centralized_mpc,
             centralized_learnable_parameters=centralized_learnable_pars,
-            # centralized_fixed_parameters=centralized_mpc.fixed_pars_init,
+            # centralized_fixed_parameters=centralized_mpc.fixed_pars_init, # TODO: implement delta PL
             centralized_exploration=deepcopy(base_exp),
             centralized_experience=deepcopy(experience),
             centralized_update_strategy=deepcopy(update_strategy),
@@ -146,8 +151,14 @@ U = np.asarray(env.actions)
 R = np.asarray(env.rewards)
 
 if save_data:
+    if centralized_flag:
+        pklname = 'cent'
+    else:
+        pklname = 'decent'
+    if learning_flag == False:
+        pklname = pklname + '_no_learning'
     with open(
-        f"C_{centralized_flag}.pkl",
-        "wb",
+        f"{pklname}.pkl",
+        "wb", # w: write mode, creates new or truncates existing. b: binary mode
     ) as file:
         pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R}, file)
