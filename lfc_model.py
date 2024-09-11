@@ -148,17 +148,6 @@ class Model:
         (4, 1)
     )  # inaccurate local state-space matrix F TODO: maybe change name to inaccurate (optional, also for A, B, Ac, note: needs to be the same in lfc_learnable)
 
-    # old:
-    # # A_l_innacurate: ClassVar[np.ndarray] = np.asarray(
-    #     [[1, 0.25], [0, 1]]
-    # )  # inaccurate local state-space matrix A
-    # B_l_innacurate: ClassVar[np.ndarray] = np.asarray(
-    #     [[0.0312], [0.25]]
-    # )  # inaccurate local state-space matrix B
-    # A_c_l_innacurate: ClassVar[np.ndarray] = np.array(
-    #     [[0, 0], [0, 0]]
-    # )  # inaccurate local coupling matrix A_c
-
     # testing/debugging:
     # nx_l = 2
     # A_l_1 = np.reshape(np.arange(4),(2,2))
@@ -279,6 +268,7 @@ class Model:
 m = Model()
 print("\nLocal A matrix for one agent/area: \n", m.A_l_1)
 print("After discretization: \n", m.A[0:4, 0:4])
-print("Local B matrix for one agent/area: \n", m.B_l_1)
-print("Local A_{ij} matrix for one agent/area: \n", m.A_c_l[0][1])
-print("dot is for debugging :)")
+print("Sampling time {} s".format(m.ts))
+# print("Local B matrix for one agent/area: \n", m.B_l_1)
+# print("Local A_{ij} matrix for one agent/area: \n", m.A_c_l[0][1])
+# print("dot is for debugging :)")

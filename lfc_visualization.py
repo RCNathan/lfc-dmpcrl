@@ -3,13 +3,6 @@ import matplotlib.pyplot as plt
 import pickle
 from lfc_model import Model
 
-# saved in train like this:
-# with open(
-#         f"{pklname}.pkl",
-#         "wb", # w: write mode, creates new or truncates existing. b: binary mode
-#     ) as file:
-#         pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R}, file)
-
 # filename = 'cent.pkl'
 filename = 'cent_no_learning.pkl'
 with open(filename, 'rb',) as file:
