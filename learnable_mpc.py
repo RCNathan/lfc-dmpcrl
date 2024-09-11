@@ -4,10 +4,10 @@ import casadi as cs
 import numpy as np
 from csnlp import Nlp
 from csnlp.wrappers import Mpc
-from model import Model
-
 from dmpcrl.mpc.mpc_admm import MpcAdmm
 from dmpcrl.utils.solver_options import SolverOptions
+
+from model import Model
 
 
 class LearnableMpc(Mpc[cs.SX]):

@@ -45,7 +45,7 @@ class Model:
     def __init__(self):
         """Initializes the model."""
         self.A, self.B = self.centralized_dynamics_from_local(
-            [self.A_l] * self.n, # n: number of agents
+            [self.A_l] * self.n,  # n: number of agents
             [self.B_l] * self.n,
             [[self.A_c_l for _ in range(np.sum(self.adj[i]))] for i in range(self.n)],
         )

@@ -5,10 +5,9 @@ from datetime import *
 
 import casadi as cs
 import numpy as np
-from lfc_env import LtiSystem # change environment in env.py (= ground truth)
+from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
+from dmpcrl.core.admm import AdmmCoordinator
 from gymnasium.wrappers import TimeLimit
-from lfc_learnable_mpc import CentralizedMpc, LearnableMpc, LocalMpc # change learnable mpc, start with centralized 
-from lfc_model import Model # change model in model.py (own repo)
 from mpcrl import LearnableParameter, LearnableParametersDict, LstdQLearningAgent
 from mpcrl.core.experience import ExperienceReplay
 from mpcrl.core.exploration import EpsilonGreedyExploration, StepWiseExploration
@@ -17,8 +16,13 @@ from mpcrl.optim import GradientDescent
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
 
-from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
-from dmpcrl.core.admm import AdmmCoordinator
+from lfc_env import LtiSystem  # change environment in env.py (= ground truth)
+from lfc_learnable_mpc import (  # change learnable mpc, start with centralized
+    CentralizedMpc,
+    LearnableMpc,
+    LocalMpc,
+)
+from lfc_model import Model  # change model in model.py (own repo)
 
 save_data = True
 
@@ -27,11 +31,11 @@ learning_flag = False
 prediction_horizon = 10
 admm_iters = 50
 rho = 0.5
-model = Model() # model class defines dynamic model
-G = AdmmCoordinator.g_map(model.adj) # network topology G 
+model = Model()  # model class defines dynamic model
+G = AdmmCoordinator.g_map(model.adj)  # network topology G
 
 # centralised mpc and params
-centralized_mpc = CentralizedMpc(model, prediction_horizon) # for comparison/debugging
+centralized_mpc = CentralizedMpc(model, prediction_horizon)  # for comparison/debugging
 centralized_learnable_pars = LearnableParametersDict[cs.SX](
     (
         LearnableParameter(name, val.shape, val, sym=centralized_mpc.parameters[name])
@@ -76,7 +80,9 @@ base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely ra
     strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
     seed=1,
 )
-experience = ExperienceReplay(maxlen=100, sample_size=15, include_latest=10, seed=1) # smooths learning
+experience = ExperienceReplay(
+    maxlen=100, sample_size=15, include_latest=10, seed=1
+)  # smooths learning
 agents = [
     RecordUpdates(
         LstdQLearningAgent(

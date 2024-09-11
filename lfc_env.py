@@ -4,10 +4,13 @@ import casadi as cs
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
+
 from lfc_model import Model
 
 
-class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # underlying system/simulation/ground truth
+class LtiSystem(
+    gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]
+):  # underlying system/simulation/ground truth
     """A discrete time network of LTI systems."""
 
     noise_bnd = np.array(
@@ -31,6 +34,10 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
             [[1.2e2, 1.2e2, 1.2e2, 1.2e2]], (1, self.n)
         )  # penalty weight for bound violations
 
+        # added to demonstrate how to changed fixed parameters
+        self.load = 2.0
+        self.step_counter = 0
+
     def reset(
         self,
         *,
@@ -53,8 +60,14 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
         super().reset(seed=seed, options=options)
         if options is not None and "x0" in options:
             self.x = options["x0"]
-        else: # Remember: n:num_agents(=3), nx_l:local_state_dim(=4), nx:n*nx_l(=12) -> reshaping is transposing
-            self.x = np.tile([0, 0, 0, 0.15], self.n).reshape(self.nx, 1) # changed to 4dimensional x0. 
+        else:  # Remember: n:num_agents(=3), nx_l:local_state_dim(=4), nx:n*nx_l(=12) -> reshaping is transposing
+            self.x = np.tile([0, 0, 0, 0.15], self.n).reshape(
+                self.nx, 1
+            )  # changed to 4dimensional x0.
+
+        # added to demonstrate how to changed fixed parameters
+        self.step_counter = 0
+
         return self.x, {}
 
     def get_stage_cost(
@@ -91,7 +104,7 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
             + w @ np.maximum(0, state - ub[:, np.newaxis])
         )
 
-    def get_dist_stage_cost( # distributed
+    def get_dist_stage_cost(  # distributed
         self,
         state: np.ndarray,
         action: np.ndarray,
@@ -146,7 +159,7 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
             The new state, the reward, truncated flag, terminated flag, and an info dictionary.
         """
         action = action.full()  # convert action from casadi DM to numpy array
-        x_new = self.A @ self.x + self.B @ action # TODO: + Pl @ F
+        x_new = self.A @ self.x + self.B @ action  # TODO: + Pl @ F
         noise = self.np_random.uniform(*self.noise_bnd).reshape(-1, 1)
         x_new[
             np.arange(0, self.nx, self.nx_l)
@@ -159,6 +172,11 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]): # 
             self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w
         )
         self.x = x_new
+
+        # added to demonstrate how to changed fixed parameters
+        self.load += 1.0
+        self.step_counter += 1
+
         return x_new, r, False, False, {"r_dist": r_dist}
 
 
