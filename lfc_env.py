@@ -35,8 +35,8 @@ class LtiSystem(
         )  # penalty weight for bound violations
 
         # added to demonstrate how to changed fixed parameters
-        self.load = 2.0
-        self.step_counter = 0
+        self.load = 2.0 # TODO: check this out 
+        self.step_counter = 0 # TODO: check this out
 
     def reset(
         self,
@@ -160,10 +160,10 @@ class LtiSystem(
         """
         action = action.full()  # convert action from casadi DM to numpy array
         x_new = self.A @ self.x + self.B @ action  # TODO: + Pl @ F
-        noise = self.np_random.uniform(*self.noise_bnd).reshape(-1, 1)
-        x_new[
-            np.arange(0, self.nx, self.nx_l)
-        ] += noise  # apply noise only to first state dimension of each agent
+        # noise = self.np_random.uniform(*self.noise_bnd).reshape(-1, 1)
+        # x_new[
+        #     np.arange(0, self.nx, self.nx_l)
+        # ] += noise  # apply noise only to first state dimension of each agent
 
         r = self.get_stage_cost(
             self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w
@@ -180,7 +180,7 @@ class LtiSystem(
         return x_new, r, False, False, {"r_dist": r_dist}
 
 
-print("Remove below statements after debugging")
-m = Model()
-LtiSystem(m)
-print("End of Debugging")
+# print("Remove below statements after debugging")
+# m = Model()
+# LtiSystem(m)
+# print("End of Debugging")

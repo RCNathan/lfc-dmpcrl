@@ -135,18 +135,23 @@ class Model:
 
     # starting point (inaccurate guess) for learning (excluding learnable params)
     np.random.seed(420)  # set seed for consistency/repeatability
-    A_l_innacurate: ClassVar[np.ndarray] = A_l_1 + 0.1 * np.random.random(
-        (4, 4)
+    A_l_inac: ClassVar[np.ndarray[np.ndarray]] = 0 * np.random.random((3, 4, 4)) + np.array(
+        [A_l_1, A_l_2, A_l_3]
     )  # inaccurate local state-space matrix A
-    B_l_innacurate: ClassVar[np.ndarray] = B_l_1 + 0.1 * np.random.random(
-        (4, 1)
+    B_l_inac: ClassVar[np.ndarray[np.ndarray]] = 0 * np.random.random((3, 4, 1)) + np.array(
+        [B_l_1, B_l_2, B_l_3]
     )  # inaccurate local state-space matrix B
-    A_c_l_innacurate: ClassVar[np.ndarray] = 0.1 * np.random.random(
-        (4, 4)
-    )  # inaccurate local coupling matrix A_c
-    F_l_innacurate: ClassVar[np.ndarray] = F_l_1 + 0.1 * np.random.random(
-        (4, 1)
-    )  # inaccurate local state-space matrix F TODO: maybe change name to inaccurate (optional, also for A, B, Ac, note: needs to be the same in lfc_learnable)
+    F_l_inac: ClassVar[np.ndarray[np.ndarray]] = 0 * np.random.random((3, 4, 1)) + np.array(
+        [F_l_1, F_l_2, F_l_3]
+    )  # inaccurate local state-space matrix F 
+    A_c_l_inac: ClassVar[np.ndarray[np.ndarray[np.ndarray]]] = 0 * np.random.random((3, 3, 4, 4)) + (
+        A_c_l)  # inaccurate local coupling matrix A_c
+
+    # TODO: discretize using ZOH!
+    # BF_inac_comb = np.hstack((B_l_inac, F_l_inac))
+    # A_l_inac, BF_inac = zero_order_hold(A_l_inac, BF_inac_comb, ts) # possible with A^-1(Ad - I) 
+    # B_l_inac = BF_inac[:, : n]
+    # F_l_inac = BF_inac[:, n :]
 
     # testing/debugging:
     # nx_l = 2
@@ -259,7 +264,7 @@ class Model:
         # return A, B, F
         # Discretization using ZOH
         B_comb = row_func((B, F))
-        A_d, B_d_comb = zero_order_hold(A, B_comb, ts)
+        A_d, B_d_comb = zero_order_hold(A, B_comb, ts) # possible with A^-1(Ad - I) 
         B_d = B_d_comb[:, : self.n]
         F_d = B_d_comb[:, self.n :]
         return A_d, B_d, F_d

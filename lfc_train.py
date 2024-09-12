@@ -16,7 +16,8 @@ from mpcrl.optim import GradientDescent
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
 
-from lfc_env import LtiSystem  # change environment in env.py (= ground truth)
+from lfc_agent import LfcLstdQLearningAgentCoordinator # TODO: integrate lfc_agent
+from lfc_env import LtiSystem  # change environment in lfc_env.py (= ground truth)
 from lfc_learnable_mpc import (  # change learnable mpc, start with centralized
     CentralizedMpc,
     LearnableMpc,
@@ -72,7 +73,9 @@ distributed_fixed_parameters: list = [
 # learning arguments
 update_strategy = 2
 if learning_flag:
-    optimizer = GradientDescent(learning_rate=ExponentialScheduler(5e-5, factor=0.9996))
+    optimizer = GradientDescent(
+        learning_rate=ExponentialScheduler(5e-5, factor=0.9996)
+    )
 else:
     optimizer = GradientDescent(learning_rate=0) # start with no learning
 base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
@@ -106,10 +109,10 @@ agents = [
     for i in range(Model.n)
 ]
 
-env = MonitorEpisodes(TimeLimit(LtiSystem(model=model), max_episode_steps=int(1e3+20))) # Lti system:
+env = MonitorEpisodes(TimeLimit(LtiSystem(model=model), max_episode_steps=int(2e2))) # Lti system:
 agent = Log(  # type: ignore[var-annotated]
     RecordUpdates(
-        LstdQLearningAgentCoordinator(
+        LfcLstdQLearningAgentCoordinator(
             agents=agents,
             N=prediction_horizon,
             nx=2,
@@ -120,7 +123,7 @@ agent = Log(  # type: ignore[var-annotated]
             consensus_iters=100,
             centralized_mpc=centralized_mpc,
             centralized_learnable_parameters=centralized_learnable_pars,
-            # centralized_fixed_parameters=centralized_mpc.fixed_pars_init, # TODO: implement delta PL
+            centralized_fixed_parameters=centralized_mpc.fixed_pars_init, # TODO: implement delta PL
             centralized_exploration=deepcopy(base_exp),
             centralized_experience=deepcopy(experience),
             centralized_update_strategy=deepcopy(update_strategy),
@@ -168,3 +171,4 @@ if save_data:
         "wb", # w: write mode, creates new or truncates existing. b: binary mode
     ) as file:
         pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R}, file)
+    print("Training succesful, file saved as", pklname)
