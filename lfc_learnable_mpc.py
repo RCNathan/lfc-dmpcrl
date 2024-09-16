@@ -8,6 +8,7 @@ from dmpcrl.mpc.mpc_admm import MpcAdmm
 from dmpcrl.utils.solver_options import SolverOptions
 
 from lfc_model import Model
+from lfc_discretization import lfc_forward_euler_cs, lfc_zero_order_hold
 
 
 class LearnableMpc(Mpc[cs.SX]):
@@ -25,6 +26,7 @@ class LearnableMpc(Mpc[cs.SX]):
         prediction_horizon : int
             The prediction horizon."""
         self.n = model.n
+        self.ts = model.ts
         self.nx_l, self.nu_l = model.nx_l, model.nu_l
         self.nx, self.nu = model.n * model.nx_l, model.n * model.nu_l
         self.x_bnd_l, self.u_bnd_l = model.x_bnd_l, model.u_bnd_l
@@ -42,7 +44,7 @@ class LearnableMpc(Mpc[cs.SX]):
             "V0": np.zeros((1, 1)),
             "x_lb": np.reshape(
                 [-0.2, 0, 0, 0], (-1, 1)
-            ),  # TODO: how does this compare with ub/lb in model?
+            ),  # TODO: how does this compare with ub/lb in model? -> this is learned.
             "x_ub": np.reshape([0.2, 0, 0, 0], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
@@ -87,7 +89,7 @@ class CentralizedMpc(LearnableMpc):
                     self.parameter(f"A_c_{i}_{j}", (self.nx_l, self.nx_l))
                     if self.adj[i, j]
                     else cs.SX.zeros((self.nx_l, self.nx_l))
-                )  # TODO: maybe this gives the error??
+                )  
                 for j in range(self.n)
             ]
             for i in range(self.n)
@@ -108,10 +110,10 @@ class CentralizedMpc(LearnableMpc):
 
         # initial values for learnable parameters
         A_l_inac, B_l_inac, A_c_l_inac, F_l_inac = (
-            model.A_l_innacurate,
-            model.B_l_innacurate,
-            model.A_c_l_innacurate,
-            model.F_l_innacurate,
+            model.A_l_inac,
+            model.B_l_inac,
+            model.A_c_l_inac,
+            model.F_l_inac,
         )
 
         # using .update: sets the initialized theta's to some values, A_l_inac for example.
@@ -121,18 +123,20 @@ class CentralizedMpc(LearnableMpc):
             for i in range(self.n)
         }
         self.learnable_pars_init.update(
-            {f"A_{i}": A_l_inac for i in range(self.n)}
-        )  # means they all start from same initial guess
-        self.learnable_pars_init.update({f"B_{i}": B_l_inac for i in range(self.n)})
+            {f"A_{i}": A_l_inac[i] for i in range(self.n)}
+        )  # different inaccurate guesses now
+        self.learnable_pars_init.update(
+            {f"B_{i}": B_l_inac[i] for i in range(self.n)})
         self.learnable_pars_init.update(
             {
-                f"A_c_{i}_{j}": A_c_l_inac
+                f"A_c_{i}_{j}": A_c_l_inac[i][j] 
                 for i in range(self.n)
                 for j in range(self.n)
-                if self.adj[i, j]
+                if self.adj[i, j] 
             }
         )
-        self.learnable_pars_init.update({f"F_{i}": F_l_inac for i in range(self.n)})
+        self.learnable_pars_init.update(
+            {f"F_{i}": F_l_inac[i] for i in range(self.n)})
 
         # concat some params for use in cost and constraint expressions
         V0 = cs.vcat(V0_list)
@@ -141,10 +145,13 @@ class CentralizedMpc(LearnableMpc):
         b = cs.vcat(b_list)
         f = cs.vcat(f_list)
 
-        # get centralized symbolic dynamics
+        # get centralized symbolic dynamics #TODO: discretize here, later also in distributed!
         A, B, F = model.centralized_dynamics_from_local(
-            A_list, B_list, A_c_list, F_list, ts=0.1
+            A_list, B_list, A_c_list, F_list, self.ts
         )  # A_c_list has zero's in formulation too.
+
+        # discretize using forward euler
+        # A, B, F = lfc_forward_euler_cs(A, B, F, self.ts)
 
         # variables (state, action, slack) | optimized over in mpc
         x, _ = self.state("x", self.nx)
@@ -155,13 +162,6 @@ class CentralizedMpc(LearnableMpc):
             ub=self.u_bnd[1].reshape(-1, 1),
         )
         s, _, _ = self.variable("s", (self.nx, N), lb=0)
-
-        # TODO: fix this to be time-dependent
-        # Pl1 = 0.5*np.sin(np.linspace(0, 6*np.pi, N))
-        # Pl2 = 0.3*np.sin(np.linspace(0, 6*np.pi, N))
-        # Pl3 = 0.2*np.sin(np.linspace(0, 6*np.pi, N))
-        # Pl =  # See Sam's reaction on my email. Also: look through the powersys example where fixed params are used
-        # Pl = 0
 
         # fixed params
         # self.fixed_pars_init = {}
@@ -197,7 +197,7 @@ class CentralizedMpc(LearnableMpc):
         )
 
         # solver
-        solver = "qpoases"
+        solver = "qpoases" # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
@@ -218,7 +218,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         Parameters
         ----------
         model : Model
-            The model object containign system information.
+            The model object containing system information.
         prediction_horizon : int
             The prediction horizon.
         num_neighbours : int
@@ -251,10 +251,10 @@ class LocalMpc(MpcAdmm, LearnableMpc):
 
         # dictionary containing initial values for local learnable parameters
         self.learnable_pars_init = self.learnable_pars_init_local.copy()
-        self.learnable_pars_init["A"] = model.A_l_innacurate
-        self.learnable_pars_init["B"] = model.B_l_innacurate
+        self.learnable_pars_init["A"] = model.A_l_inac[my_index] # TODO: this is placeholder, to be changed when tackling distributed
+        self.learnable_pars_init["B"] = model.B_l_inac[my_index]
         self.learnable_pars_init.update(
-            {f"A_c_{i}": model.A_c_l_innacurate for i in range(num_neighbours)}
+            {f"A_c_{i}": model.A_c_l_inac[1][0] for i in range(num_neighbours)} # TODO: this is placeholder, to be changed when tackling distributed
         )
 
         # variables (state+coupling, action, slack)
@@ -308,3 +308,4 @@ class LocalMpc(MpcAdmm, LearnableMpc):
 # print("Debugggggin")
 # model = Model()
 # centralized_mpc = CentralizedMpc(model, prediction_horizon=10) # for comparison/debugging
+# print("adfsj")

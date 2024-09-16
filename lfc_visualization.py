@@ -9,7 +9,6 @@ filename = 'cent_no_learning.pkl'
 with open(filename, 'rb',) as file:
     data = pickle.load(file)
 
-
 # data.get('X') can be replaced with data['X']
 # shape is (1, 1001, 12, 1) but can be made more workable with squeeze() -> (1001, 12)
 x = data.get('X').squeeze() # shape = (1, 1001, 12, 1) -> (1001, 12) | x[0].reshape(-1, 1) => x[0] is initial states; [0, 0, 0, 0.15] as defined in env

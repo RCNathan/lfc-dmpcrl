@@ -2,7 +2,8 @@ from typing import ClassVar
 
 import casadi as cs
 import numpy as np
-from dmpcrl.utils.discretisation import zero_order_hold
+from dmpcrl.utils.discretisation import zero_order_hold, forward_euler
+from lfc_discretization import lfc_forward_euler, lfc_zero_order_hold
 
 
 class Model:
@@ -13,7 +14,7 @@ class Model:
     nx_l: ClassVar[int] = 4  # local state dimension
     nu_l: ClassVar[int] = 1  # local control dimension
 
-    ts = 0.1  # sampling time for ZOH discretization (not sure about value)
+    ts = 0.01  # sampling time for ZOH discretization/ Forward Euler (not sure about value)
 
     # Constants taken from Yan et al.'s three area network
     # Area 1
@@ -41,10 +42,11 @@ class Model:
 
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(
+        # [[-0.2, -1e3, -1e3, -1e3], [0.2, 1e3, 1e3, 1e3]]
         [[-1, -1, -1, -1], [1, 1, 1, 1]]
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
     u_bnd_l: ClassVar[np.ndarray] = np.array(
-        [[-1], [1]]
+        [[-1], [1]] # Yan: GRC: |u| <= 2e-4
     )  # local control bounds u_bnd[0] <= u <= u_bnd[1]
 
     # Yan et al.'s three-area network is fully connected
@@ -117,21 +119,15 @@ class Model:
     A23: ClassVar[np.ndarray] = np.array(
         np.zeros((4, 4))
     )  # local coupling matrix A_23 = A_32
-    A23[3, 0] = -2 * np.pi * T23
+    A23[3, 0] = -2 * np.pi * T23    
 
-    # these can be used in formulation of A_c_l
-    # A21 = A12
-    # A31 = A13
-    # A32 = A23
-
-    # combine into one matrix (for ease of change later)
-    A_c_l = np.array(
-        [
-            [np.zeros((4, 4)), A12, A13],
-            [A12, np.zeros((4, 4)), A23],
-            [A13, A23, np.zeros((4, 4))],
-        ]
-    )  # zeros are placeholders/not used
+    # discretize using forward Euler | centralized: x+ = (I + ts*A)x + (ts*B)u | local:  xi+ = (I + ts*Ai)xi + (ts*Bi)ui + (ts*Aij)xj
+    # A_l_1, B_l_1, F_l_1 = lfc_forward_euler(A_l_1, B_l_1, F_l_1, ts)
+    # A_l_2, B_l_2, F_l_2 = lfc_forward_euler(A_l_2, B_l_2, F_l_2, ts)
+    # A_l_3, B_l_3, F_l_3 = lfc_forward_euler(A_l_3, B_l_3, F_l_3, ts)
+    # A12 = ts*A12
+    # A13 = ts*A13
+    # A23 = ts*A23
 
     # starting point (inaccurate guess) for learning (excluding learnable params)
     np.random.seed(420)  # set seed for consistency/repeatability
@@ -143,25 +139,20 @@ class Model:
     )  # inaccurate local state-space matrix B
     F_l_inac: ClassVar[np.ndarray[np.ndarray]] = 0 * np.random.random((3, 4, 1)) + np.array(
         [F_l_1, F_l_2, F_l_3]
-    )  # inaccurate local state-space matrix F 
+    ) # inaccurate local state-space matrix F 
+
+
+    # Coupling matrix: after discretizatoin: combine into one matrix (for ease of change later)
+    A_c_l = np.array(
+        [
+            [np.zeros((4, 4)), A12, A13],
+            [A12, np.zeros((4, 4)), A23],
+            [A13, A23, np.zeros((4, 4))],
+        ]
+    )  # zeros are placeholders/not used
     A_c_l_inac: ClassVar[np.ndarray[np.ndarray[np.ndarray]]] = 0 * np.random.random((3, 3, 4, 4)) + (
-        A_c_l)  # inaccurate local coupling matrix A_c
-
-    # TODO: discretize using ZOH!
-    # BF_inac_comb = np.hstack((B_l_inac, F_l_inac))
-    # A_l_inac, BF_inac = zero_order_hold(A_l_inac, BF_inac_comb, ts) # possible with A^-1(Ad - I) 
-    # B_l_inac = BF_inac[:, : n]
-    # F_l_inac = BF_inac[:, n :]
-
-    # testing/debugging:
-    # nx_l = 2
-    # A_l_1 = np.reshape(np.arange(4),(2,2))
-    # A_l_2 = np.reshape(np.arange(4,8),(2,2))
-    # A_l_3 = np.reshape(np.arange(8,12),(2,2))
-    # A_c_l = np.reshape(np.arange(20, 20+36), (3,3,2,2)) # list of lists; 3x3 with matrices Aij which are 2x2 for the example
-    # B_l_1 = np.array([[0],[1]])
-    # B_l_2 = np.array([[0],[2]])
-    # B_l_3 = np.array([[0],[3]])
+        A_c_l
+    )  # inaccurate local coupling matrix A_c
 
     def __init__(self):
         """Initializes the model."""
@@ -172,7 +163,7 @@ class Model:
             self.A_c_l,  # n by n matrix with coupling matrices (which are nx_l by nx_l) # works for model but not with learnable_mpc...
             [self.F_l_1, self.F_l_2, self.F_l_3],
             self.ts,
-        )
+        )        
 
     def centralized_dynamics_from_local(
         self,
@@ -261,18 +252,15 @@ class Model:
                 for i in range(self.n)
             ]
         )
-        # return A, B, F
-        # Discretization using ZOH
-        B_comb = row_func((B, F))
-        A_d, B_d_comb = zero_order_hold(A, B_comb, ts) # possible with A^-1(Ad - I) 
-        B_d = B_d_comb[:, : self.n]
-        F_d = B_d_comb[:, self.n :]
-        return A_d, B_d, F_d
+        return A, B, F
+        # # Discretization using ZOH # --> !NOTE! Discretization now done locally and using forward euler!
+        Ad, Bd, Fd = lfc_zero_order_hold(A, B, F, ts)
+        return Ad, Bd, Fd
 
 
 m = Model()
 print("\nLocal A matrix for one agent/area: \n", m.A_l_1)
-print("After discretization: \n", m.A[0:4, 0:4])
+# print("After discretization: \n", m.A[0:4, 0:4])
 print("Sampling time {} s".format(m.ts))
 # print("Local B matrix for one agent/area: \n", m.B_l_1)
 # print("Local A_{ij} matrix for one agent/area: \n", m.A_c_l[0][1])

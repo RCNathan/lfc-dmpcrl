@@ -61,7 +61,7 @@ class LtiSystem(
         if options is not None and "x0" in options:
             self.x = options["x0"]
         else:  # Remember: n:num_agents(=3), nx_l:local_state_dim(=4), nx:n*nx_l(=12) -> reshaping is transposing
-            self.x = np.tile([0, 0, 0, 0.15], self.n).reshape(
+            self.x = np.tile([0.1, 0, 0, 0], self.n).reshape(
                 self.nx, 1
             )  # changed to 4dimensional x0.
 

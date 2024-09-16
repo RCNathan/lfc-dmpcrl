@@ -29,7 +29,7 @@ save_data = True
 
 centralized_flag = True
 learning_flag = False
-prediction_horizon = 10
+prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources | not the issue at hand.
 admm_iters = 50
 rho = 0.5
 model = Model()  # model class defines dynamic model
@@ -71,7 +71,7 @@ distributed_fixed_parameters: list = [
 ]
 
 # learning arguments
-update_strategy = 2
+update_strategy = 2 # Frequency to update the mpc parameters with. Updates every `n` env's steps
 if learning_flag:
     optimizer = GradientDescent(
         learning_rate=ExponentialScheduler(5e-5, factor=0.9996)
