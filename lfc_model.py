@@ -4,6 +4,7 @@ import casadi as cs
 import numpy as np
 from dmpcrl.utils.discretisation import zero_order_hold, forward_euler
 from lfc_discretization import lfc_forward_euler, lfc_zero_order_hold
+from controllability import ctrb
 
 
 class Model:
@@ -43,10 +44,10 @@ class Model:
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(
         # [[-0.2, -1e3, -1e3, -1e3], [0.2, 1e3, 1e3, 1e3]]
-        [[-1, -1, -1, -1], [1, 1, 1, 1]]
+        [[-0.2, -1, -1, -1], [0.2, 1, 1, 1]]
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
     u_bnd_l: ClassVar[np.ndarray] = np.array(
-        [[-1], [1]] # Yan: GRC: |u| <= 2e-4
+        [[-1e-1], [1e-1]] # Yan: GRC: |u| <= 2e-4
     )  # local control bounds u_bnd[0] <= u <= u_bnd[1]
 
     # Yan et al.'s three-area network is fully connected
@@ -252,16 +253,21 @@ class Model:
                 for i in range(self.n)
             ]
         )
-        return A, B, F
-        # # Discretization using ZOH # --> !NOTE! Discretization now done locally and using forward euler!
+        # return A, B, F
+        # comment/uncomment 'return A, B, F' to toggle between ZOH discretization or none | Forward Euler is done above (locally)
         Ad, Bd, Fd = lfc_zero_order_hold(A, B, F, ts)
         return Ad, Bd, Fd
 
 
-m = Model()
-print("\nLocal A matrix for one agent/area: \n", m.A_l_1)
-# print("After discretization: \n", m.A[0:4, 0:4])
-print("Sampling time {} s".format(m.ts))
-# print("Local B matrix for one agent/area: \n", m.B_l_1)
-# print("Local A_{ij} matrix for one agent/area: \n", m.A_c_l[0][1])
-# print("dot is for debugging :)")
+# m = Model()
+# # print("\nLocal A matrix for one agent/area: \n", m.A_l_1)
+# print("Sampling time {} s".format(m.ts))
+
+# # controllability of (discretized) A,B:
+# K, rank = ctrb(m.A, m.B)
+# print("Rank of controllability matrix is", rank)
+# if rank != m.A.shape[0]:
+#     print("Rank is smaller than dimension, meaning system (A,B) has uncontrollable modes")
+# # eigvals, eigvec = np.linalg.eig(m.A)
+
+# print("Debug")

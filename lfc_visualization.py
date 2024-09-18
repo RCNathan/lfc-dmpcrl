@@ -65,6 +65,7 @@ for j in range(numAgents):
     axs[3, j].set_xlabel(r"time $t$") # x-labels (only bottom row) 
 
     axs[4, j].plot(t[:-1], u[:, j])
+    axs[4, j].hlines(u_bnd, 0, t[-2], linestyles='--', color='r') # hlines(y_values, xmin, xmax)
 
 # y-axis labels (states)
 axs[0, 0].set_ylabel(r"$\Delta$ f$_i$")
@@ -74,23 +75,4 @@ axs[3, 0].set_ylabel(r"$\Delta$ P$_{tie,i}$")
 axs[4, 0].set_ylabel("u")
 
 plt.show()
-
-# # subplot index increases to the right ->
-# plt.figure()
-# for j in range(3): # numagents    
-#     plt.subplot(4,3, j + 1)
-#     plt.plot(x[:, 4*j + 0])
-
-#     plt.subplot(4,3, j + 4)
-#     plt.plot(x[:, 4*j + 1])
-
-#     plt.subplot(4,3, j + 7)    
-#     plt.plot(x[:, 4*j + 2])
-
-#     plt.subplot(4,3, j + 10)
-#     plt.plot(x[:, 4*j + 3])
-# plt.show()
-
-
-# for i in 
 print('debug')

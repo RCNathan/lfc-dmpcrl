@@ -34,7 +34,7 @@ class LearnableMpc(Mpc[cs.SX]):
             model.u_bnd_l, model.n
         )
         self.w_l = np.array(
-            [[1.2e2, 1.2e2, 1.2e2, 1.2e2]]  # TODO: change
+            [[1.2e4, 1.2e2, 1.2e2, 1.2e2]]  # TODO: change
         )  # penalty weight for constraint violations in cost
         self.w = np.tile(self.w_l, (1, self.n))
         self.adj = model.adj
@@ -43,9 +43,9 @@ class LearnableMpc(Mpc[cs.SX]):
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
             "x_lb": np.reshape(
-                [-0.2, 0, 0, 0], (-1, 1)
+                [-0.2, -1, -1, -1], (-1, 1)
             ),  # TODO: how does this compare with ub/lb in model? -> this is learned.
-            "x_ub": np.reshape([0.2, 0, 0, 0], (-1, 1)),
+            "x_ub": np.reshape([0.2, 1, 1, 1], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
         }
@@ -163,21 +163,16 @@ class CentralizedMpc(LearnableMpc):
         )
         s, _, _ = self.variable("s", (self.nx, N), lb=0)
 
-        # fixed params
-        # self.fixed_pars_init = {}
-        # self.fixed_pars_init["Pl"] = np.zeros((self.n, 1)) # dict: these are fixed
-        # Pl = self.parameter("Pl", (3, 1)) # creates parameter obj
-
         # added to demonstrate how to change fixed parameters
-        Pl = self.parameter("Pl", (1, 1))  # creates parameter obj
+        Pl = self.parameter("Pl", (3, 1))  # creates parameter obj for load
         self.fixed_pars_init = {
-            "Pl": np.zeros((1, 1))
-        }  # initial value of 0.0 will be changed by agent on episode start, and then every env step (see lfc_agent.py)
+            "Pl": np.zeros((3, 1))
+        }  # !!! initial value of 0.0 will be changed by agent on episode start, and then every env step (see lfc_agent.py) !!!
 
-        # dynamics | feed the dynamics: todo: add F in model, Pl as fixed parameter (over whole horizon N)
-        # self.set_dynamics(lambda x, u: A @ x + B @ u + F @ Pl + b, n_in=2, n_out=1)
+        # dynamics
         self.set_dynamics(
-            lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1
+            # lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1
+            lambda x, u: A @ x + B @ u + F @ Pl + b, n_in=2, n_out=1
         )  # TODO: b is removed, maybe return later
 
         # other constraints

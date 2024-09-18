@@ -30,12 +30,15 @@ class LtiSystem(
         self.nx = model.n * model.nx_l
         self.nx_l = model.nx_l
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
+        self.ts = model.ts
         self.w = np.tile(
-            [[1.2e2, 1.2e2, 1.2e2, 1.2e2]], (1, self.n)
+            [[1.2e4, 1.2e2, 1.2e2, 1.2e2]], (1, self.n)
         )  # penalty weight for bound violations
 
         # added to demonstrate how to changed fixed parameters
-        self.load = 2.0 # TODO: check this out 
+        self.load = np.array([0.0, 0.0, 0.0]).reshape(
+            self.n, -1
+        ) # TODO: check this out 
         self.step_counter = 0 # TODO: check this out
 
     def reset(
@@ -159,7 +162,8 @@ class LtiSystem(
             The new state, the reward, truncated flag, terminated flag, and an info dictionary.
         """
         action = action.full()  # convert action from casadi DM to numpy array
-        x_new = self.A @ self.x + self.B @ action  # TODO: + Pl @ F
+        # x_new = self.A @ self.x + self.B @ action  # TODO: + Pl @ F
+        x_new = self.A @ self.x + self.B @ action  + self.F @ self.load
         # noise = self.np_random.uniform(*self.noise_bnd).reshape(-1, 1)
         # x_new[
         #     np.arange(0, self.nx, self.nx_l)
@@ -173,8 +177,21 @@ class LtiSystem(
         )
         self.x = x_new
 
-        # added to demonstrate how to changed fixed parameters
-        self.load += 1.0
+        #  step function for load | time = step_counter*ts
+        if(self.step_counter*self.ts >= 1):
+            self.load = np.array(
+                [0.2, 0.0, 0.0]    
+            ).reshape(self.n, -1)
+        else:
+            self.load = np.array(
+                [0.0, 0.0, 0.0]    
+            ).reshape(self.n, -1)
+        
+        # incrementing load every time-step:
+        # self.load += self.ts * np.array(
+        #     [0.01, 0.0, 0.0]    # adds constant load each time-step, scaled by sampling-time
+        # ).reshape(self.n, -1)
+
         self.step_counter += 1
 
         return x_new, r, False, False, {"r_dist": r_dist}
