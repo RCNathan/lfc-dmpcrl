@@ -11,6 +11,7 @@ class Model:
     """Class to store model information for the system."""
 
     print("Model instance created")
+    discretizationFlag: ClassVar[str] = "FE" # change discretization. Options: 'ZOH' or 'FE' 
     n: ClassVar[int] = 3  # number of agents
     nx_l: ClassVar[int] = 4  # local state dimension
     nu_l: ClassVar[int] = 1  # local control dimension
@@ -121,14 +122,6 @@ class Model:
         np.zeros((4, 4))
     )  # local coupling matrix A_23 = A_32
     A23[3, 0] = -2 * np.pi * T23    
-
-    # discretize using forward Euler | centralized: x+ = (I + ts*A)x + (ts*B)u | local:  xi+ = (I + ts*Ai)xi + (ts*Bi)ui + (ts*Aij)xj
-    # A_l_1, B_l_1, F_l_1 = lfc_forward_euler(A_l_1, B_l_1, F_l_1, ts)
-    # A_l_2, B_l_2, F_l_2 = lfc_forward_euler(A_l_2, B_l_2, F_l_2, ts)
-    # A_l_3, B_l_3, F_l_3 = lfc_forward_euler(A_l_3, B_l_3, F_l_3, ts)
-    # A12 = ts*A12
-    # A13 = ts*A13
-    # A23 = ts*A23
 
     # starting point (inaccurate guess) for learning (excluding learnable params)
     np.random.seed(420)  # set seed for consistency/repeatability
@@ -252,11 +245,18 @@ class Model:
                 for i in range(self.n)
             ]
         )
-        # return A, B, F
-        # comment/uncomment 'return A, B, F' to toggle between ZOH discretization or none | Forward Euler is done above (locally)
-        Ad, Bd, Fd = lfc_zero_order_hold(A, B, F, ts)
+        #  Toggle between ZOH discretization or [none]
+        if self.discretizationFlag == 'ZOH':
+            # use Zero-Order Hold
+            Ad, Bd, Fd = lfc_zero_order_hold(A, B, F, ts)
+            print("Using Zero-Order Hold discretization")
+        elif self.discretizationFlag == 'FE':
+            # discretize using forward Euler | centralized: x+ = (I + ts*A)x + (ts*B)u | local:  xi+ = (I + ts*Ai)xi + (ts*Bi)ui + (ts*Aij)xj
+            Ad, Bd, Fd = lfc_forward_euler(A, B, F, ts)
+            print("Using Forward Euler discretization")
+        else:
+            raise Exception("No valid option for discretization given. Choose between 'ZOH' or 'FE' for Zero-Order Hold or Forward Euler, respectively.")
         return Ad, Bd, Fd
-
 
 # m = Model()
 # # print("\nLocal A matrix for one agent/area: \n", m.A_l_1)
