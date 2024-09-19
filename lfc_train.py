@@ -24,8 +24,10 @@ from lfc_learnable_mpc import (  # change learnable mpc, start with centralized
     LocalMpc,
 )
 from lfc_model import Model  # change model in model.py (own repo)
+from lfc_visualization import visualize
 
 save_data = True
+make_plots = True
 
 centralized_flag = True
 learning_flag = False
@@ -73,19 +75,22 @@ distributed_fixed_parameters: list = [
 # learning arguments
 update_strategy = 2 # Frequency to update the mpc parameters with. Updates every `n` env's steps
 if learning_flag:
-    optimizer = GradientDescent(
-        learning_rate=ExponentialScheduler(5e-5, factor=0.9996)
+    optimizer = GradientDescent(        
+        learning_rate=ExponentialScheduler(5e-5, factor=0.9996)    
     )
-else:
-    optimizer = GradientDescent(learning_rate=0) # start with no learning
-base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
-    epsilon=ExponentialScheduler(0.7, factor=0.99), # (value, decay-rate: 1 = no decay)
-    strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
-    seed=1,
-)
-experience = ExperienceReplay(
-    maxlen=100, sample_size=15, include_latest=10, seed=1
-)  # smooths learning
+    base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
+        epsilon=ExponentialScheduler(0.7, factor=0.99), # (value, decay-rate: 1 = no decay)
+        strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
+        seed=1,
+    )
+    experience = ExperienceReplay(
+        maxlen=100, sample_size=15, include_latest=10, seed=1
+    )  # smooths learning
+else: # NO LEARNING
+    optimizer = GradientDescent(learning_rate=0) # learning-rate 0: alpha = 0: no updating theta's.
+    base_exp = EpsilonGreedyExploration(epsilon = 0, strength = 0, seed=1,) # 0 exploration adds no perturbation
+    experience = ExperienceReplay(maxlen=100, sample_size=15, include_latest=10, seed=1) 
+
 agents = [
     RecordUpdates(
         LstdQLearningAgent(
@@ -115,7 +120,7 @@ agent = Log(  # type: ignore[var-annotated]
         LfcLstdQLearningAgentCoordinator(
             agents=agents,
             N=prediction_horizon,
-            nx=2,
+            nx=4,
             nu=1,
             adj=model.adj,
             rho=rho,
@@ -172,3 +177,6 @@ if save_data:
     ) as file:
         pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R}, file)
     print("Training succesful, file saved as", pklname)
+
+    if make_plots:
+        visualize(pklname)

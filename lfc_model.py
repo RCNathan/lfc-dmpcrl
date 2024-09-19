@@ -160,8 +160,7 @@ class Model:
         self.A, self.B, self.F = self.centralized_dynamics_from_local(
             [self.A_l_1, self.A_l_2, self.A_l_3],
             [self.B_l_1, self.B_l_2, self.B_l_3],
-            # [[self.A_c_l for _ in range(np.sum(self.adj[i]))] for i in range(self.n)], # original from model.py
-            self.A_c_l,  # n by n matrix with coupling matrices (which are nx_l by nx_l) # works for model but not with learnable_mpc...
+            self.A_c_l,  # n by n matrix with coupling matrices (which are nx_l by nx_l)
             [self.F_l_1, self.F_l_2, self.F_l_3],
             self.ts,
         )        
