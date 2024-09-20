@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import pickle
 from lfc_model import Model
 
-def visualize(file:str):
+def visualize(file:str) -> None:
+    """Makes plots to visualize TD-error, rewards, states and inputs"""
 
     # Change filename below
     # filename = 'cent.pkl'
@@ -23,10 +24,10 @@ def visualize(file:str):
     if isinstance(data, dict):
         # Find and print all the keys where the value is a list
         list_keys = [key for key, value in data.items()]
-        param_keys = [key for key, value in data.get('param_dict').items()]
+        # param_keys = [key for key, value in data.get('param_dict').items()]
         
         print("Keys in data:", list_keys)
-        print("Keys inside param_dict:", param_keys)
+        # print("Keys inside param_dict:", param_keys)
     else:
         print("The loaded data is not a dictionary.")
     if (param_dict['A_0'][0] == param_dict['A_0'][-1]).all():

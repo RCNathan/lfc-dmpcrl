@@ -31,6 +31,7 @@ make_plots = True
 
 centralized_flag = True
 learning_flag = False
+
 prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources | not the issue at hand.
 admm_iters = 50
 rho = 0.5
@@ -79,13 +80,13 @@ if learning_flag:
         learning_rate=ExponentialScheduler(5e-5, factor=0.9996)    
     )
     base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
-        epsilon=ExponentialScheduler(0.7, factor=0.99), # (value, decay-rate: 1 = no decay)
+        epsilon=ExponentialScheduler(0.7, factor=0.9), # (value, decay-rate: 1 = no decay)
         strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
         seed=1,
     )
     experience = ExperienceReplay(
-        maxlen=100, sample_size=15, include_latest=10, seed=1
-    )  # smooths learning
+        maxlen=100, sample_size=15, include_latest=10, seed=1 # smooths learning
+    )  
 else: # NO LEARNING
     optimizer = GradientDescent(learning_rate=0) # learning-rate 0: alpha = 0: no updating theta's.
     base_exp = EpsilonGreedyExploration(epsilon = 0, strength = 0, seed=1,) # 0 exploration adds no perturbation

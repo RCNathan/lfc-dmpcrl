@@ -45,7 +45,7 @@ class Model:
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(
         # [[-0.2, -1e3, -1e3, -1e3], [0.2, 1e3, 1e3, 1e3]]
-        [[-0.2, -1, -1, -1], [0.2, 1, 1, 1]]
+        [[-0.2, -1, -1, -0.2], [0.2, 1, 1, 0.2]]
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
     u_bnd_l: ClassVar[np.ndarray] = np.array(
         [[-1e-1], [1e-1]] # Yan: GRC: |u| <= 2e-4
@@ -245,13 +245,13 @@ class Model:
                 for i in range(self.n)
             ]
         )
-        #  Toggle between ZOH discretization or [none]
+        #  Toggle between ZOH or FE discretization
         if self.discretizationFlag == 'ZOH':
-            # use Zero-Order Hold
+            # using Zero-Order Hold | expm(ts*M) of augmented matrix M = [A, I; 0, 0] actually is [expm(A*ts), int_0^ts(expm(A*ts)); 0, I]!
             Ad, Bd, Fd = lfc_zero_order_hold(A, B, F, ts)
             print("Using Zero-Order Hold discretization")
         elif self.discretizationFlag == 'FE':
-            # discretize using forward Euler | centralized: x+ = (I + ts*A)x + (ts*B)u | local:  xi+ = (I + ts*Ai)xi + (ts*Bi)ui + (ts*Aij)xj
+            # using forward Euler | centralized: x+ = (I + ts*A)x + (ts*B)u | local:  xi+ = (I + ts*Ai)xi + (ts*Bi)ui + (ts*Aij)xj
             Ad, Bd, Fd = lfc_forward_euler(A, B, F, ts)
             print("Using Forward Euler discretization")
         else:

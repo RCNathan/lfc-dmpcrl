@@ -43,9 +43,9 @@ class LearnableMpc(Mpc[cs.SX]):
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
             "x_lb": np.reshape(
-                [-0.2, -1, -1, -1], (-1, 1)
+                [-0.2, -1, -1, -0.2], (-1, 1)
             ),  # TODO: how does this compare with ub/lb in model? -> this is learned.
-            "x_ub": np.reshape([0.2, 1, 1, 1], (-1, 1)),
+            "x_ub": np.reshape([0.2, 1, 1, 0.2], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
         }
@@ -300,7 +300,6 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         self.init_solver(opts, solver=solver)
 
 
-# print("Debugggggin")
 # model = Model()
 # centralized_mpc = CentralizedMpc(model, prediction_horizon=10) # for comparison/debugging
-# print("adfsj")
+# print("Debug point.")
