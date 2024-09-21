@@ -40,21 +40,8 @@ def visualize(file:str) -> None:
     x_bnd = m.x_bnd_l.T
     t = np.linspace(0, m.ts*(x.shape[0]-1), x.shape[0]) # time - I suppose connected to sampling time no?
 
-
-    # plot TD error, reward and cumulative reward
-    _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True)
-    axs[0].plot(t[:-1], TD)
-    axs[0].set_title("Temporal difference error (TD)")
-    axs[0].set_xlabel(r"time $t$") 
-    axs[1].plot(t[:-1], R)
-    axs[1].set_title("Centralized rewards (R)")
-    axs[1].set_xlabel(r"time $t$")
-    axs[2].plot(t[:-1], np.cumsum(R))
-    axs[2].set_title("Cumulative reward")
-    axs[2].set_xlabel(r"time $t$")
-
     # plot states of all agents
-    _, axs = plt.subplots(5, 3, figsize=(10,5),)
+    _, axs = plt.subplots(5, 3, figsize=(10,7),)
     for j in range(numAgents):
         axs[0, j].plot(t, x[:, 4*j])
         axs[0, j].hlines(x_bnd[0, :], 0, t[-1], linestyles='--', color='r') # hlines(y_values, xmin, xmax)
@@ -79,11 +66,29 @@ def visualize(file:str) -> None:
     axs[2, 0].set_ylabel(r"$\Delta$ P$_{g,i}$") 
     axs[3, 0].set_ylabel(r"$\Delta$ P$_{tie,i}$")
     axs[4, 0].set_ylabel("u")
+    
+    wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
+    # print(wm.window.geometry()) # (x,y,dx,dy)
+    figx, figy, figdx, figdy = wm.window.geometry().getRect()
+    wm.window.setGeometry(-10, 0, figdx, figdy)
 
-    # wm = plt.get_current_fig_manager()
-    # print(wm.window.wm_geometry())
-    # wm.window.wm_geometry("1500x900+0+0")
-    # wm.window.wm_geometry(str(wm.window.maxsize()[0])+'x'+str(wm.window.maxsize()[1])+'+0+0')
+        # plot TD error, reward and cumulative reward
+    _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(5,7))
+    axs[0].plot(t[:-1], TD)
+    axs[0].set_title("Temporal difference error (TD)")
+    axs[0].set_xlabel(r"time $t$") 
+    axs[1].plot(t[:-1], R)
+    axs[1].set_title("Centralized rewards (R)")
+    axs[1].set_xlabel(r"time $t$")
+    axs[2].plot(t[:-1], np.cumsum(R))
+    axs[2].set_title("Cumulative reward")
+    axs[2].set_xlabel(r"time $t$")
+    
+    wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
+    # print(wm.window.geometry()) # (x,y,dx,dy)
+    figx, figy, figdx, figdy = wm.window.geometry().getRect()
+    wm.window.setGeometry(900, 0, figdx, figdy)
+
     plt.show()
 
 # filename = 'cent_no_learning'

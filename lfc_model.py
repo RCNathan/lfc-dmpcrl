@@ -47,9 +47,13 @@ class Model:
         # [[-0.2, -1e3, -1e3, -1e3], [0.2, 1e3, 1e3, 1e3]]
         [[-0.2, -1, -1, -0.2], [0.2, 1, 1, 0.2]]
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
+    ubnd = 1e-1 # 1e-1
     u_bnd_l: ClassVar[np.ndarray] = np.array(
-        [[-1e-1], [1e-1]] # Yan: GRC: |u| <= 2e-4
+        [[-ubnd], [ubnd]] # Yan: GRC: |u| <= 2e-4
     )  # local control bounds u_bnd[0] <= u <= u_bnd[1]
+    noise_A = 1e1 # for inaccurate matrices used by learnable MPC
+    noise_B = 1e0
+    noise_F = 1e0
 
     # Yan et al.'s three-area network is fully connected
     adj: ClassVar[np.ndarray] = np.array(
@@ -124,14 +128,14 @@ class Model:
     A23[3, 0] = -2 * np.pi * T23    
 
     # starting point (inaccurate guess) for learning (excluding learnable params)
-    np.random.seed(420)  # set seed for consistency/repeatability
-    A_l_inac: ClassVar[np.ndarray[np.ndarray]] = 0 * np.random.random((3, 4, 4)) + np.array(
+    np.random.seed(420)  # set seed for consistency/repeatability | 2*rand-1 returns uniform distribution in [-1, 1)
+    A_l_inac: ClassVar[np.ndarray[np.ndarray]] = noise_A * (2*np.random.random((3, 4, 4))-1) + np.array(
         [A_l_1, A_l_2, A_l_3]
     )  # inaccurate local state-space matrix A
-    B_l_inac: ClassVar[np.ndarray[np.ndarray]] = 0 * np.random.random((3, 4, 1)) + np.array(
+    B_l_inac: ClassVar[np.ndarray[np.ndarray]] = noise_B * (2*np.random.random((3, 4, 1))-1) + np.array(
         [B_l_1, B_l_2, B_l_3]
     )  # inaccurate local state-space matrix B
-    F_l_inac: ClassVar[np.ndarray[np.ndarray]] = 0 * np.random.random((3, 4, 1)) + np.array(
+    F_l_inac: ClassVar[np.ndarray[np.ndarray]] = noise_F * (2*np.random.random((3, 4, 1))-1) + np.array(
         [F_l_1, F_l_2, F_l_3]
     ) # inaccurate local state-space matrix F 
 
