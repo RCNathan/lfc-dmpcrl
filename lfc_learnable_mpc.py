@@ -4,10 +4,11 @@ import casadi as cs
 import numpy as np
 from csnlp import Nlp
 from csnlp.wrappers import Mpc
-from lfc_model import Model
-
 from dmpcrl.mpc.mpc_admm import MpcAdmm
 from dmpcrl.utils.solver_options import SolverOptions
+
+from lfc_model import Model
+from lfc_discretization import lfc_forward_euler_cs, lfc_zero_order_hold
 
 
 class LearnableMpc(Mpc[cs.SX]):
@@ -25,6 +26,7 @@ class LearnableMpc(Mpc[cs.SX]):
         prediction_horizon : int
             The prediction horizon."""
         self.n = model.n
+        self.ts = model.ts
         self.nx_l, self.nu_l = model.nx_l, model.nu_l
         self.nx, self.nu = model.n * model.nx_l, model.n * model.nu_l
         self.x_bnd_l, self.u_bnd_l = model.x_bnd_l, model.u_bnd_l
@@ -32,7 +34,7 @@ class LearnableMpc(Mpc[cs.SX]):
             model.u_bnd_l, model.n
         )
         self.w_l = np.array(
-            [[1.2e2, 1.2e2, 1.2e2, 1.2e2]] # TODO: change
+            [[1.2e4, 1.2e2, 1.2e2, 1.2e2]]  # TODO: change
         )  # penalty weight for constraint violations in cost
         self.w = np.tile(self.w_l, (1, self.n))
         self.adj = model.adj
@@ -40,8 +42,10 @@ class LearnableMpc(Mpc[cs.SX]):
         # standard learnable parameters dictionary for local agent
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
-            "x_lb": np.reshape([-0.2, 0, 0, 0], (-1, 1)), # TODO: how does this compare with ub/lb in model?
-            "x_ub": np.reshape([0.2, 0, 0, 0], (-1, 1)),
+            "x_lb": np.reshape(
+                [-0.2, -1, -1, -0.2], (-1, 1)
+            ),  # TODO: how does this compare with ub/lb in model? -> this is learned.
+            "x_ub": np.reshape([0.2, 1, 1, 0.2], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
         }
@@ -81,15 +85,22 @@ class CentralizedMpc(LearnableMpc):
         # if no coupling between i and j, A_c_list[i, j] = None, otherwise we add a parameterized matrix
         A_c_list = [
             [
-                self.parameter(f"A_c_{i}_{j}", (self.nx_l, self.nx_l)) if self.adj[i, j]
-                else cs.SX.zeros((self.nx_l, self.nx_l)) # TODO: maybe this gives the error??
+                (
+                    self.parameter(f"A_c_{i}_{j}", (self.nx_l, self.nx_l))
+                    if self.adj[i, j]
+                    else cs.SX.zeros((self.nx_l, self.nx_l))
+                )  
                 for j in range(self.n)
             ]
             for i in range(self.n)
         ]
-        b_list = [self.parameter(f"b_{i}", (self.nx_l, 1)) for i in range(self.n)] # learnable param =/= optimized over
+        b_list = [
+            self.parameter(f"b_{i}", (self.nx_l, 1)) for i in range(self.n)
+        ]  # learnable param =/= optimized over
         # cost parameters
-        V0_list = [self.parameter(f"V0_{i}", (1,)) for i in range(self.n)] # not optimized over
+        V0_list = [
+            self.parameter(f"V0_{i}", (1,)) for i in range(self.n)
+        ]  # not optimized over
         f_list = [
             self.parameter(f"f_{i}", (self.nx_l + self.nu_l, 1)) for i in range(self.n)
         ]
@@ -99,10 +110,10 @@ class CentralizedMpc(LearnableMpc):
 
         # initial values for learnable parameters
         A_l_inac, B_l_inac, A_c_l_inac, F_l_inac = (
-            model.A_l_innacurate,
-            model.B_l_innacurate,
-            model.A_c_l_innacurate,
-            model.F_l_innacurate
+            model.A_l_inac,
+            model.B_l_inac,
+            model.A_c_l_inac,
+            model.F_l_inac,
         )
 
         # using .update: sets the initialized theta's to some values, A_l_inac for example.
@@ -110,18 +121,22 @@ class CentralizedMpc(LearnableMpc):
             f"{name}_{i}": val
             for name, val in self.learnable_pars_init_local.items()
             for i in range(self.n)
-        } 
-        self.learnable_pars_init.update({f"A_{i}": A_l_inac for i in range(self.n)}) # means they all start from same initial guess
-        self.learnable_pars_init.update({f"B_{i}": B_l_inac for i in range(self.n)})
+        }
+        self.learnable_pars_init.update(
+            {f"A_{i}": A_l_inac[i] for i in range(self.n)}
+        )  # different inaccurate guesses now
+        self.learnable_pars_init.update(
+            {f"B_{i}": B_l_inac[i] for i in range(self.n)})
         self.learnable_pars_init.update(
             {
-                f"A_c_{i}_{j}": A_c_l_inac
+                f"A_c_{i}_{j}": A_c_l_inac[i][j] 
                 for i in range(self.n)
                 for j in range(self.n)
-                if self.adj[i, j]
+                if self.adj[i, j] 
             }
         )
-        self.learnable_pars_init.update({f"F_{i}": F_l_inac for i in range(self.n)}) 
+        self.learnable_pars_init.update(
+            {f"F_{i}": F_l_inac[i] for i in range(self.n)})
 
         # concat some params for use in cost and constraint expressions
         V0 = cs.vcat(V0_list)
@@ -130,8 +145,13 @@ class CentralizedMpc(LearnableMpc):
         b = cs.vcat(b_list)
         f = cs.vcat(f_list)
 
-        # get centralized symbolic dynamics
-        A, B, F = model.centralized_dynamics_from_local(A_list, B_list, A_c_list, F_list, ts=0.1) # A_c_list has zero's in formulation too.
+        # get centralized symbolic dynamics #TODO: discretize here, later also in distributed!
+        A, B, F = model.centralized_dynamics_from_local(
+            A_list, B_list, A_c_list, F_list, self.ts
+        )  # A_c_list has zero's in formulation too.
+
+        # discretize using forward euler
+        # A, B, F = lfc_forward_euler_cs(A, B, F, self.ts)
 
         # variables (state, action, slack) | optimized over in mpc
         x, _ = self.state("x", self.nx)
@@ -143,22 +163,17 @@ class CentralizedMpc(LearnableMpc):
         )
         s, _, _ = self.variable("s", (self.nx, N), lb=0)
 
-        #TODO: fix this to be time-dependent
-        # Pl1 = 0.5*np.sin(np.linspace(0, 6*np.pi, N))
-        # Pl2 = 0.3*np.sin(np.linspace(0, 6*np.pi, N))
-        # Pl3 = 0.2*np.sin(np.linspace(0, 6*np.pi, N))
-        # Pl =  # See Sam's reaction on my email. Also: look through the powersys example where fixed params are used
-        Pl = 0
+        # added to demonstrate how to change fixed parameters
+        Pl = self.parameter("Pl", (3, 1))  # creates parameter obj for load
+        self.fixed_pars_init = {
+            "Pl": np.zeros((3, 1))
+        }  # !!! initial value of 0.0 will be changed by agent on episode start, and then every env step (see lfc_agent.py) !!!
 
-
-        # fixed params
-        # self.fixed_pars_init = {}
-        # self.fixed_pars_init["Pl"] = np.zeros((self.n, 1)) # dict: these are fixed
-        # Pl = self.parameter("Pl", (3, 1)) # creates parameter obj
-
-        # dynamics | feed the dynamics: todo: add F in model, Pl as fixed parameter (over whole horizon N)
-        # self.set_dynamics(lambda x, u: A @ x + B @ u + F @ Pl + b, n_in=2, n_out=1)
-        self.set_dynamics(lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1) # TODO: b is removed, maybe return later
+        # dynamics
+        self.set_dynamics(
+            # lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1
+            lambda x, u: A @ x + B @ u + F @ Pl + b, n_in=2, n_out=1
+        )  # TODO: b is removed, maybe return later
 
         # other constraints
         self.constraint("x_lb", self.x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])
@@ -177,7 +192,7 @@ class CentralizedMpc(LearnableMpc):
         )
 
         # solver
-        solver = "qpoases"
+        solver = "qpoases" # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
@@ -198,7 +213,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         Parameters
         ----------
         model : Model
-            The model object containign system information.
+            The model object containing system information.
         prediction_horizon : int
             The prediction horizon.
         num_neighbours : int
@@ -231,10 +246,10 @@ class LocalMpc(MpcAdmm, LearnableMpc):
 
         # dictionary containing initial values for local learnable parameters
         self.learnable_pars_init = self.learnable_pars_init_local.copy()
-        self.learnable_pars_init["A"] = model.A_l_innacurate
-        self.learnable_pars_init["B"] = model.B_l_innacurate
+        self.learnable_pars_init["A"] = model.A_l_inac[my_index] # TODO: this is placeholder, to be changed when tackling distributed
+        self.learnable_pars_init["B"] = model.B_l_inac[my_index]
         self.learnable_pars_init.update(
-            {f"A_c_{i}": model.A_c_l_innacurate for i in range(num_neighbours)}
+            {f"A_c_{i}": model.A_c_l_inac[1][0] for i in range(num_neighbours)} # TODO: this is placeholder, to be changed when tackling distributed
         )
 
         # variables (state+coupling, action, slack)
@@ -285,6 +300,6 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         self.init_solver(opts, solver=solver)
 
 
-# print("Debugggggin")
 # model = Model()
 # centralized_mpc = CentralizedMpc(model, prediction_horizon=10) # for comparison/debugging
+# print("Debug point.")

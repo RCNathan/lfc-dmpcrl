@@ -1,13 +1,13 @@
 import logging
 import pickle
 from copy import deepcopy
+from datetime import *
 
 import casadi as cs
 import numpy as np
-from lfc_env import LtiSystem # change environment in env.py (= ground truth)
+from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
+from dmpcrl.core.admm import AdmmCoordinator
 from gymnasium.wrappers import TimeLimit
-from lfc_learnable_mpc import CentralizedMpc, LearnableMpc, LocalMpc # change learnable mpc, start with centralized 
-from lfc_model import Model # change model in model.py (own repo)
 from mpcrl import LearnableParameter, LearnableParametersDict, LstdQLearningAgent
 from mpcrl.core.experience import ExperienceReplay
 from mpcrl.core.exploration import EpsilonGreedyExploration, StepWiseExploration
@@ -16,20 +16,30 @@ from mpcrl.optim import GradientDescent
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
 
-from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
-from dmpcrl.core.admm import AdmmCoordinator
+from lfc_agent import LfcLstdQLearningAgentCoordinator # TODO: integrate lfc_agent
+from lfc_env import LtiSystem  # change environment in lfc_env.py (= ground truth)
+from lfc_learnable_mpc import (  # change learnable mpc, start with centralized
+    CentralizedMpc,
+    LearnableMpc,
+    LocalMpc,
+)
+from lfc_model import Model  # change model in model.py (own repo)
+from lfc_visualization import visualize
 
 save_data = True
+make_plots = True
 
 centralized_flag = True
-prediction_horizon = 10
+learning_flag = False
+
+prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources | not the issue at hand.
 admm_iters = 50
 rho = 0.5
-model = Model() # model class defines dynamic model
-G = AdmmCoordinator.g_map(model.adj) # network topology G 
+model = Model()  # model class defines dynamic model
+G = AdmmCoordinator.g_map(model.adj)  # network topology G
 
 # centralised mpc and params
-centralized_mpc = CentralizedMpc(model, prediction_horizon) # for comparison/debugging
+centralized_mpc = CentralizedMpc(model, prediction_horizon)  # for comparison/debugging
 centralized_learnable_pars = LearnableParametersDict[cs.SX](
     (
         LearnableParameter(name, val.shape, val, sym=centralized_mpc.parameters[name])
@@ -64,14 +74,24 @@ distributed_fixed_parameters: list = [
 ]
 
 # learning arguments
-update_strategy = 2
-optimizer = GradientDescent(learning_rate=ExponentialScheduler(5e-5, factor=0.9996))
-base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
-    epsilon=ExponentialScheduler(0.7, factor=0.99), # (value, decay-rate: 1 = no decay)
-    strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
-    seed=1,
-)
-experience = ExperienceReplay(maxlen=100, sample_size=15, include_latest=10, seed=1) # smooths learning
+update_strategy = 2 # Frequency to update the mpc parameters with. Updates every `n` env's steps
+if learning_flag:
+    optimizer = GradientDescent(        
+        learning_rate=ExponentialScheduler(5e-5, factor=0.9996)    
+    )
+    base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
+        epsilon=ExponentialScheduler(0.7, factor=0.9), # (value, decay-rate: 1 = no decay)
+        strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
+        seed=1,
+    )
+    experience = ExperienceReplay(
+        maxlen=100, sample_size=15, include_latest=10, seed=1 # smooths learning
+    )  
+else: # NO LEARNING
+    optimizer = GradientDescent(learning_rate=0) # learning-rate 0: alpha = 0: no updating theta's.
+    base_exp = EpsilonGreedyExploration(epsilon = 0, strength = 0, seed=1,) # 0 exploration adds no perturbation
+    experience = ExperienceReplay(maxlen=100, sample_size=15, include_latest=10, seed=1) 
+
 agents = [
     RecordUpdates(
         LstdQLearningAgent(
@@ -95,13 +115,13 @@ agents = [
     for i in range(Model.n)
 ]
 
-env = MonitorEpisodes(TimeLimit(LtiSystem(model=model), max_episode_steps=int(1e3))) # Lti system:
+env = MonitorEpisodes(TimeLimit(LtiSystem(model=model), max_episode_steps=int(2e2))) # Lti system:
 agent = Log(  # type: ignore[var-annotated]
     RecordUpdates(
-        LstdQLearningAgentCoordinator(
+        LfcLstdQLearningAgentCoordinator(
             agents=agents,
             N=prediction_horizon,
-            nx=2,
+            nx=4,
             nu=1,
             adj=model.adj,
             rho=rho,
@@ -109,7 +129,7 @@ agent = Log(  # type: ignore[var-annotated]
             consensus_iters=100,
             centralized_mpc=centralized_mpc,
             centralized_learnable_parameters=centralized_learnable_pars,
-            # centralized_fixed_parameters=centralized_mpc.fixed_pars_init,
+            centralized_fixed_parameters=centralized_mpc.fixed_pars_init, # TODO: implement delta PL
             centralized_exploration=deepcopy(base_exp),
             centralized_experience=deepcopy(experience),
             centralized_update_strategy=deepcopy(update_strategy),
@@ -146,8 +166,18 @@ U = np.asarray(env.actions)
 R = np.asarray(env.rewards)
 
 if save_data:
+    if centralized_flag:
+        pklname = 'cent'
+    else:
+        pklname = 'decent'
+    if learning_flag == False:
+        pklname = pklname + '_no_learning'
     with open(
-        f"C_{centralized_flag}.pkl",
-        "wb",
+        f"{pklname}.pkl",
+        "wb", # w: write mode, creates new or truncates existing. b: binary mode
     ) as file:
         pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R}, file)
+    print("Training succesful, file saved as", pklname)
+
+    if make_plots:
+        visualize(pklname)

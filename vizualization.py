@@ -2,6 +2,7 @@ import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 from model import Model
 
 # file_name = "examples/distributed/centralized_data.pkl"
