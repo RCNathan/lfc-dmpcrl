@@ -30,7 +30,7 @@ save_data = True
 make_plots = True
 
 centralized_flag = True
-learning_flag = False
+learning_flag = True
 
 prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources | not the issue at hand.
 admm_iters = 50
@@ -80,7 +80,7 @@ if learning_flag:
         learning_rate=ExponentialScheduler(5e-5, factor=0.9996)    
     )
     base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
-        epsilon=ExponentialScheduler(0.7, factor=0.9), # (value, decay-rate: 1 = no decay)
+        epsilon=ExponentialScheduler(0.3, factor=0.9), # (value, decay-rate: 1 = no decay)
         strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
         seed=1,
     )
@@ -129,7 +129,7 @@ agent = Log(  # type: ignore[var-annotated]
             consensus_iters=100,
             centralized_mpc=centralized_mpc,
             centralized_learnable_parameters=centralized_learnable_pars,
-            centralized_fixed_parameters=centralized_mpc.fixed_pars_init, # TODO: implement delta PL
+            centralized_fixed_parameters=centralized_mpc.fixed_pars_init, # fixed: Pl
             centralized_exploration=deepcopy(base_exp),
             centralized_experience=deepcopy(experience),
             centralized_update_strategy=deepcopy(update_strategy),
@@ -145,8 +145,8 @@ agent = Log(  # type: ignore[var-annotated]
     level=logging.DEBUG,
     log_frequencies={"on_timestep_end": 100},
 )
-
-agent.train(env=env, episodes=1, seed=1, raises=False)
+numEpisodes = 4
+agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
 
 # extract data
 # from agent
@@ -164,19 +164,22 @@ else:
 X = np.asarray(env.observations)
 U = np.asarray(env.actions)
 R = np.asarray(env.rewards)
+Pl = np.asarray(env.unwrapped.loads) # WARNING: use env.unwrapped.loads or env.get_wrapper_attr('loads') in new v1.0 (if ever updated)
+Pl_noise = np.asarray(env.unwrapped.load_noises)
 
-if save_data:
+if save_data: # TODO: maybe add episodes/time in name? 
     if centralized_flag:
         pklname = 'cent'
     else:
-        pklname = 'decent'
+        pklname = 'distr'
     if learning_flag == False:
         pklname = pklname + '_no_learning'
+    pklname = pklname + '_' + str(numEpisodes) + 'ep'
     with open(
         f"{pklname}.pkl",
         "wb", # w: write mode, creates new or truncates existing. b: binary mode
     ) as file:
-        pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R}, file)
+        pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R, "Pl": Pl, "Pl_noise": Pl_noise}, file)
     print("Training succesful, file saved as", pklname)
 
     if make_plots:

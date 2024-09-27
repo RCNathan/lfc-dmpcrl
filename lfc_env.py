@@ -35,11 +35,16 @@ class LtiSystem(
             [[1.2e4, 1.2e2, 1.2e2, 1.2e2]], (1, self.n)
         )  # penalty weight for bound violations
 
-        # added to demonstrate how to changed fixed parameters
+        # Initialize step_counter, load and load_noise
         self.load = np.array([0.0, 0.0, 0.0]).reshape(
             self.n, -1
-        ) # TODO: check this out 
-        self.step_counter = 0 # TODO: check this out
+        )
+        self.load_noise = self.load # initialize also at 0 
+        self.step_counter = 0 
+
+        # Saving data on load and noise for plotting # TODO: make this work for multiple episodes
+        self.loads: list = []
+        self.load_noises: list = []
 
     def reset(
         self,
@@ -47,7 +52,7 @@ class LtiSystem(
         seed=None,
         options=None,
     ) -> tuple[npt.NDArray[np.floating], dict[str, Any]]:
-        """Resets the environment.
+        """Resets the environment. Gets called at the start of each episode.
 
         Parameters
         ----------
@@ -64,13 +69,20 @@ class LtiSystem(
         if options is not None and "x0" in options:
             self.x = options["x0"]
         else:  # Remember: n:num_agents(=3), nx_l:local_state_dim(=4), nx:n*nx_l(=12) -> reshaping is transposing
-            self.x = np.hstack([[0.1, 0.1, 0, 0], # x0 for agent 1
-                                [0.05, 0, 0, 0], # x0 for agent 2
-                                [0.01, 0, 0, 0], # x0 for agent 3
+            self.x = np.hstack([[0.1, 0, 0, 0], # x0 for agent 1
+                                [0.0, 0, 0, 0], # x0 for agent 2
+                                [0.0, 0, 0, 0], # x0 for agent 3
                                 ]).reshape(self.nx, 1)
 
-        # added to demonstrate how to changed fixed parameters
+        #  Fixed parameters: time, load, load-noise
         self.step_counter = 0
+        self.load = np.array([0.0, 0.0, 0.0]).reshape(
+            self.n, -1
+        ) # TODO: decide: does this continue past episodes? or reset each time? <- probably reset
+        self.load_noise = np.array([0.0, 0.0, 0.0]).reshape(
+            self.n, -1
+        ) # TODO: decide: does this continue past episodes? or reset each time? <- probably continue
+
 
         return self.x, {}
 
@@ -162,22 +174,6 @@ class LtiSystem(
         tuple[np.ndarray, float, bool, bool, dict[str, Any]]
             The new state, the reward, truncated flag, terminated flag, and an info dictionary.
         """
-        action = action.full()  # convert action from casadi DM to numpy array
-        # x_new = self.A @ self.x + self.B @ action  # TODO: + Pl @ F
-        x_new = self.A @ self.x + self.B @ action  + self.F @ self.load
-        # noise = self.np_random.uniform(*self.noise_bnd).reshape(-1, 1)
-        # x_new[
-        #     np.arange(0, self.nx, self.nx_l)
-        # ] += noise  # apply noise only to first state dimension of each agent
-
-        r = self.get_stage_cost(
-            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w
-        )
-        r_dist = self.get_dist_stage_cost(
-            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w
-        )
-        self.x = x_new
-
         #  step function for load | time = step_counter*ts
         if(self.step_counter*self.ts >= 1):
             self.load = np.array(
@@ -193,7 +189,26 @@ class LtiSystem(
         #     [0.01, 0.0, 0.0]    # adds constant load each time-step, scaled by sampling-time
         # ).reshape(self.n, -1)
 
+        action = action.full()  # convert action from casadi DM to numpy array
+        # x_new = self.A @ self.x + self.B @ action  
+        x_new = self.A @ self.x + self.B @ action  + self.F @ self.load
+        
+        # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
+        self.load_noise = (0.01*(np.random.uniform(0, 2, (3,1)) -1)) # (low, high, size) -> in [-1, 1) 
+        x_new += self.F @ self.load_noise 
+        
+
+        r = self.get_stage_cost(
+            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w
+        )
+        r_dist = self.get_dist_stage_cost(
+            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w
+        )
+        self.x = x_new
+
         self.step_counter += 1
+        self.loads.append(self.load)
+        self.load_noises.append(self.load_noise)
 
         return x_new, r, False, False, {"r_dist": r_dist}
 

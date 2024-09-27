@@ -11,7 +11,7 @@ class Model:
     """Class to store model information for the system."""
 
     print("Model instance created")
-    discretizationFlag: ClassVar[str] = "FE" # change discretization. Options: 'ZOH' or 'FE' 
+    discretizationFlag: ClassVar[str] = "FE" # change discretization. Options: 'ZOH' or 'FE' or 'None'
     n: ClassVar[int] = 3  # number of agents
     nx_l: ClassVar[int] = 4  # local state dimension
     nu_l: ClassVar[int] = 1  # local control dimension
@@ -258,6 +258,9 @@ class Model:
             # using forward Euler | centralized: x+ = (I + ts*A)x + (ts*B)u | local:  xi+ = (I + ts*Ai)xi + (ts*Bi)ui + (ts*Aij)xj
             Ad, Bd, Fd = lfc_forward_euler(A, B, F, ts)
             print("Using Forward Euler discretization")
+        elif self.discretizationFlag == 'None':
+            Ad, Bd, Fd = A, B, F
+            print("Not using any discretization (for debugging purposes only!)")
         else:
             raise Exception("No valid option for discretization given. Choose between 'ZOH' or 'FE' for Zero-Order Hold or Forward Euler, respectively.")
         return Ad, Bd, Fd
