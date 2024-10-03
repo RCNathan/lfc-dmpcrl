@@ -9,6 +9,7 @@ from dmpcrl.utils.solver_options import SolverOptions
 
 from lfc_model import Model
 from lfc_discretization import lfc_forward_euler_cs, lfc_zero_order_hold
+from block_diag import block_diag
 
 
 class LearnableMpc(Mpc[cs.SX]):
@@ -36,20 +37,26 @@ class LearnableMpc(Mpc[cs.SX]):
             model.u_bnd_l, model.n
         )
         self.w_l = np.array(
-            [[1e1, 1e1, 1e1, 1e1]]  # TODO: change
+            [[1e3, 1e1, 1e1, 1e1]]  # TODO: change
         )  # penalty weight for slack variables!
         self.w = np.tile(self.w_l, (1, self.n))
         self.adj = model.adj
 
-        # standard learnable parameters dictionary for local agent
+        # standard learnable parameters dictionary for local agent - initial values
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
             "x_lb": np.reshape(
                 [-0.2, -1, -1, -0.2], (-1, 1)
-            ),  # TODO: how does this compare with ub/lb in model? -> this is learned.
+            ),  # how does this compare with ub/lb in model? -> this is learned.
             "x_ub": np.reshape([0.2, 1, 1, 0.2], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
+            "Qx": np.array(
+            [[1e4, 0, 0, 0], 
+             [0, 1e2, 0, 0],
+             [0, 0, 1e2, 0],
+             [0, 0, 0, 1e1]]), # quadratic cost on states (local)
+            "Qu": np.array([0.5]),
         }
 
 
@@ -73,7 +80,7 @@ class CentralizedMpc(LearnableMpc):
         N = prediction_horizon
         gamma = self.discount_factor
 
-        # create MPC parameters
+        # create MPC parameters - parameters are learned but not optimized over during MPC
         # dynamics parameters
         A_list = [
             self.parameter(f"A_{i}", (self.nx_l, self.nx_l)) for i in range(self.n)
@@ -98,13 +105,20 @@ class CentralizedMpc(LearnableMpc):
         ]
         b_list = [
             self.parameter(f"b_{i}", (self.nx_l, 1)) for i in range(self.n)
-        ]  # learnable param =/= optimized over
+        ] 
+
         # cost parameters
         V0_list = [
             self.parameter(f"V0_{i}", (1,)) for i in range(self.n)
-        ]  # not optimized over
+        ]  
         f_list = [
             self.parameter(f"f_{i}", (self.nx_l + self.nu_l, 1)) for i in range(self.n)
+        ] 
+        Qx_list = [
+            self.parameter(f"Qx_{i}", (self.nx_l, self.nx_l)) for i in range(self.n)
+        ]
+        Qu_list= [
+            self.parameter(f"Qu_{i}", (1,)) for i in range(self.n)
         ]
         # constraints parameters
         x_lb_list = [self.parameter(f"x_lb_{i}", (self.nx_l,)) for i in range(self.n)]
@@ -118,7 +132,7 @@ class CentralizedMpc(LearnableMpc):
             model.F_l_inac,
         )
 
-        # using .update: sets the initialized theta's to some values, A_l_inac for example.
+        # using .update: sets the initialized theta's to some values, for all learnable params with a name in learnable_pars_init (defined in LearnableMPC)
         self.learnable_pars_init = {
             f"{name}_{i}": val
             for name, val in self.learnable_pars_init_local.items()
@@ -146,6 +160,9 @@ class CentralizedMpc(LearnableMpc):
         x_ub = cs.vcat(x_ub_list)
         b = cs.vcat(b_list)
         f = cs.vcat(f_list)
+        Qu = cs.vcat(Qu_list)
+        Qx = block_diag(*Qx_list) 
+            # -> uses custom block_diag func and *unpacking operator; == block_diag(Qx_list[0], Qx_list[1], Qx_list[2])
 
         # get centralized symbolic dynamics 
         A, B, F = model.centralized_dynamics_from_local(
@@ -178,21 +195,21 @@ class CentralizedMpc(LearnableMpc):
         self.constraint("x_lb", self.x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])
         self.constraint("x_ub", x[:, 1:], "<=", self.x_bnd[1].reshape(-1, 1) + x_ub + s)
 
-        # objective
+        # objective | x.shape = (nx, N+1), u.shape = (nu, N)    |   sum1 is row-sum, sum2 is col-sum
         gammapowers = cs.DM(gamma ** np.arange(N)).T
-        self.minimize(
-            cs.sum1(V0)
-            # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
-            + 0.5
-            * cs.sum2(
-                gammapowers
-                # * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + self.w @ s)
-                * (cs.sum1(x[:, :-1] ** 2)  + self.w @ s)
-            )
+        self.minimize( 
+            cs.sum1(V0) 
+            # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u)) # f'([x, u]')
+            + cs.sum2(Qu.T @ u**2) # u'Q_u u
+            + cs.sum2(
+                cs.sum1(
+                    x.T @ Qx @ x # x' Q_x x 
+                )
+            ) 
         )
-
+        
         # solver
-        solver = "qpoases" # qpoases or ipopt
+        solver = "ipopt" # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
@@ -243,6 +260,8 @@ class LocalMpc(MpcAdmm, LearnableMpc):
             self.parameter(f"A_c_{i}", (self.nx_l, self.nx_l))
             for i in range(num_neighbours)
         ]
+        Qx = self.parameter("Qx", (self.nx_l, self.nx_l)) # TODO: this is placeholder, needs to be changed in stage cost
+        Qu = self.parameter("Qu", (1,))
 
         # dictionary containing initial values for local learnable parameters
         self.learnable_pars_init = self.learnable_pars_init_local.copy()
@@ -251,6 +270,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         self.learnable_pars_init.update(
             {f"A_c_{i}": model.A_c_l_inac[1][0] for i in range(num_neighbours)} # TODO: this is placeholder, to be changed when tackling distributed
         )
+        self.learnable_pars_init
 
         # variables (state+coupling, action, slack)
         x, x_c = self.augmented_state(num_neighbours, my_index, self.nx_l)

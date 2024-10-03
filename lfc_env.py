@@ -6,6 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 from lfc_model import Model
+from block_diag import block_diag
 
 
 class LtiSystem(
@@ -32,7 +33,7 @@ class LtiSystem(
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
         self.ts = model.ts
         self.w = np.tile(
-            [[1e5, 1e1, 1e1, 1e1]], (1, self.n)
+            [[1e3, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
 
         # Initialize step_counter, load and load_noise
@@ -70,8 +71,8 @@ class LtiSystem(
             self.x = options["x0"]
         else:  # Remember: n:num_agents(=3), nx_l:local_state_dim(=4), nx:n*nx_l(=12) -> reshaping is transposing
             self.x = np.hstack([[0.1, 0, 0, 0], # x0 for agent 1
-                                [0.0, 0, 0, 0], # x0 for agent 2
-                                [0.0, 0, 0, 0], # x0 for agent 3
+                                [0.1, 0, 0, 0], # x0 for agent 2
+                                [0.1, 0, 0, 0], # x0 for agent 3
                                 ]).reshape(self.nx, 1)
 
         #  Fixed parameters: time, load, load-noise
@@ -93,31 +94,39 @@ class LtiSystem(
         lb: np.ndarray,
         ub: np.ndarray,
         w: np.ndarray,
+        Qs: np.ndarray,
+        Qa: np.ndarray,
     ) -> float:
         """Returns the stage cost of the system for a given state and action.
 
         Parameters
         ----------
         state : np.ndarray
-            The state of the system.
+            The state of the system. Shape (nx, 1).
         action : np.ndarray
-            The action of the system.
+            The action of the system. Shape (nu,1).
         lb : np.ndarray
             The lower bounds of the states.
         ub : np.ndarray
             The upper bounds of the states.
         w : np.ndarray
             The penalty weight for bound violations.
+        Qs: np.ndarray
+            Matrix defining quadratic cost on states (LQR-like)
+        Qa: np.ndarray
+            Matrix defining quadratic cost on actions (LQR-like)
 
         Returns
         -------
         float
             The stage cost."""
-        return 0.5 * float(
-            np.square(state).sum()
-            # + 0.5 * np.square(action).sum()
-            + w @ np.maximum(0, lb[:, np.newaxis] - state)
-            + w @ np.maximum(0, state - ub[:, np.newaxis])
+        # replaced by ||s||^2_{Q_s} + ||a||^2_{Q_a} + w*(constraint violations)
+        return float(
+            state.T.squeeze() @ Qs @ state.squeeze() # s'Qs: quadratic
+            + 0.5 * np.square(action).sum() # 0.5*a^2
+            # necessary to punish constraint violation
+            + w @ np.maximum(0, lb[:, np.newaxis] - state) # = 0 if x > x_lower
+            + w @ np.maximum(0, state - ub[:, np.newaxis]) # = 0 if x < x_upper
         )
 
     def get_dist_stage_cost(  # distributed
@@ -127,6 +136,8 @@ class LtiSystem(
         lb: np.ndarray,
         ub: np.ndarray,
         w: np.ndarray,
+        Qs_l: np.ndarray,
+        Qa_l: np.ndarray,
     ) -> list[float]:
         """Returns the distributed costs of the system for a given centralized state and action.
 
@@ -142,6 +153,10 @@ class LtiSystem(
             The upper bounds of the states.
         w : np.ndarray
             The penalty weight for bound violations.
+        Qs_l: np.ndarray
+            LOCAL Matrix defining quadratic cost on states (LQR-like)
+        Qa_l: np.ndarray
+            LOCAL Matrix defining quadratic cost on actions (LQR-like)
 
         Returns
         -------
@@ -155,7 +170,7 @@ class LtiSystem(
             np.split(w, self.n, axis=1),
         )  # break into local pieces
         return [
-            self.get_stage_cost(x_l[i], u_l[i], lb_l[i], ub_l[i], w_l[i])
+            self.get_stage_cost(x_l[i], u_l[i], lb_l[i], ub_l[i], w_l[i], Qs_l, Qa_l)
             for i in range(self.n)
         ]
 
@@ -177,7 +192,7 @@ class LtiSystem(
         #  step function for load | time = step_counter*ts
         if(self.step_counter*self.ts >= 1):
             self.load = np.array(
-                [0.0, 0.0, 0.0]    
+                [0.15, 0.0, 0.0]    
             ).reshape(self.n, -1)
         else:
             self.load = np.array(
@@ -197,23 +212,27 @@ class LtiSystem(
         self.load_noise = (0.01*(np.random.uniform(0, 2, (3,1)) -1)) # (low, high, size) -> in [-1, 1) 
         x_new += self.F @ self.load_noise 
         
+        # Defines the quadratic cost on states
+        Qs_l = np.array(
+            [[1e4, 0, 0, 0], 
+             [0, 1e2, 0, 0],
+             [0, 0, 1e2, 0],
+             [0, 0, 0, 1e1]])
+        Qs = block_diag(Qs_l, n=self.n)
+
 
         r = self.get_stage_cost(
-            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w
+            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, Qs=Qs, Qa=0
         )
-        r_dist = self.get_dist_stage_cost(
-            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w
+        r_dist = self.get_dist_stage_cost( # TODO: change for distributed setting
+            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, Qs_l=Qs_l, Qa_l=0
         )
         self.x = x_new
 
         self.step_counter += 1
+
+        # save data for plots
         self.loads.append(self.load)
         self.load_noises.append(self.load_noise)
 
         return x_new, r, False, False, {"r_dist": r_dist}
-
-
-# print("Remove below statements after debugging")
-# m = Model()
-# LtiSystem(m)
-# print("End of Debugging")

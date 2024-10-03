@@ -22,12 +22,12 @@ class Model:
     noise_A = 0 # default 1e2
     noise_B = 0 # default 1e1
     noise_F = 0 # default 1e1
-    ubnd = 1e1 # default 1e-1
+    ubnd = 3e-1 # default 1e-1
 
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(
         # [[-0.2, -1e3, -1e3, -1e3], [0.2, 1e3, 1e3, 1e3]]
-        [[-0.2, -1, -1, -0.2], [0.2, 1, 1, 0.2]]
+        [[-0.2, -0.3, -1, -0.1], [0.2, 0.3, 1, 0.1]]
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
     u_bnd_l: ClassVar[np.ndarray] = np.array(
         [[-ubnd], [ubnd]] # Yan: GRC: |u| <= 2e-4
