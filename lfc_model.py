@@ -16,7 +16,22 @@ class Model:
     nx_l: ClassVar[int] = 4  # local state dimension
     nu_l: ClassVar[int] = 1  # local control dimension
 
-    ts = 0.01  # sampling time for ZOH discretization/ Forward Euler (not sure about value)
+    ts = 0.01  # sampling time for ZOH discretization/ Forward Euler | 0.1 gives problems, 0.01 seems fine
+    
+    # noise on matrices for inaccurate guess used by learnable MPC
+    noise_A = 0 # default 1e2
+    noise_B = 0 # default 1e1
+    noise_F = 0 # default 1e1
+    ubnd = 1e1 # default 1e-1
+
+    # note: changed dimensions only (physical constraints?)
+    x_bnd_l: ClassVar[np.ndarray] = np.array(
+        # [[-0.2, -1e3, -1e3, -1e3], [0.2, 1e3, 1e3, 1e3]]
+        [[-0.2, -1, -1, -0.2], [0.2, 1, 1, 0.2]]
+    )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
+    u_bnd_l: ClassVar[np.ndarray] = np.array(
+        [[-ubnd], [ubnd]] # Yan: GRC: |u| <= 2e-4
+    )  # local control bounds u_bnd[0] <= u <= u_bnd[1]
 
     # Constants taken from Yan et al.'s three area network
     # Area 1
@@ -41,19 +56,6 @@ class Model:
     T12 = 0.015
     T13 = 0.02
     T23 = 0.01
-
-    # note: changed dimensions only (physical constraints?)
-    x_bnd_l: ClassVar[np.ndarray] = np.array(
-        # [[-0.2, -1e3, -1e3, -1e3], [0.2, 1e3, 1e3, 1e3]]
-        [[-0.2, -1, -1, -0.2], [0.2, 1, 1, 0.2]]
-    )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
-    ubnd = 1e-1 # 1e-1
-    u_bnd_l: ClassVar[np.ndarray] = np.array(
-        [[-ubnd], [ubnd]] # Yan: GRC: |u| <= 2e-4
-    )  # local control bounds u_bnd[0] <= u <= u_bnd[1]
-    noise_A = 1e1 # for inaccurate matrices used by learnable MPC
-    noise_B = 1e0
-    noise_F = 1e0
 
     # Yan et al.'s three-area network is fully connected
     adj: ClassVar[np.ndarray] = np.array(
@@ -190,10 +192,6 @@ class Model:
         tuple[np.ndarray | cs.SX, np.ndarray | cs.SX, np.ndarray | cs.SX]
             Global state-space matrices A and B and matrix F for load disturbance delta P.
         """
-        # if any(len(A_c_list[i]) != np.sum(self.adj[i]) for i in range(self.n)):
-        #     raise ValueError(
-        #         "A_c_list must have the same length as the number of neighbors."
-        #     )
         if isinstance(A_list[0], np.ndarray):
             row_func = lambda x: np.hstack(x)
             col_func = lambda x: np.vstack(x)

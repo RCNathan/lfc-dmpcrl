@@ -32,7 +32,7 @@ class LtiSystem(
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
         self.ts = model.ts
         self.w = np.tile(
-            [[1.2e4, 1.2e2, 1.2e2, 1.2e2]], (1, self.n)
+            [[1e5, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
 
         # Initialize step_counter, load and load_noise
@@ -42,7 +42,7 @@ class LtiSystem(
         self.load_noise = self.load # initialize also at 0 
         self.step_counter = 0 
 
-        # Saving data on load and noise for plotting # TODO: make this work for multiple episodes
+        # Saving data on load and noise for plotting 
         self.loads: list = []
         self.load_noises: list = []
 
@@ -115,7 +115,7 @@ class LtiSystem(
             The stage cost."""
         return 0.5 * float(
             np.square(state).sum()
-            + 0.5 * np.square(action).sum()
+            # + 0.5 * np.square(action).sum()
             + w @ np.maximum(0, lb[:, np.newaxis] - state)
             + w @ np.maximum(0, state - ub[:, np.newaxis])
         )
@@ -177,7 +177,7 @@ class LtiSystem(
         #  step function for load | time = step_counter*ts
         if(self.step_counter*self.ts >= 1):
             self.load = np.array(
-                [0.2, 0.0, 0.0]    
+                [0.0, 0.0, 0.0]    
             ).reshape(self.n, -1)
         else:
             self.load = np.array(

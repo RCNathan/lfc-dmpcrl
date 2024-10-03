@@ -1,9 +1,9 @@
-import numpy as np
+import numpy as np 
 import matplotlib.pyplot as plt
 import pickle
 from lfc_model import Model
 
-def visualize(file:str) -> None:
+def vis_large_eps(file:str) -> None:
     """Makes plots to visualize TD-error, rewards, states and inputs"""
 
     # Change filename below -> update: gets passed into visualize()
@@ -46,15 +46,37 @@ def visualize(file:str) -> None:
     t = np.linspace(0, m.ts*(x_len-1), x_len) # time = sampling_time * num_samples
     numEpisodes = x.shape[0] if len(x.shape) == 3 else 1
 
+    # get max and min of states
+    xmax = np.max(x, axis=0)
+    xmin = np.min(x, axis=0)
+    umax = np.max(u, axis=0) 
+    umin = np.min(u, axis=0)
+
     # plot states of all agents
     _, axs = plt.subplots(5, 3, figsize=(10,7.5),) # figsize: (width, height)
     for j in range(numAgents):
-        for n in range(numEpisodes): # plot trajectories for every episode
-            axs[0, j].plot(t, x[n, :, 4*j])
-            axs[1, j].plot(t, x[n, :, 4*j+1])
-            axs[2, j].plot(t, x[n, :, 4*j+2])
-            axs[3, j].plot(t, x[n, :, 4*j+3])
-            axs[4, j].plot(t[:-1], u[n, :, j])
+        axs[0, j].plot(t, xmax[:, 4*j], linestyle="--", label="upper bound")
+        axs[0, j].plot(t, xmin[:, 4*j], linestyle="--", label="lower bound")
+        axs[0, j].plot(t, x[-1, :, 4*j], color="black", label="last")
+        axs[1, j].plot(t, xmax[:, 4*j+1], linestyle="--", label="upper bound")
+        axs[1, j].plot(t, xmin[:, 4*j+1], linestyle="--", label="lower bound")
+        axs[1, j].plot(t, x[-1, :, 4*j+1], color="black", label="last")
+        axs[2, j].plot(t, xmax[:, 4*j+2], linestyle="--", label="upper bound")
+        axs[2, j].plot(t, xmin[:, 4*j+2], linestyle="--", label="lower bound")
+        axs[2, j].plot(t, x[-1, :, 4*j+2], color="black", label="last")
+        axs[3, j].plot(t, xmax[:, 4*j+3], linestyle="--", label="upper bound")
+        axs[3, j].plot(t, xmin[:, 4*j+3], linestyle="--", label="lower bound")
+        axs[3, j].plot(t, x[-1, :, 4*j+3], color="black", label="last")
+        axs[4, j].plot(t[:-1], umax[:, j], linestyle="--", label="upper bound")
+        axs[4, j].plot(t[:-1], umin[:, j], linestyle="--", label="lower bound")
+        axs[4, j].plot(t[:-1], u[-1, :, j], color="black", label="last")
+        
+        # Show legend for each plot
+        # axs[0, j].legend()
+        # axs[1, j].legend()
+        # axs[2, j].legend()
+        # axs[3, j].legend()
+        # axs[4, j].legend()
         
         # only needs to be plotted once for each agent
         axs[0, j].hlines(x_bnd[0, :], 0, t[-1], linestyles='--', color='r') # hlines(y_values, xmin, xmax)
@@ -71,21 +93,38 @@ def visualize(file:str) -> None:
     axs[2, 0].set_ylabel(r"$\Delta P_{g,i}$") 
     axs[3, 0].set_ylabel(r"$\Delta P_{tie,i}$")
     axs[4, 0].set_ylabel(r"$u$")
+    axs[3, 2].legend(loc='lower right')
     
-    wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
-    # print(wm.window.geometry()) # (x,y,dx,dy)
-    figx, figy, figdx, figdy = wm.window.geometry().getRect()
-    wm.window.setGeometry(-10, 0, figdx, figdy)
+    # wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
+    # # print(wm.window.geometry()) # (x,y,dx,dy)
+    # figx, figy, figdx, figdy = wm.window.geometry().getRect()
+    # wm.window.setGeometry(-10, 0, figdx, figdy)
 
     if numEpisodes != 1:
         TD = TD.reshape((numEpisodes, -1)) # newShape = (numEps, steps)
 
+    # get max and min of TD, R
+    TDmax = np.max(TD, axis=0) 
+    TDmin = np.min(TD, axis=0)
+    Rmax = np.max(R, axis=0)
+    Rmin = np.min(R, axis=0)
+    # make cumulative sum, get max and min
+    Rcumsum = np.cumsum(R, axis=1)
+    Rcmax = np.max(Rcumsum, axis=0)
+    Rcmin = np.min(Rcumsum, axis=0)
+
     # plot TD error, reward and cumulative reward
     _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(5,7.5))
-    for n in range(numEpisodes):
-        axs[0].plot(t[:-1], TD[n, :], label='ep. {}'.format(n+1))
-        axs[1].plot(t[:-1], R[n, :], label='ep. {}'.format(n+1))
-        axs[2].plot(t[:-1], np.cumsum(R[n, :]), label='ep. {}'.format(n+1))
+    axs[0].plot(t[:-1], TDmax, linestyle='--', label='max')
+    axs[0].plot(t[:-1], TDmin, linestyle='--', label='min')
+    axs[0].plot(t[:-1], TD[-1, :], color='black', label='last')
+    axs[1].plot(t[:-1], Rmax, linestyle='--', label='max')
+    axs[1].plot(t[:-1], Rmin, linestyle='--', label='min')
+    axs[1].plot(t[:-1], R[-1, :], color='black', label='last')
+    axs[2].plot(t[:-1], Rcumsum[-1, :], color='black', label='last')
+    axs[2].plot(t[:-1], Rcmax, linestyle='--', label='max')
+    axs[2].plot(t[:-1], Rcmin, linestyle='--', label='min')
+    
         
     # only set once
     axs[0].set_title("Temporal difference error (TD)")
@@ -99,10 +138,10 @@ def visualize(file:str) -> None:
     axs[2].legend()
     
     
-    wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
-    # print(wm.window.geometry()) # (x,y,dx,dy)
-    figx, figy, figdx, figdy = wm.window.geometry().getRect()
-    wm.window.setGeometry(900, 0, figdx, figdy)
+    # # wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
+    # # # print(wm.window.geometry()) # (x,y,dx,dy)
+    # # figx, figy, figdx, figdy = wm.window.geometry().getRect()
+    # # wm.window.setGeometry(900, 0, figdx, figdy)
 
     if numEpisodes != 1:
         Pl = Pl.reshape((numEpisodes, -1, 3)) # newShape = (numEps, steps)
@@ -129,6 +168,6 @@ def visualize(file:str) -> None:
 # filename = 'cent_no_learning_1ep'
 # filename = 'cent_no_learning_4ep'
 # filename = 'cent_4ep'
-# filename = 'cent_1ep'
-# visualize(filename)
+# filename = 'cent_10ep'
+# vis_large_eps(filename)
 # print('debug')

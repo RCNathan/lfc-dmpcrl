@@ -30,12 +30,14 @@ class LearnableMpc(Mpc[cs.SX]):
         self.nx_l, self.nu_l = model.nx_l, model.nu_l
         self.nx, self.nu = model.n * model.nx_l, model.n * model.nu_l
         self.x_bnd_l, self.u_bnd_l = model.x_bnd_l, model.u_bnd_l
-        self.x_bnd, self.u_bnd = np.tile(model.x_bnd_l, model.n), np.tile(
+        self.x_bnd  = np.tile(
+            model.x_bnd_l, model.n)
+        self.u_bnd = np.tile(
             model.u_bnd_l, model.n
         )
         self.w_l = np.array(
-            [[1.2e4, 1.2e2, 1.2e2, 1.2e2]]  # TODO: change
-        )  # penalty weight for constraint violations in cost
+            [[1e1, 1e1, 1e1, 1e1]]  # TODO: change
+        )  # penalty weight for slack variables!
         self.w = np.tile(self.w_l, (1, self.n))
         self.adj = model.adj
 
@@ -145,13 +147,10 @@ class CentralizedMpc(LearnableMpc):
         b = cs.vcat(b_list)
         f = cs.vcat(f_list)
 
-        # get centralized symbolic dynamics #TODO: discretize here, later also in distributed!
+        # get centralized symbolic dynamics 
         A, B, F = model.centralized_dynamics_from_local(
             A_list, B_list, A_c_list, F_list, self.ts
         )  # A_c_list has zero's in formulation too.
-
-        # discretize using forward euler
-        # A, B, F = lfc_forward_euler_cs(A, B, F, self.ts)
 
         # variables (state, action, slack) | optimized over in mpc
         x, _ = self.state("x", self.nx)
@@ -183,11 +182,12 @@ class CentralizedMpc(LearnableMpc):
         gammapowers = cs.DM(gamma ** np.arange(N)).T
         self.minimize(
             cs.sum1(V0)
-            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
+            # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
             + 0.5
             * cs.sum2(
                 gammapowers
-                * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + self.w @ s)
+                # * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + self.w @ s)
+                * (cs.sum1(x[:, :-1] ** 2)  + self.w @ s)
             )
         )
 

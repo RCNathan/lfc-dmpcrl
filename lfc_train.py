@@ -16,7 +16,7 @@ from mpcrl.optim import GradientDescent
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
 
-from lfc_agent import LfcLstdQLearningAgentCoordinator # TODO: integrate lfc_agent
+from lfc_agent import LfcLstdQLearningAgentCoordinator 
 from lfc_env import LtiSystem  # change environment in lfc_env.py (= ground truth)
 from lfc_learnable_mpc import (  # change learnable mpc, start with centralized
     CentralizedMpc,
@@ -25,12 +25,16 @@ from lfc_learnable_mpc import (  # change learnable mpc, start with centralized
 )
 from lfc_model import Model  # change model in model.py (own repo)
 from lfc_visualization import visualize
+from vis_large_eps import vis_large_eps
 
 save_data = True
 make_plots = True
 
 centralized_flag = True
-learning_flag = True
+learning_flag = False
+
+numEpisodes = 1 # how many episodes | x0, load etc reset on episode start
+numSteps= 4e2 # how many steps per episode | steps*ts = time
 
 prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources | not the issue at hand.
 admm_iters = 50
@@ -115,7 +119,7 @@ agents = [
     for i in range(Model.n)
 ]
 
-env = MonitorEpisodes(TimeLimit(LtiSystem(model=model), max_episode_steps=int(2e2))) # Lti system:
+env = MonitorEpisodes(TimeLimit(LtiSystem(model=model), max_episode_steps=int(numSteps))) # Lti system:
 agent = Log(  # type: ignore[var-annotated]
     RecordUpdates(
         LfcLstdQLearningAgentCoordinator(
@@ -145,7 +149,6 @@ agent = Log(  # type: ignore[var-annotated]
     level=logging.DEBUG,
     log_frequencies={"on_timestep_end": 100},
 )
-numEpisodes = 4
 agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
 
 # extract data
@@ -167,7 +170,7 @@ R = np.asarray(env.rewards)
 Pl = np.asarray(env.unwrapped.loads) # WARNING: use env.unwrapped.loads or env.get_wrapper_attr('loads') in new v1.0 (if ever updated)
 Pl_noise = np.asarray(env.unwrapped.load_noises)
 
-if save_data: # TODO: maybe add episodes/time in name? 
+if save_data: 
     if centralized_flag:
         pklname = 'cent'
     else:
@@ -183,4 +186,7 @@ if save_data: # TODO: maybe add episodes/time in name?
     print("Training succesful, file saved as", pklname)
 
     if make_plots:
-        visualize(pklname)
+        if numEpisodes > 4:
+            vis_large_eps(pklname)
+        else:
+            visualize(pklname)
