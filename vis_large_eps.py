@@ -12,7 +12,7 @@ def vis_large_eps(file:str) -> None:
         data = pickle.load(file)
 
     # Note that .squeeze() will get rid of the (1,) in the first index for case 1 episode, making it incompatible
-    param_dict = data.get('param_dict') # params V0_0, ... all have len = steps
+    param_dict = data.get('param_dict') # params V0_0, ... all have len = steps   ---> shape is affected by update_strategy, i.e: if 10, only saves once every 10 steps
     x = data.get('X') # shape = (4, 201, 12, 1)                 | (eps, steps, states, 1)
     x = x.reshape(x.shape[0], x.shape[1], -1) # (4, 201, 12)    | (eps, steps, states)
     u = data.get('U') # shape = (4, 201, 3, 1)                  | (eps, steps, inputs, 1)
@@ -53,30 +53,35 @@ def vis_large_eps(file:str) -> None:
     umin = np.min(u, axis=0)
 
     # plot states of all agents
-    _, axs = plt.subplots(5, 3, figsize=(10,7.5),) # figsize: (width, height)
+    _, axs = plt.subplots(5, 3, constrained_layout=True, sharex=True, figsize=(10,7.5),) # figsize: (width, height)
     for j in range(numAgents):
         axs[0, j].plot(t, xmax[:, 4*j], linestyle="--", label="upper bound")
         axs[0, j].plot(t, xmin[:, 4*j], linestyle="--", label="lower bound")
+        axs[0, j].plot(t, x[0, :, 4*j], color="green", label="first")
         axs[0, j].plot(t, x[-1, :, 4*j], color="black", label="last")
         axs[1, j].plot(t, xmax[:, 4*j+1], linestyle="--", label="upper bound")
         axs[1, j].plot(t, xmin[:, 4*j+1], linestyle="--", label="lower bound")
+        axs[1, j].plot(t, x[0, :, 4*j+1], color="green", label="first")
         axs[1, j].plot(t, x[-1, :, 4*j+1], color="black", label="last")
         axs[2, j].plot(t, xmax[:, 4*j+2], linestyle="--", label="upper bound")
         axs[2, j].plot(t, xmin[:, 4*j+2], linestyle="--", label="lower bound")
+        axs[2, j].plot(t, x[0, :, 4*j+2], color="green", label="first")
         axs[2, j].plot(t, x[-1, :, 4*j+2], color="black", label="last")
         axs[3, j].plot(t, xmax[:, 4*j+3], linestyle="--", label="upper bound")
         axs[3, j].plot(t, xmin[:, 4*j+3], linestyle="--", label="lower bound")
+        axs[3, j].plot(t, x[0, :, 4*j+3], color="green", label="first")
         axs[3, j].plot(t, x[-1, :, 4*j+3], color="black", label="last")
         axs[4, j].plot(t[:-1], umax[:, j], linestyle="--", label="upper bound")
         axs[4, j].plot(t[:-1], umin[:, j], linestyle="--", label="lower bound")
+        axs[4, j].plot(t[:-1], u[0, :, j], color="black", label="first")
         axs[4, j].plot(t[:-1], u[-1, :, j], color="black", label="last")
         
         # Show legend for each plot
-        # axs[0, j].legend()
-        # axs[1, j].legend()
-        # axs[2, j].legend()
-        # axs[3, j].legend()
-        # axs[4, j].legend()
+        # axs1[0, j].legend()
+        # axs1[1, j].legend()
+        # axs1[2, j].legend()
+        # axs1[3, j].legend()
+        # axs1[4, j].legend()
         
         # only needs to be plotted once for each agent
         axs[0, j].hlines(x_bnd[0, :], 0, t[-1], linestyles='--', color='r') # hlines(y_values, xmin, xmax)
@@ -95,10 +100,11 @@ def vis_large_eps(file:str) -> None:
     axs[4, 0].set_ylabel(r"$u$")
     axs[3, 2].legend(loc='lower right')
     
-    # wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
-    # # print(wm.window.geometry()) # (x,y,dx,dy)
+    wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
+    # print(wm.window.geometry()) # (x,y,dx,dy)
     # figx, figy, figdx, figdy = wm.window.geometry().getRect()
     # wm.window.setGeometry(-10, 0, figdx, figdy)
+    wm.window.move(-10, 0)
 
     if numEpisodes != 1:
         TD = TD.reshape((numEpisodes, -1)) # newShape = (numEps, steps)
@@ -114,13 +120,16 @@ def vis_large_eps(file:str) -> None:
     Rcmin = np.min(Rcumsum, axis=0)
 
     # plot TD error, reward and cumulative reward
-    _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(5,7.5))
+    _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(5,5))
     axs[0].plot(t[:-1], TDmax, linestyle='--', label='max')
     axs[0].plot(t[:-1], TDmin, linestyle='--', label='min')
+    axs[0].plot(t[:-1], TD[0, :], color='green', label='first')
     axs[0].plot(t[:-1], TD[-1, :], color='black', label='last')
     axs[1].plot(t[:-1], Rmax, linestyle='--', label='max')
     axs[1].plot(t[:-1], Rmin, linestyle='--', label='min')
+    axs[1].plot(t[:-1], R[0, :], color='green', label='first')
     axs[1].plot(t[:-1], R[-1, :], color='black', label='last')
+    axs[2].plot(t[:-1], Rcumsum[0, :], color='green', label='first')
     axs[2].plot(t[:-1], Rcumsum[-1, :], color='black', label='last')
     axs[2].plot(t[:-1], Rcmax, linestyle='--', label='max')
     axs[2].plot(t[:-1], Rcmin, linestyle='--', label='min')
@@ -137,30 +146,62 @@ def vis_large_eps(file:str) -> None:
     axs[2].set_xlabel(r"time $t$")
     axs[2].legend()
     
-    
-    # # wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
-    # # # print(wm.window.geometry()) # (x,y,dx,dy)
-    # # figx, figy, figdx, figdy = wm.window.geometry().getRect()
-    # # wm.window.setGeometry(900, 0, figdx, figdy)
+    wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
+    # print(wm.window.geometry()) # (x,y,dx,dy)
+    # figx, figy, figdx, figdy = wm.window.geometry().getRect()
+    # wm.window.setGeometry(1000, 0, figdx, figdy)
+    wm.window.move(1000, 0)
+
+    # Plot TD error continously, (avg) rewards & TD per episode and evolution of learnable params over time
+    TDlong = TD.reshape(-1,) # reverting back to (1, eps*steps)
+    tlong = m.ts*np.linspace(0, len(TDlong)-1, len(TDlong))
+    _, axs = plt.subplots(4, 1, constrained_layout=True, sharex=False, figsize=(4, 7.5))
+    axs[0].plot(tlong, TDlong)
+    axs[0].set_title("Temporal difference error (TD)")
+    axs[0].set_xlabel(r"time $t$") 
+    axs[1].plot(np.linspace(1,numEpisodes, numEpisodes), Rcumsum[:, -1], linestyle="--")
+    axs[1].scatter(np.linspace(1,numEpisodes, numEpisodes), Rcumsum[:, -1], label="cumulative reward")
+    axs[1].plot(np.linspace(1,numEpisodes, numEpisodes), np.sum(TD, axis=1), linestyle="--")
+    axs[1].scatter(np.linspace(1,numEpisodes, numEpisodes), np.sum(TD, axis=1), label="sum of TD error")
+    # axs[1].set_ylim(bottom=0)
+    axs[1].set_title("Per episode")
+    axs[1].set_xlabel("Episodes")
+    axs[1].legend()
+    axs[2].plot(np.sum(np.sum(param_dict['A_0'], axis=1),axis=1), label=r"avg of $A_{11}$")
+    axs[2].plot(np.sum(m.A_l_1) * np.ones(param_dict['A_0'].shape[0]), label=r"real value of $A_{11}$")
+    axs[2].legend()
+    axs[3].plot(param_dict['A_0'][:,0,0], label=r"avg of first element of $A_{11}$")
+    axs[3].plot(m.A_l_1[0,0] * np.ones(param_dict['A_0'].shape[0]), label=r"real value of first element of $A_{11}$")
+    axs[3].legend()
+
+    wm = plt.get_current_fig_manager()
+    wm.window.move(1500,0)
+
 
     if numEpisodes != 1:
         Pl = Pl.reshape((numEpisodes, -1, 3)) # newShape = (numEps, steps)
         Pl_noise = Pl_noise.reshape((numEpisodes, -1, 3)) # newShape = (numEps, steps)
 
     # Plot loads and loads + noise
-    _, axs = plt.subplots(1,3, figsize=(10,4)) # figsize: (width, height)
+    _, axs = plt.subplots(1,3, constrained_layout=True, sharey=True, figsize=(5,2)) # figsize: (width, height)
     for j in range(numAgents):
-        for n in range(numEpisodes):
-            axs[j].plot(t[:-1], Pl[n,:,j] + Pl_noise[n,:,j], label='ep. {}'.format(n+1))
-            axs[j].plot(t[:-1], Pl[n,:,j], linestyle='--', color="black")
+        axs[j].plot(t[:-1], Pl[-1,:,j] + Pl_noise[-1,:,j], label='last ep.')
+        axs[j].plot(t[:-1], Pl[-1,:,j], linestyle='--', color="black")
 
         # only set once for every agent
         axs[j].set_title("Agent {}".format(j+1)) # sets agent-title on every top plot only
         axs[j].set_xlabel(r"time $t$")
-        axs[j].legend()
+        # axs[j].legend()
+    axs[2].legend(loc='upper right')
     
     # only set once
     axs[0].set_ylabel(r"Load $\Delta P_l$")
+
+    wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
+    # print(wm.window.geometry()) # (x,y,dx,dy)
+    # figx, figy, figdx, figdy = wm.window.geometry().getRect()
+    # wm.window.setGeometry(1000, 570, figdx, figdy)
+    wm.window.move(1000, 570)
 
     plt.show()
 
@@ -168,6 +209,9 @@ def vis_large_eps(file:str) -> None:
 # filename = 'cent_no_learning_1ep'
 # filename = 'cent_no_learning_4ep'
 # filename = 'cent_4ep'
+filename = 'cent_5ep'
 # filename = 'cent_10ep'
+# filename = 'cent_20ep'
+# filename = 'cent_50ep'
 # vis_large_eps(filename)
 # print('debug')
