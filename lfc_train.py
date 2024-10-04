@@ -31,9 +31,9 @@ save_data = True
 make_plots = True
 
 centralized_flag = True
-learning_flag = False
+learning_flag = True
 
-numEpisodes = 1 # how many episodes | x0, load etc reset on episode start
+numEpisodes = 20 # how many episodes | x0, load etc reset on episode start
 numSteps= 3e2 # how many steps per episode | steps*ts = time
 
 prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources | not the issue at hand.
@@ -81,7 +81,7 @@ distributed_fixed_parameters: list = [
 update_strategy = 5 # Frequency to update the mpc parameters with. Updates every `n` env's steps
 if learning_flag:
     optimizer = GradientDescent(        
-        learning_rate=ExponentialScheduler(7e-9, factor=0.98)    
+        learning_rate=ExponentialScheduler(1e-11, factor=0.9)    
     )
     base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
         epsilon=ExponentialScheduler(0.5, factor=0.8), # (value, decay-rate: 1 = no decay)

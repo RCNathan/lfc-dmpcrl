@@ -33,7 +33,7 @@ class LtiSystem(
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
         self.ts = model.ts
         self.w = np.tile(
-            [[1e3, 1e1, 1e1, 1e1]], (1, self.n)
+            [[1e4, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
 
         # Initialize step_counter, load and load_noise
@@ -209,7 +209,7 @@ class LtiSystem(
         x_new = self.A @ self.x + self.B @ action  + self.F @ self.load
         
         # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
-        self.load_noise = (0.01*(np.random.uniform(0, 2, (3,1)) -1)) # (low, high, size) -> in [-1, 1) 
+        self.load_noise = (0.005*(np.random.uniform(0, 2, (3,1)) -1)) # (low, high, size) -> in [-1, 1) 
         x_new += self.F @ self.load_noise 
         
         # Defines the quadratic cost on states

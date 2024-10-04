@@ -81,7 +81,7 @@ def visualize(file:str) -> None:
         TD = TD.reshape((numEpisodes, -1)) # newShape = (numEps, steps)
 
     # plot TD error, reward and cumulative reward
-    _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(5,7.5))
+    _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(5,5))
     for n in range(numEpisodes):
         axs[0].plot(t[:-1], TD[n, :], label='ep. {}'.format(n+1))
         axs[1].plot(t[:-1], R[n, :], label='ep. {}'.format(n+1))
@@ -109,7 +109,7 @@ def visualize(file:str) -> None:
         Pl_noise = Pl_noise.reshape((numEpisodes, -1, 3)) # newShape = (numEps, steps)
 
     # Plot loads and loads + noise
-    _, axs = plt.subplots(1,3, figsize=(10,4)) # figsize: (width, height)
+    _, axs = plt.subplots(1,3, figsize=(5,2)) # figsize: (width, height)
     for j in range(numAgents):
         for n in range(numEpisodes):
             axs[j].plot(t[:-1], Pl[n,:,j] + Pl_noise[n,:,j], label='ep. {}'.format(n+1))
@@ -122,6 +122,11 @@ def visualize(file:str) -> None:
     
     # only set once
     axs[0].set_ylabel(r"Load $\Delta P_l$")
+
+    wm = plt.get_current_fig_manager() # using pyqt5 allows .setGeometry() and changes behavior of geometry()
+    # print(wm.window.geometry()) # (x,y,dx,dy)
+    figx, figy, figdx, figdy = wm.window.geometry().getRect()
+    wm.window.setGeometry(900, 550, figdx, figdy)
 
     plt.show()
 

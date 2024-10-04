@@ -37,7 +37,7 @@ class LearnableMpc(Mpc[cs.SX]):
             model.u_bnd_l, model.n
         )
         self.w_l = np.array(
-            [[1e3, 1e1, 1e1, 1e1]]  # TODO: change
+            [[1e5, 1e1, 1e1, 1e1]]  # TODO: change
         )  # penalty weight for slack variables!
         self.w = np.tile(self.w_l, (1, self.n))
         self.adj = model.adj
@@ -209,7 +209,7 @@ class CentralizedMpc(LearnableMpc):
         )
         
         # solver
-        solver = "ipopt" # qpoases or ipopt
+        solver = "qpoases" # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
