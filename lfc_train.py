@@ -33,8 +33,8 @@ make_plots = True
 centralized_flag = True
 learning_flag = True
 
-numEpisodes = 20 # how many episodes | x0, load etc reset on episode start
-numSteps= 3e2 # how many steps per episode | steps*ts = time
+numEpisodes = 5 # how many episodes | x0, load etc reset on episode start
+numSteps= 5e2 # how many steps per episode | steps*ts = time
 
 prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources | not the issue at hand.
 admm_iters = 50
@@ -81,15 +81,15 @@ distributed_fixed_parameters: list = [
 update_strategy = 5 # Frequency to update the mpc parameters with. Updates every `n` env's steps
 if learning_flag:
     optimizer = GradientDescent(        
-        learning_rate=ExponentialScheduler(1e-11, factor=0.9)    
+        learning_rate=ExponentialScheduler(1e-9, factor=0.9995)    
     )
-    base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random/perturbation)
-        epsilon=ExponentialScheduler(0.5, factor=0.8), # (value, decay-rate: 1 = no decay)
-        strength=0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
+    base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random OR perturbation on chosen input)
+        epsilon=ExponentialScheduler(0.9, factor=0.9995), # (probability, decay-rate: 1 = no decay)
+        strength=0.2 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
         seed=1,
     )
     experience = ExperienceReplay(
-        maxlen=100, sample_size=15, include_latest=10, seed=1 # smooths learning
+        maxlen=100, sample_size=20, include_latest=10, seed=1 # smooths learning
     )  
 else: # NO LEARNING
     optimizer = GradientDescent(learning_rate=0) # learning-rate 0: alpha = 0: no updating theta's.
@@ -179,14 +179,15 @@ if save_data:
         pklname = pklname + '_no_learning'
     pklname = pklname + '_' + str(numEpisodes) + 'ep'
     with open(
-        f"{pklname}.pkl",
+        f"{pklname}TEST2.pkl",
+
         "wb", # w: write mode, creates new or truncates existing. b: binary mode
     ) as file:
         pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R, "Pl": Pl, "Pl_noise": Pl_noise}, file)
     print("Training succesful, file saved as", pklname)
 
     if make_plots:
-        if numEpisodes > 4:
+        if numEpisodes > 0:
             vis_large_eps(pklname)
         else:
             visualize(pklname)

@@ -214,10 +214,10 @@ class LtiSystem(
         
         # Defines the quadratic cost on states
         Qs_l = np.array(
-            [[1e4, 0, 0, 0], 
-             [0, 1e2, 0, 0],
-             [0, 0, 1e2, 0],
-             [0, 0, 0, 1e1]])
+            [[1e2, 0, 0, 0], 
+             [0, 1e0, 0, 0],
+             [0, 0, 1e1, 0],
+             [0, 0, 0, 1e-1]])
         Qs = block_diag(Qs_l, n=self.n)
 
 

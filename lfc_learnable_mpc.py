@@ -52,10 +52,10 @@ class LearnableMpc(Mpc[cs.SX]):
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
             "Qx": np.array(
-            [[1e4, 0, 0, 0], 
-             [0, 1e2, 0, 0],
-             [0, 0, 1e2, 0],
-             [0, 0, 0, 1e1]]), # quadratic cost on states (local)
+            [[1e2, 0, 0, 0], 
+             [0, 1e0, 0, 0],
+             [0, 0, 1e1, 0],
+             [0, 0, 0, 1e-1]]), # quadratic cost on states (local)
             "Qu": np.array([0.5]),
         }
 
@@ -179,7 +179,7 @@ class CentralizedMpc(LearnableMpc):
         )
         s, _, _ = self.variable("s", (self.nx, N), lb=0)
 
-        # added to demonstrate how to change fixed parameters
+        # Fixed parameters: load
         Pl = self.parameter("Pl", (3, 1))  # creates parameter obj for load
         self.fixed_pars_init = {
             "Pl": np.zeros((3, 1))

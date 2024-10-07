@@ -73,7 +73,7 @@ def vis_large_eps(file:str) -> None:
         axs[3, j].plot(t, x[-1, :, 4*j+3], color="black", label="last")
         axs[4, j].plot(t[:-1], umax[:, j], linestyle="--", label="upper bound")
         axs[4, j].plot(t[:-1], umin[:, j], linestyle="--", label="lower bound")
-        axs[4, j].plot(t[:-1], u[0, :, j], color="black", label="first")
+        axs[4, j].plot(t[:-1], u[0, :, j], color="green", label="first")
         axs[4, j].plot(t[:-1], u[-1, :, j], color="black", label="last")
         
         # Show legend for each plot
@@ -201,7 +201,7 @@ def vis_large_eps(file:str) -> None:
     # print(wm.window.geometry()) # (x,y,dx,dy)
     # figx, figy, figdx, figdy = wm.window.geometry().getRect()
     # wm.window.setGeometry(1000, 570, figdx, figdy)
-    wm.window.move(1000, 570)
+    wm.window.move(1000, 550)
 
     plt.show()
 
@@ -209,9 +209,14 @@ def vis_large_eps(file:str) -> None:
 # filename = 'cent_no_learning_1ep'
 # filename = 'cent_no_learning_4ep'
 # filename = 'cent_4ep'
-filename = 'cent_5ep'
+# filename = 'cent_5ep' # this one shows really promising results! 
 # filename = 'cent_10ep'
 # filename = 'cent_20ep'
 # filename = 'cent_50ep'
+
+# changed Qs,Qx and other stuff -> to get TD error down for numerical stability
+filename = 'cent_5ep' # this one shows really promising results!
+filename = 'cent_50epTEST' # holy shit this shit is amazing!
+filename = 'cent_5epTEST'
 # vis_large_eps(filename)
 # print('debug')

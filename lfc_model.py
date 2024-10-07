@@ -19,9 +19,9 @@ class Model:
     ts = 0.01  # sampling time for ZOH discretization/ Forward Euler | 0.1 gives problems, 0.01 seems fine
     
     # noise on matrices for inaccurate guess used by learnable MPC
-    noise_A = 0 # default 1e2
-    noise_B = 0 # default 1e1
-    noise_F = 0 # default 1e1
+    noise_A = 1e0 # default 1e0
+    noise_B = 0 # default 1e-1
+    noise_F = 0 # default 1e-1
     ubnd = 3e-1 # default 1e-1
 
     # note: changed dimensions only (physical constraints?)
