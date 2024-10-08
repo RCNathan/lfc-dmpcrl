@@ -15,6 +15,7 @@ from mpcrl.core.schedulers import ExponentialScheduler
 from mpcrl.optim import GradientDescent
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
+from mpcrl import UpdateStrategy 
 
 from lfc_agent import LfcLstdQLearningAgentCoordinator 
 from lfc_env import LtiSystem  # change environment in lfc_env.py (= ground truth)
@@ -33,7 +34,7 @@ make_plots = True
 centralized_flag = True
 learning_flag = True
 
-numEpisodes = 5 # how many episodes | x0, load etc reset on episode start
+numEpisodes = 50 # how many episodes | x0, load etc reset on episode start
 numSteps= 5e2 # how many steps per episode | steps*ts = time
 
 prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources | not the issue at hand.
@@ -78,23 +79,24 @@ distributed_fixed_parameters: list = [
 ]
 
 # learning arguments
-update_strategy = 5 # Frequency to update the mpc parameters with. Updates every `n` env's steps
+update_strategy = 20 # Frequency to update the mpc parameters with. Updates every `n` env's steps
+# update_strategy = UpdateStrategy(1, skip_first=0, hook="on_episode_end")
 if learning_flag:
     optimizer = GradientDescent(        
-        learning_rate=ExponentialScheduler(1e-9, factor=0.9995)    
+        learning_rate=ExponentialScheduler(1e-10, factor=0.9995)    
     )
     base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random OR perturbation on chosen input)
         epsilon=ExponentialScheduler(0.9, factor=0.9995), # (probability, decay-rate: 1 = no decay)
-        strength=0.2 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
+        strength= 0.2 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
         seed=1,
     )
     experience = ExperienceReplay(
-        maxlen=100, sample_size=20, include_latest=10, seed=1 # smooths learning
+        maxlen=100, sample_size=15, include_latest=10, seed=1 # smooths learning
     )  
 else: # NO LEARNING
     optimizer = GradientDescent(learning_rate=0) # learning-rate 0: alpha = 0: no updating theta's.
     base_exp = EpsilonGreedyExploration(epsilon = 0, strength = 0, seed=1,) # 0 exploration adds no perturbation
-    experience = ExperienceReplay(maxlen=100, sample_size=15, include_latest=10, seed=1) 
+    experience = ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1) 
 
 agents = [
     RecordUpdates(
@@ -169,6 +171,13 @@ U = np.asarray(env.actions)
 R = np.asarray(env.rewards)
 Pl = np.asarray(env.unwrapped.loads) # WARNING: use env.unwrapped.loads or env.get_wrapper_attr('loads') in new v1.0 (if ever updated)
 Pl_noise = np.asarray(env.unwrapped.load_noises)
+learning_params = {
+    'update_strategy': update_strategy,
+    'optimizer': optimizer,
+    'epsilon': base_exp.epsilon_scheduler,
+    'eps_strength': base_exp.strength_scheduler,
+    'experience': {'max_len' : experience.maxlen, 'sample_size': experience.sample_size, "incl_latest" : experience.include_latest},
+}
 
 if save_data: 
     if centralized_flag:
@@ -177,13 +186,13 @@ if save_data:
         pklname = 'distr'
     if learning_flag == False:
         pklname = pklname + '_no_learning'
-    pklname = pklname + '_' + str(numEpisodes) + 'ep'
+    pklname = pklname + '_' + str(numEpisodes) + 'ep' + 'TEST4'
     with open(
-        f"{pklname}TEST2.pkl",
+        f"{pklname}.pkl",
 
         "wb", # w: write mode, creates new or truncates existing. b: binary mode
     ) as file:
-        pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R, "Pl": Pl, "Pl_noise": Pl_noise}, file)
+        pickle.dump({"TD": TD, "param_dict": param_dict, "X": X, "U": U, "R": R, "Pl": Pl, "Pl_noise": Pl_noise, "learning_params": learning_params}, file)
     print("Training succesful, file saved as", pklname)
 
     if make_plots:

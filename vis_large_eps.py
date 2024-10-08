@@ -216,7 +216,8 @@ def vis_large_eps(file:str) -> None:
 
 # changed Qs,Qx and other stuff -> to get TD error down for numerical stability
 filename = 'cent_5ep' # this one shows really promising results!
-filename = 'cent_50epTEST' # holy shit this shit is amazing!
-filename = 'cent_5epTEST'
+# filename = 'cent_50epTEST' # holy shit this shit is amazing!
+# filename = 'cent_5epTEST'
+# filename = 'cent_5epTEST3'
 # vis_large_eps(filename)
 # print('debug')
