@@ -35,7 +35,7 @@ centralized_flag = True
 learning_flag = False
 
 numEpisodes = 1 # how many episodes | x0, load etc reset on episode start
-numSteps= 5e2# how many steps per episode | steps*ts = time
+numSteps= 10e2# how many steps per episode | steps*ts = time
 
 prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources
 admm_iters = 50

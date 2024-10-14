@@ -218,7 +218,7 @@ class LtiSystem(
         x_new = self.A @ self.x + self.B @ action  + self.F @ self.load
         
         # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
-        self.load_noise = (0.005*(np.random.uniform(0, 2, (3,1)) -1)) # (low, high, size) -> in [-1, 1) 
+        self.load_noise = (0.0*(np.random.uniform(0, 2, (3,1)) -1)) # (low, high, size) -> in [-1, 1) 
         x_new += self.F @ self.load_noise 
         
         # Defines the quadratic cost on states
