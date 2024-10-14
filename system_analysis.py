@@ -31,7 +31,7 @@ for i in range(len(eigvals)):
 
 print("\n\n")
 for i in range(12):
-    testVec = np.zeros((12,1))
+    testVec = np.zeros((12,1)) # unit vector with with a 1 in ith pos
     testVec[i] = 1
     K_prime = np.hstack([K, testVec])
     rank_K_p = np.linalg.matrix_rank(K_prime, tol=1e-8)
@@ -42,6 +42,9 @@ for i in range(12):
 
 # sys = ct.ss(m.A, m.B, np.zeros((4, 12)), np.zeros((4,3)))
 # ct.poles(sys) # ct.poles(sys) == eigvals
+
+Kl, rankl = ctrb(m.A_l_1, m.B_l_1)
+print("\nRank of smaller subsystem is", rankl)
 
 print("Debug")
 

@@ -33,7 +33,7 @@ class LtiSystem(
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
         self.ts = model.ts
         self.w = np.tile(
-            [[1e4, 1e1, 1e1, 1e1]], (1, self.n)
+            [[5e3, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
 
         # Initialize step_counter, load and load_noise
@@ -214,7 +214,7 @@ class LtiSystem(
         
         # Defines the quadratic cost on states
         Qs_l = np.array(
-            [[1e2, 0, 0, 0], 
+            [[5e2, 0, 0, 0], 
              [0, 1e0, 0, 0],
              [0, 0, 1e1, 0],
              [0, 0, 0, 1e-1]])

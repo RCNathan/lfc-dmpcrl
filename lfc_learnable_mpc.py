@@ -37,7 +37,7 @@ class LearnableMpc(Mpc[cs.SX]):
             model.u_bnd_l, model.n
         )
         self.w_l = np.array(
-            [[1e5, 1e1, 1e1, 1e1]]  # TODO: change
+            [[1e4, 1e1, 1e1, 1e1]]  # TODO: change
         )  # penalty weight for slack variables!
         self.w = np.tile(self.w_l, (1, self.n))
         self.adj = model.adj
@@ -52,11 +52,11 @@ class LearnableMpc(Mpc[cs.SX]):
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
             "Qx": np.array(
-            [[1e2, 0, 0, 0], 
-             [0, 1e0, 0, 0],
-             [0, 0, 1e1, 0],
-             [0, 0, 0, 1e-1]]), # quadratic cost on states (local)
-            "Qu": np.array([0.5]),
+            [[5e2, 0, 0, 0], 
+             [0, 1e1, 0, 0],
+             [0, 0, 1e2, 0],
+             [0, 0, 0, 1e0]]), # quadratic cost on states (local)
+            "Qu": np.array([0.1]),
         }
 
 

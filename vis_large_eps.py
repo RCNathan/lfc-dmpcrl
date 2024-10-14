@@ -139,10 +139,10 @@ def vis_large_eps(file:str) -> None:
     axs[0].set_title("Temporal difference error (TD)")
     axs[0].set_xlabel(r"time $t$") 
     axs[0].legend()
-    axs[1].set_title("Centralized rewards (R)")
+    axs[1].set_title("Centralized costs (R)")
     axs[1].set_xlabel(r"time $t$")
     axs[1].legend()
-    axs[2].set_title("Cumulative reward")
+    axs[2].set_title("Cumulative cost")
     axs[2].set_xlabel(r"time $t$")
     axs[2].legend()
     
@@ -160,7 +160,7 @@ def vis_large_eps(file:str) -> None:
     axs[0].set_title("Temporal difference error (TD)")
     axs[0].set_xlabel(r"time $t$") 
     axs[1].plot(np.linspace(1,numEpisodes, numEpisodes), Rcumsum[:, -1], linestyle="--")
-    axs[1].scatter(np.linspace(1,numEpisodes, numEpisodes), Rcumsum[:, -1], label="cumulative reward")
+    axs[1].scatter(np.linspace(1,numEpisodes, numEpisodes), Rcumsum[:, -1], label="cumulative cost")
     axs[1].plot(np.linspace(1,numEpisodes, numEpisodes), np.sum(TD, axis=1), linestyle="--")
     axs[1].scatter(np.linspace(1,numEpisodes, numEpisodes), np.sum(TD, axis=1), label="sum of TD error")
     # axs[1].set_ylim(bottom=0)
@@ -175,7 +175,8 @@ def vis_large_eps(file:str) -> None:
     axs[3].legend()
 
     wm = plt.get_current_fig_manager()
-    wm.window.move(1500,0)
+    # wm.window.move(1500,0)
+    wm.window.move(650,0)
 
 
     if numEpisodes != 1:
@@ -201,7 +202,7 @@ def vis_large_eps(file:str) -> None:
     # print(wm.window.geometry()) # (x,y,dx,dy)
     # figx, figy, figdx, figdy = wm.window.geometry().getRect()
     # wm.window.setGeometry(1000, 570, figdx, figdy)
-    wm.window.move(1000, 550)
+    wm.window.move(1000, 550)   
 
     plt.show()
 
@@ -216,8 +217,10 @@ def vis_large_eps(file:str) -> None:
 
 # changed Qs,Qx and other stuff -> to get TD error down for numerical stability
 filename = 'cent_5ep' # this one shows really promising results!
-# filename = 'cent_50epTEST' # holy shit this shit is amazing!
+filename = 'cent_50epTEST' # holy shit this shit is amazing!
 # filename = 'cent_5epTEST'
 # filename = 'cent_5epTEST3'
+# filename = 'cent_5epTEST4'
+filename = 'cent_20epTEST4' # incredible. good stuffs!
 # vis_large_eps(filename)
 # print('debug')
