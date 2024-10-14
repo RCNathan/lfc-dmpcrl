@@ -33,7 +33,7 @@ class LtiSystem(
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
         self.ts = model.ts
         self.w = np.tile(
-            [[5e3, 1e1, 1e1, 1e1]], (1, self.n)
+            [[5e2, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
 
         # Initialize step_counter, load and load_noise
@@ -190,19 +190,28 @@ class LtiSystem(
             The new state, the reward, truncated flag, terminated flag, and an info dictionary.
         """
         #  step function for load | time = step_counter*ts
-        if(self.step_counter*self.ts >= 1):
-            self.load = np.array(
-                [0.15, 0.0, 0.0]    
-            ).reshape(self.n, -1)
-        else:
+        sim_time = self.step_counter*self.ts
+        if(sim_time <= 10):
             self.load = np.array(
                 [0.0, 0.0, 0.0]    
             ).reshape(self.n, -1)
+        elif(sim_time <= 20):   # from t = 10 - 20
+             self.load = 5*np.array(
+                [0.01, 0.0, 0.01]    
+            ).reshape(self.n, -1)
+        elif(sim_time <= 30):   # from t = 20 - 30
+             self.load = 5*np.array(
+                [0.01, -0.01, 0.0]    
+            ).reshape(self.n, -1)
+        elif(sim_time <= 40):
+             self.load = 5*np.array(
+                [0.01, -0.01, 0.0]    
+            ).reshape(self.n, -1)
+        else:
+            self.load = 5*np.array(
+                [0.01, -0.01, -0.01]    
+            ).reshape(self.n, -1)
         
-        # incrementing load every time-step:
-        # self.load += self.ts * np.array(
-        #     [0.01, 0.0, 0.0]    # adds constant load each time-step, scaled by sampling-time
-        # ).reshape(self.n, -1)
 
         action = action.full()  # convert action from casadi DM to numpy array
         # x_new = self.A @ self.x + self.B @ action  
@@ -214,10 +223,10 @@ class LtiSystem(
         
         # Defines the quadratic cost on states
         Qs_l = np.array(
-            [[5e2, 0, 0, 0], 
+            [[1e4, 0, 0, 0], 
              [0, 1e0, 0, 0],
              [0, 0, 1e1, 0],
-             [0, 0, 0, 1e-1]])
+             [0, 0, 0, 2e1]])
         Qs = block_diag(Qs_l, n=self.n)
 
 

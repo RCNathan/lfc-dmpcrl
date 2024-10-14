@@ -16,21 +16,22 @@ class Model:
     nx_l: ClassVar[int] = 4  # local state dimension
     nu_l: ClassVar[int] = 1  # local control dimension
 
-    ts = 0.01  # sampling time for ZOH discretization/ Forward Euler | 0.1 gives problems, 0.01 seems fine
+    ts = 0.1  # sampling time for ZOH discretization/ Forward Euler | 0.1 gives problems, 0.01 seems fine
     
     # noise on matrices for inaccurate guess used by learnable MPC
-    noise_A = 1e0 # default 1e0
+    noise_A = 1e-1 # default 1e0
     noise_B = 0 # default 1e-1
     noise_F = 0 # default 1e-1
-    ubnd = 3e-1 # default 1e-1
+    noise_A, noise_B, noise_F = 0, 0, 0 # Perfect knowledge of system matrices
+    ubnd = 2e-1 # default 1e-1
 
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(
         # [[-0.2, -1e3, -1e3, -1e3], [0.2, 1e3, 1e3, 1e3]]
-        [[-0.2, -0.3, -1, -0.1], [0.2, 0.3, 1, 0.1]]
+        [[-0.2, -0.3, -0.5, -0.1], [0.2, 0.3, 0.5, 0.1]]
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
     u_bnd_l: ClassVar[np.ndarray] = np.array(
-        [[-ubnd], [ubnd]] # Yan: GRC: |u| <= 2e-4
+        [[-ubnd], [ubnd]] # Yan: GRC: |u| <= 2e-4   =/=  input constraint!
     )  # local control bounds u_bnd[0] <= u <= u_bnd[1]
 
     # Constants taken from Yan et al.'s three area network

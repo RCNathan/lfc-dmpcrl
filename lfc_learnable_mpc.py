@@ -15,7 +15,7 @@ from block_diag import block_diag
 class LearnableMpc(Mpc[cs.SX]):
     """Abstract class for learnable MPC controllers. Implemented by centralized and distributed child classes"""
 
-    discount_factor = 0.9
+    discount_factor = 1 # was 0.9
 
     def __init__(self, model: Model) -> None:
         """Initializes the learnable MPC controller.
@@ -37,7 +37,7 @@ class LearnableMpc(Mpc[cs.SX]):
             model.u_bnd_l, model.n
         )
         self.w_l = np.array(
-            [[1e4, 1e1, 1e1, 1e1]]  # TODO: change
+            [[1e3, 1e1, 1e1, 1e1]]  # TODO: change
         )  # penalty weight for slack variables!
         self.w = np.tile(self.w_l, (1, self.n))
         self.adj = model.adj
@@ -46,16 +46,17 @@ class LearnableMpc(Mpc[cs.SX]):
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
             "x_lb": np.reshape(
-                [-0.2, -1, -1, -0.2], (-1, 1)
+                [-0.2, -0.3, -0.1, -0.1], (-1, 1)
             ),  # how does this compare with ub/lb in model? -> this is learned.
-            "x_ub": np.reshape([0.2, 1, 1, 0.2], (-1, 1)),
+            "x_ub": np.reshape(
+                [0.2, 0.3, 0.1, 0.1], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
             "Qx": np.array(
-            [[5e2, 0, 0, 0], 
-             [0, 1e1, 0, 0],
-             [0, 0, 1e2, 0],
-             [0, 0, 0, 1e0]]), # quadratic cost on states (local)
+            [[1e4, 0, 0, 0], 
+             [0, 1e0, 0, 0],
+             [0, 0, 1e1, 0],
+             [0, 0, 0, 2e1]]), # quadratic cost on states (local)
             "Qu": np.array([0.1]),
         }
 
@@ -200,16 +201,20 @@ class CentralizedMpc(LearnableMpc):
         self.minimize( 
             cs.sum1(V0) 
             # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u)) # f'([x, u]')
-            + cs.sum2(Qu.T @ u**2) # u'Q_u u
+            # + cs.sum2(Qu.T @ u**2) # u'Q_u u
             + cs.sum2(
-                cs.sum1(
-                    x.T @ Qx @ x # x' Q_x x 
+                gammapowers * (
+                    Qu.T @ u**2 +
+                    cs.sum1(
+                        x[:, :-1].T @ Qx @ x[:, :-1] # x' Q_x x 
+                    )
                 )
+                + cs.sum1(x[:, -1].T @ Qx @ x[:, -1]) # x(N)' Qx x(N))
             ) 
         )
         
         # solver
-        solver = "qpoases" # qpoases or ipopt
+        solver = "ipopt" # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 

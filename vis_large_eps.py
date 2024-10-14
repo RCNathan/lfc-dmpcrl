@@ -222,5 +222,7 @@ filename = 'cent_50epTEST' # holy shit this shit is amazing!
 # filename = 'cent_5epTEST3'
 # filename = 'cent_5epTEST4'
 filename = 'cent_20epTEST4' # incredible. good stuffs!
+
+filename = 'cent_no_learning_1epTEST5'
 # vis_large_eps(filename)
 # print('debug')

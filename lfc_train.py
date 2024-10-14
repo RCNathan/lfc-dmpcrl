@@ -32,12 +32,12 @@ save_data = True
 make_plots = True
 
 centralized_flag = True
-learning_flag = True
+learning_flag = False
 
-numEpisodes = 20 # how many episodes | x0, load etc reset on episode start
-numSteps= 5e2 # how many steps per episode | steps*ts = time
+numEpisodes = 1 # how many episodes | x0, load etc reset on episode start
+numSteps= 5e2# how many steps per episode | steps*ts = time
 
-prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources | not the issue at hand.
+prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources
 admm_iters = 50
 rho = 0.5
 model = Model()  # model class defines dynamic model
@@ -83,10 +83,10 @@ update_strategy = 10 # Frequency to update the mpc parameters with. Updates ever
 # update_strategy = UpdateStrategy(1, skip_first=0, hook="on_episode_end")
 if learning_flag:
     optimizer = GradientDescent(        
-        learning_rate=ExponentialScheduler(1e-10, factor=0.9995)    
+        learning_rate=ExponentialScheduler(1e-11, factor=1)    
     )
     base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random OR perturbation on chosen input)
-        epsilon=ExponentialScheduler(0.99, factor=0.99), # (probability, decay-rate: 1 = no decay)
+        epsilon=ExponentialScheduler(0.9, factor=0.99), # (probability, decay-rate: 1 = no decay)
         strength= 0.2 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
         seed=1,
     )
