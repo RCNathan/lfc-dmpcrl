@@ -20,8 +20,8 @@ class Model:
     
     # noise on matrices for inaccurate guess used by learnable MPC
     noise_A = 1e-1 # default 1e0
-    noise_B = 0 # default 1e-1
-    noise_F = 0 # default 1e-1
+    noise_B = 1e-1 # default 1e-1
+    noise_F = 1e-1 # default 1e-1
     noise_A, noise_B, noise_F = 0, 0, 0 # Perfect knowledge of system matrices
     ubnd = 2e-1 # default 1e-1
 

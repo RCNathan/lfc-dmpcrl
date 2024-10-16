@@ -42,6 +42,7 @@ class LtiSystem(
         )
         self.load_noise = self.load # initialize also at 0 
         self.step_counter = 0 
+        np.random.seed(1)
 
         # Saving data on load and noise for plotting 
         self.loads: list = []
@@ -84,7 +85,6 @@ class LtiSystem(
             self.n, -1
         ) # TODO: decide: does this continue past episodes? or reset each time? <- probably continue
 
-
         return self.x, {}
 
     def get_stage_cost(
@@ -123,7 +123,7 @@ class LtiSystem(
         # replaced by ||s||^2_{Q_s} + ||a||^2_{Q_a} + w*(constraint violations)
         return float(
             state.T.squeeze() @ Qs @ state.squeeze() # s'Qs: quadratic
-            + 0.5 * np.square(action).sum() # 0.5*a^2
+            + Qa * np.square(action).sum() # 0.5*a^2
             # necessary to punish constraint violation
             + w @ np.maximum(0, lb[:, np.newaxis] - state) # = 0 if x > x_lower
             + w @ np.maximum(0, state - ub[:, np.newaxis]) # = 0 if x < x_upper
@@ -212,13 +212,16 @@ class LtiSystem(
                 [0.01, -0.01, -0.01]    
             ).reshape(self.n, -1)
         
+        # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
+        self.load_noise = (0.01*(np.random.uniform(0, 2, (3,1)) -1)) # (low, high, size) -> in [-1, 1)
+        
+        # self.load = np.zeros((3,1)) # to toggle load on/off
+        self.load_noise =  np.zeros((3,1)) 
 
         action = action.full()  # convert action from casadi DM to numpy array
+
         # x_new = self.A @ self.x + self.B @ action  
         x_new = self.A @ self.x + self.B @ action  + self.F @ self.load
-        
-        # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
-        self.load_noise = (0.0*(np.random.uniform(0, 2, (3,1)) -1)) # (low, high, size) -> in [-1, 1) 
         x_new += self.F @ self.load_noise 
         
         # Defines the quadratic cost on states
@@ -228,13 +231,14 @@ class LtiSystem(
              [0, 0, 1e1, 0],
              [0, 0, 0, 2e1]])
         Qs = block_diag(Qs_l, n=self.n)
+        Qa = 0.5
 
 
         r = self.get_stage_cost(
-            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, Qs=Qs, Qa=0
+            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, Qs=Qs, Qa=Qa
         )
         r_dist = self.get_dist_stage_cost( # TODO: change for distributed setting
-            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, Qs_l=Qs_l, Qa_l=0
+            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, Qs_l=Qs_l, Qa_l=Qa
         )
         self.x = x_new
 

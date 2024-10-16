@@ -53,10 +53,10 @@ class LearnableMpc(Mpc[cs.SX]):
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
             "Qx": np.array(
-            [[1e4, 0, 0, 0], 
+            [[1e3, 0, 0, 0], 
              [0, 1e0, 0, 0],
              [0, 0, 1e1, 0],
-             [0, 0, 0, 2e1]]), # quadratic cost on states (local)
+             [0, 0, 0, 1e1]]), # quadratic cost on states (local)
             "Qu": np.array([0.1]),
         }
 
@@ -201,7 +201,6 @@ class CentralizedMpc(LearnableMpc):
         self.minimize( 
             cs.sum1(V0) 
             # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u)) # f'([x, u]')
-            # + cs.sum2(Qu.T @ u**2) # u'Q_u u
             + cs.sum2(
                 gammapowers * (
                     Qu.T @ u**2 +
@@ -209,12 +208,12 @@ class CentralizedMpc(LearnableMpc):
                         x[:, :-1].T @ Qx @ x[:, :-1] # x' Q_x x 
                     )
                 )
-                + cs.sum1(x[:, -1].T @ Qx @ x[:, -1]) # x(N)' Qx x(N))
             ) 
+            + cs.sum1(x[:, -1].T @ Qx @ x[:, -1]) # x(N)' Qx x(N))
         )
         
         # solver
-        solver = "ipopt" # qpoases or ipopt
+        solver = "qpoases" # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
@@ -228,6 +227,8 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         prediction_horizon: int,
         num_neighbours: int,
         my_index: int,
+        global_index: int,
+        G: list[list],
         rho: float = 0.5,
     ) -> None:
         """Initializes the local learnable MPC controller.
@@ -261,21 +262,37 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         f = self.parameter("f", (self.nx_l + self.nu_l, 1))
         A = self.parameter("A", (self.nx_l, self.nx_l))
         B = self.parameter("B", (self.nx_l, self.nu_l))
+        F = self.parameter("F", (self.nx_l, self.nu_l))
         A_c_list = [
-            self.parameter(f"A_c_{i}", (self.nx_l, self.nx_l))
-            for i in range(num_neighbours)
+            self.parameter(f"A_c_{j}", (self.nx_l, self.nx_l)) # always A_c_0, A_c_1 right
+            for j in G[global_index]
+            if j != global_index 
         ]
         Qx = self.parameter("Qx", (self.nx_l, self.nx_l)) # TODO: this is placeholder, needs to be changed in stage cost
         Qu = self.parameter("Qu", (1,))
 
         # dictionary containing initial values for local learnable parameters
-        self.learnable_pars_init = self.learnable_pars_init_local.copy()
-        self.learnable_pars_init["A"] = model.A_l_inac[my_index] # TODO: this is placeholder, to be changed when tackling distributed
-        self.learnable_pars_init["B"] = model.B_l_inac[my_index]
+        self.learnable_pars_init = self.learnable_pars_init_local.copy() # copies from the LearnableMPC; V0, b, f, etc.
+        self.learnable_pars_init["A"] = model.A_l_inac[global_index] 
+        self.learnable_pars_init["B"] = model.B_l_inac[global_index]
+        self.learnable_pars_init["F"] = model.F_l_inac[global_index]
         self.learnable_pars_init.update(
-            {f"A_c_{i}": model.A_c_l_inac[1][0] for i in range(num_neighbours)} # TODO: this is placeholder, to be changed when tackling distributed
+            # gets Ac[i][j] from model, when i=/=j, (i,j) in adj(i,j), and where i is local MPCs own global index.
+            {
+                f"A_c_{j}": model.A_c_l_inac[global_index][j] 
+                for j in G[global_index]
+                if j != global_index 
+            } # note: name corresponds to neighbours numbers, i.e for agent 1 (i = 0), only Ac1, Ac2 exist
         )
-        self.learnable_pars_init
+        self.learnable_pars_init # TODO: why is this here?
+
+        # Fixed parameters: load
+        # Pl = self.parameter(f"Pl_{global_index}", (1, 1))  # creates parameter obj for local load based on global index.
+        Pl = self.parameter("Pl", (1,1))
+        self.fixed_pars_init.update(
+            # {f"Pl_{global_index}": 0.0}
+            {"Pl": 0.0}
+        ) # value changed in lfc_agent
 
         # variables (state+coupling, action, slack)
         x, x_c = self.augmented_state(num_neighbours, my_index, self.nx_l)
@@ -285,7 +302,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
             lb=self.u_bnd_l[0][0],
             ub=self.u_bnd_l[1][0],
         )
-        s, _, _ = self.variable("s", (self.nx_l, N), lb=0)
+        s, _, _ = self.variable("s", (self.nx_l, N), lb=0) # TODO: what does this lb do? (also for centralized!) Maybe that impacts sim
 
         x_c_list = cs.vertsplit(
             x_c, np.arange(0, self.nx_l * num_neighbours + 1, self.nx_l)
@@ -298,7 +315,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
                 coup += A_c_list[i] @ x_c_list[i][:, [k]]
             self.constraint(
                 f"dynam_{k}",
-                A @ x[:, [k]] + B @ u[:, [k]] + coup + b,
+                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl + coup + b, 
                 "==",
                 x[:, [k + 1]],
             )
@@ -311,16 +328,20 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         gammapowers = cs.DM(gamma ** np.arange(N)).T
         self.set_local_cost(
             V0
-            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
-            + 0.5
-            * cs.sum2(
-                gammapowers
-                * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + self.w_l @ s)
+            # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
+            + cs.sum2(
+                gammapowers * (
+                    Qu.T @ u**2 + # u' Q_u u
+                    cs.sum1(
+                        x[:, :-1].T @ Qx @ x[:, :-1] # x' Q_x x
+                    )
+                )
             )
+            + cs.sum1(x[:, -1].T @ Qx @ x[:, -1]) # x(N)' Qx x(N))
         )
 
         # solver
-        solver = "ipopt"
+        solver = "qpoases"
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 

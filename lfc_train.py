@@ -31,11 +31,11 @@ from vis_large_eps import vis_large_eps
 save_data = True
 make_plots = True
 
-centralized_flag = True
-learning_flag = False
+centralized_flag = False
+learning_flag = True
 
 numEpisodes = 1 # how many episodes | x0, load etc reset on episode start
-numSteps= 10e2# how many steps per episode | steps*ts = time
+numSteps= 50 # how many steps per episode | steps*ts = time
 
 prediction_horizon = 10 # higher seems better but takes significantly longer/more compute time & resources
 admm_iters = 50
@@ -59,6 +59,8 @@ distributed_mpcs: list[LocalMpc] = [
         prediction_horizon=prediction_horizon,
         num_neighbours=len(G[i]) - 1,
         my_index=G[i].index(i),
+        global_index=i, # for the initial values of learnable params, taken from list in model
+        G = G, # also for getting correct initial values
         rho=rho,
     )
     for i in range(Model.n)
@@ -79,19 +81,19 @@ distributed_fixed_parameters: list = [
 ]
 
 # learning arguments
-update_strategy = 10 # Frequency to update the mpc parameters with. Updates every `n` env's steps
+update_strategy = 2 # Frequency to update the mpc parameters with. Updates every `n` env's steps
 # update_strategy = UpdateStrategy(1, skip_first=0, hook="on_episode_end")
 if learning_flag:
     optimizer = GradientDescent(        
-        learning_rate=ExponentialScheduler(1e-11, factor=1)    
+        learning_rate=ExponentialScheduler(1e-10, factor=1)    
     )
     base_exp = EpsilonGreedyExploration( # TODO: SAM: to clarify type (completely random OR perturbation on chosen input)
         epsilon=ExponentialScheduler(0.9, factor=0.99), # (probability, decay-rate: 1 = no decay)
-        strength= 0.2 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
+        strength= 0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
         seed=1,
     )
     experience = ExperienceReplay(
-        maxlen=100, sample_size=10, include_latest=10, seed=1 # smooths learning
+        maxlen=100, sample_size=20, include_latest=10, seed=1 # smooths learning
     )  
 else: # NO LEARNING
     optimizer = GradientDescent(learning_rate=0) # learning-rate 0: alpha = 0: no updating theta's.
@@ -106,7 +108,7 @@ agents = [
             discount_factor=LearnableMpc.discount_factor,
             optimizer=deepcopy(optimizer),
             learnable_parameters=distributed_learnable_parameters[i],
-            fixed_parameters=distributed_fixed_parameters[i],
+            fixed_parameters=distributed_fixed_parameters[i], # Pl_i, y, z
             exploration=StepWiseExploration(
                 base_exploration=deepcopy(base_exp),
                 step_size=admm_iters,
@@ -186,7 +188,7 @@ if save_data:
         pklname = 'distr'
     if learning_flag == False:
         pklname = pklname + '_no_learning'
-    pklname = pklname + '_' + str(numEpisodes) + 'ep' + 'TEST5'
+    pklname = pklname + '_' + str(numEpisodes) + 'ep' + 'dist_time'
     with open(
         f"{pklname}.pkl",
 
