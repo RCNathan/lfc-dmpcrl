@@ -269,6 +269,6 @@ make_plots = True
 
 
 # distr working pls
-train(centralized_flag=False, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10,
-      admm_iters=10, rho=0.5)
+train(centralized_flag=False, learning_flag=False, numEpisodes=2, numSteps=20, prediction_horizon=10,
+      admm_iters=1000, rho=0.5)
 # filename = cent_no_learning_1ep_scenario_0, return[460.72410733]

@@ -343,13 +343,14 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         )  # store the bits of x that are couplings in a list for ease of access
 
         # dynamics - added manually due to coupling
-        coup = [cs.SX.zeros(self.nx_l, 1) for _ in range(N)]
+        # coup = [cs.SX.zeros(self.nx_l, 1) for _ in range(N)]
         for k in range(N): # N: horizon
+            coup = cs.SX.zeros(self.nx_l, 1)
             for i in range(num_neighbours):  # get coupling expression
-                coup[k] += A_c_list[i] @ x_c_list[i][:, [k]]
+                coup += A_c_list[i] @ x_c_list[i][:, [k]]
             self.constraint(
                 f"dynam_{k}",
-                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl + coup[k] + b, 
+                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl + coup + b, 
                 "==",
                 x[:, [k + 1]],
             )
