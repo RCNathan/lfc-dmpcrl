@@ -168,12 +168,7 @@ def vis_large_eps(file:str) -> None:
     axs[1].set_title("Per episode")
     axs[1].set_xlabel("Episodes")
     axs[1].legend()
-    axs[2].plot(np.sum(np.sum(param_dict['A_0'], axis=1),axis=1), label=r"avg of $A_{11}$")
-    axs[2].plot(np.sum(m.A_l_1) * np.ones(param_dict['A_0'].shape[0]), label=r"real value of $A_{11}$")
-    axs[2].legend()
-    axs[3].plot(param_dict['A_0'][:,0,0], label=r"avg of first element of $A_{11}$")
-    axs[3].plot(m.A_l_1[0,0] * np.ones(param_dict['A_0'].shape[0]), label=r"real value of first element of $A_{11}$")
-    axs[3].legend()
+    
 
     wm = plt.get_current_fig_manager()
     # wm.window.move(1500,0)
@@ -232,11 +227,12 @@ def vis_large_eps(file:str) -> None:
     wm = plt.get_current_fig_manager()
     wm.window.move(0, 0)
 
-    # GRC plot
+    # GRC plot | x: (eps, steps, states)
     grc = m.GRC_l
     _, axs = plt.subplots(1,3)
     for n in range(m.n):
-        axs[n].plot(t[:-1], 1/m.ts*(x[-1, 1:, 4*n + 1] - x[-1, :-1, 4*n + 1]))
+        axs[n].plot(t[:-1], 1/m.ts*(x[0, 1:, 4*n + 1] - x[0, :-1, 4*n + 1]), color='green')
+        axs[n].plot(t[:-1], 1/m.ts*(x[-1, 1:, 4*n + 1] - x[-1, :-1, 4*n + 1]), color='black')
         axs[n].hlines([-grc, grc], 0, t[-2], color='r', linestyle='--') # hlines(y_values, xmin, xmax)
         # axs[n].set_ylim([-1.1*grc, 1.1*grc])
 
@@ -279,7 +275,8 @@ filename = 'cent_no_learning_5ep_sanityCheck'
 
 # Scenario 0
 filename = 'cent_5ep_scenario_0'
-filename = 'cent_2ep_scenario_0'
+# filename = 'cent_2ep_scenario_0'
+filename = 'cent_no_learning_1ep_scenario_0'
 
 # vis_large_eps(filename)
 # print('debug')

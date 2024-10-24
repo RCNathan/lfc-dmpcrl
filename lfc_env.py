@@ -36,7 +36,9 @@ class LtiSystem(
         self.w = np.tile(
             [[5e2, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
-        self.w_grc = np.array([10]) # weight on slacks for grc violation
+        self.w_grc = np.tile([0, 1e4, 0, 0], (1, self.n)) # weight on slacks for grc violation
+            # note: with the way it's set up with dist_cost, I pass entire state (12) or local state (4), 
+            # making this the easiest way to implement 
         self.grc = model.GRC_l
 
         # Initialize step_counter, load and load_noise
@@ -93,10 +95,12 @@ class LtiSystem(
     def get_stage_cost(
         self,
         state: np.ndarray,
+        statekp1: np.ndarray,
         action: np.ndarray,
         lb: np.ndarray,
         ub: np.ndarray,
         w: np.ndarray,
+        w_grc: np.ndarray,
         Qs: np.ndarray,
         Qa: np.ndarray,
     ) -> float:
@@ -106,6 +110,8 @@ class LtiSystem(
         ----------
         state : np.ndarray
             The state of the system. Shape (nx, 1).
+        state+ : np.ndarray
+            The state of the system at the next time-step, to calculate GRC. Shape (nx, 1)
         action : np.ndarray
             The action of the system. Shape (nu,1).
         lb : np.ndarray
@@ -114,6 +120,8 @@ class LtiSystem(
             The upper bounds of the states.
         w : np.ndarray
             The penalty weight for bound violations.
+        w_grc: np.ndarray
+            The penalty weight on GRC violations
         Qs: np.ndarray
             Matrix defining quadratic cost on states (LQR-like)
         Qa: np.ndarray
@@ -129,19 +137,20 @@ class LtiSystem(
             + Qa * np.square(action).sum() # 0.5*a^2
             # necessary to punish constraint violation
             + w @ np.maximum(0, lb[:, np.newaxis] - state) # = 0 if x > x_lower
-            + w @ np.maximum(0, state - ub[:, np.newaxis]) # = 0 if x < x_upper
-            # TODO: implement after messing with the env simulation iters, also: need to pass more than just state as (nx, 1)
-            # + self.w_grc * np.maximum(0, ) # = 0 if x_dot > -grc    or  -grc < x_dot
-            # + self.w_grc * np.maximum(0, state- self.grc) # = 0 if x_dot < grc, nonzero if x_dot > grc
+            + w @ np.maximum(0, state - ub[:, np.newaxis]) # = 0 if x < x_upper            
+            + w_grc @ np.maximum(0, statekp1-state - self.grc) # = 0 if x_dot > -grc    or  -grc < x_dot
+            + w_grc @ np.maximum(0, -(statekp1-state) - self.grc) # = 0 if x_dot < grc, nonzero if x_dot > grc
         )
 
     def get_dist_stage_cost(  # distributed
         self,
         state: np.ndarray,
+        statekp1: np.ndarray,
         action: np.ndarray,
         lb: np.ndarray,
         ub: np.ndarray,
         w: np.ndarray,
+        w_grc: np.ndarray,
         Qs_l: np.ndarray,
         Qa_l: np.ndarray,
     ) -> list[float]:
@@ -151,6 +160,8 @@ class LtiSystem(
         ----------
         state : np.ndarray
             The centralized state of the system.
+        state+ : np.ndarray
+            The centralized state of the system at the next time-step.
         action : np.ndarray
             The centralized action of the system.
         lb : np.ndarray
@@ -159,6 +170,8 @@ class LtiSystem(
             The upper bounds of the states.
         w : np.ndarray
             The penalty weight for bound violations.
+        w_grc: np.ndarray
+            The penalty weight for GRC violations.
         Qs_l: np.ndarray
             LOCAL Matrix defining quadratic cost on states (LQR-like)
         Qa_l: np.ndarray
@@ -168,15 +181,17 @@ class LtiSystem(
         -------
         list[float]
             The distributed costs."""
-        x_l, u_l, lb_l, ub_l, w_l = (
+        x_l, x_lp1, u_l, lb_l, ub_l, w_l, w_l_grc = (
             np.split(state, self.n),
+            np.split(statekp1, self.n),
             np.split(action, self.n),
             np.split(lb, self.n),
             np.split(ub, self.n),
             np.split(w, self.n, axis=1),
+            np.split(w_grc, self.n, axis=1)
         )  # break into local pieces
         return [
-            self.get_stage_cost(x_l[i], u_l[i], lb_l[i], ub_l[i], w_l[i], Qs_l, Qa_l)
+            self.get_stage_cost(x_l[i], x_lp1[i], u_l[i], lb_l[i], ub_l[i], w_l[i], w_l_grc[i], Qs_l, Qa_l)
             for i in range(self.n)
         ]
 
@@ -203,19 +218,19 @@ class LtiSystem(
             ).reshape(self.n, -1)
         elif(sim_time <= 20):   # from t = 10 - 20
              self.load = np.array(
-                [0.05, 0.0, 0.0]    
+                [0.03, 0.0, 0.0]    
             ).reshape(self.n, -1)
         elif(sim_time <= 30):   # from t = 20 - 30
              self.load = np.array(
-                [0.05, 0.0, 0.0]    
+                [0.03, 0.0, -0.02]    
             ).reshape(self.n, -1)
         elif(sim_time <= 40):
              self.load = np.array(
-                [0.05, 0.0, 0.0]    
+                [0.03, 0.0, -0.02]    
             ).reshape(self.n, -1)
         else:
             self.load = np.array(
-                [0.05, 0.0, 0.0]    
+                [0.03, 0.0, -0.02]    
             ).reshape(self.n, -1)
         
         # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
@@ -244,10 +259,10 @@ class LtiSystem(
 
 
         r = self.get_stage_cost(
-            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, Qs=Qs, Qa=Qa
+            self.x, x_new, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, w_grc=self.w_grc, Qs=Qs, Qa=Qa
         )
         r_dist = self.get_dist_stage_cost( # TODO: change for distributed setting
-            self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, Qs_l=Qs_l, Qa_l=Qa
+            self.x, x_new, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, w_grc=self.w_grc, Qs_l=Qs_l, Qa_l=Qa
         )
         
         # store for next step

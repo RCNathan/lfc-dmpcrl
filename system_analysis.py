@@ -1,6 +1,7 @@
 import numpy as np
 from lfc_model import Model
 from controllability import ctrb
+from block_diag import block_diag
 import control as ct
 
 m = Model()
@@ -45,6 +46,28 @@ for i in range(12):
 
 Kl, rankl = ctrb(m.A_l_1, m.B_l_1)
 print("\nRank of smaller subsystem is", rankl)
+
+
+Q_l = np.array(
+            [[1e2, 0, 0, 0], 
+             [0, 1e0, 0, 0],
+             [0, 0, 1e1, 0],
+             [0, 0, 0, 2e1]]) # local Q matrix, as defined in lfc_learnable_mpc
+Q = block_diag(Q_l, n=3)
+R_l = 0.5
+R = np.array([[R_l, 0, 0],
+              [0, R_l, 0],
+              [0, 0, R_l]])
+P, L, K = ct.dare(m.A, m.B, Q, R) # P is the solution, K the gain matrix, L the closed loop eigenvalues (of [A - BK])
+# P has some entries that are ridiculously large, i.e 3.25317029e+16 in the final entry, leading to instabilities. maybe DARE not suited here.
+    # some more info: ill-conditioned A,B may lead to large P. Also, poorly tuned Q,R may cause this. However, Q,R dont have abnormal values.
+
+
+# sanity check; are eigenvalues in unit circle?
+for eig in L:
+    if abs(eig) > 1:
+        print("Eigenvalue of closed-loop solution of DARE outside of unit circle (unstable)", eig)
+
 
 print("Debug")
 

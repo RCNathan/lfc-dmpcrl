@@ -260,9 +260,14 @@ make_plots = True
 train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10)
 
 # cent learning 
-# train(centralized_flag=True, learning_flag=True, numEpisodes=2, numSteps=300, prediction_horizon=10, 
+# train(centralized_flag=True, learning_flag=True, numEpisodes=5, numSteps=500, prediction_horizon=10, 
 #       update_strategy=10, 
-#       learning_rate=ExponentialScheduler(1e-9, factor=0.99), 
-#       epsilon=ExponentialScheduler(0.9, factor=1),
-#       eps_strength=50, # doesnt seem to work, the exploration. why?
+#       learning_rate=ExponentialScheduler(1e-12, factor=0.9999), 
+#       epsilon=ExponentialScheduler(0.9, factor=0.99),
+#       eps_strength=2000, # values depend on setup, might need large values!
 #       experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1))
+
+
+# distr working pls
+# train(centralized_flag=False, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10)
+# filename = cent_no_learning_1ep_scenario_0, return[460.72410733]

@@ -41,7 +41,8 @@ class LearnableMpc(Mpc[cs.SX]):
             [[1e3, 1e1, 1e1, 1e1]]  # TODO: change
         )  # penalty weight for slack variables!
         self.w = np.tile(self.w_l, (1, self.n))
-        self.w_grc = np.tile([1e4], (1, self.n))
+        self.w_grc_l = np.array([1e4])
+        self.w_grc = np.tile(self.w_grc_l, (1, self.n))
         self.adj = model.adj
         self.GRC_l = model.GRC_l
         self.GRC = np.tile(
@@ -317,7 +318,6 @@ class LocalMpc(MpcAdmm, LearnableMpc):
                 if j != global_index 
             } # note: name corresponds to neighbours numbers, i.e for agent 1 (i = 0), only Ac1, Ac2 exist
         )
-        self.learnable_pars_init # TODO: why is this here?
 
         # Fixed parameters: load
         # Pl = self.parameter(f"Pl_{global_index}", (1, 1))  # creates parameter obj for local load based on global index.
@@ -335,7 +335,8 @@ class LocalMpc(MpcAdmm, LearnableMpc):
             lb=self.u_bnd_l[0][0],
             ub=self.u_bnd_l[1][0],
         )
-        s, _, _ = self.variable("s", (self.nx_l, N), lb=0) # TODO: what does this lb do? (also for centralized!) Maybe that impacts sim
+        s, _, _ = self.variable("s", (self.nx_l, N), lb=0)
+        s_grc, _, _ = self.variable("s_grc", (1, N), lb=0)
 
         x_c_list = cs.vertsplit(
             x_c, np.arange(0, self.nx_l * num_neighbours + 1, self.nx_l)
@@ -356,21 +357,26 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         # other constraints
         self.constraint(f"x_lb", self.x_bnd_l[0] + x_lb - s, "<=", x[:, 1:])
         self.constraint(f"x_ub", x[:, 1:], "<=", self.x_bnd_l[1] + x_ub + s)
+        self.constraint("GRC_lb", -self.GRC_l -s_grc, "<=", 1/self.ts * (x[1, 1:] - x[1, :-1]), soft=False) # grc constraint
+        self.constraint("GRC_ub", 1/self.ts * (x[1, 1:] - x[1, :-1]), "<=", self.GRC_l + s_grc, soft=False) # grc constraint
 
         # objective
         gammapowers = cs.DM(gamma ** np.arange(N)).T
         self.set_local_cost(
             V0
-            # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
+            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
             + cs.sum2(
                 gammapowers * (
-                    Qu.T @ u**2 + # u' Q_u u
+                    # Qu.T @ u**2 + # u' Q_u u
                     cs.sum1(
+                        u.T @ Qu @ u +
                         x[:, :-1].T @ Qx @ x[:, :-1] # x' Q_x x
                     )
                 )
             )
             + cs.sum1(x[:, -1].T @ Qf @ x[:, -1]) # x(N)' Qx x(N))
+            + cs.sum2(self.w_l @ s) # punishes slack variables
+            + cs.sum2(self.w_grc_l @ s_grc) # punishes slacks on grc
         )
 
         # solver
