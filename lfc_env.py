@@ -26,15 +26,18 @@ class LtiSystem(
         model : Model
             The model of the system."""
         super().__init__()
-        self.A, self.B, self.F = model.A, model.B, model.F
+        self.A, self.B, self.F = model.A_env, model.B_env, model.F_env
         self.n = model.n
         self.nx = model.n * model.nx_l
         self.nx_l = model.nx_l
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
-        self.ts = model.ts
+        self.ts_env = model.ts_env # different sampling time for env
+        self.ts = model.ts # needed to decide how many times to run loop
         self.w = np.tile(
             [[5e2, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
+        self.w_grc = np.array([10]) # weight on slacks for grc violation
+        self.grc = model.GRC_l
 
         # Initialize step_counter, load and load_noise
         self.load = np.array([0.0, 0.0, 0.0]).reshape(
@@ -127,6 +130,9 @@ class LtiSystem(
             # necessary to punish constraint violation
             + w @ np.maximum(0, lb[:, np.newaxis] - state) # = 0 if x > x_lower
             + w @ np.maximum(0, state - ub[:, np.newaxis]) # = 0 if x < x_upper
+            # TODO: implement after messing with the env simulation iters, also: need to pass more than just state as (nx, 1)
+            # + self.w_grc * np.maximum(0, ) # = 0 if x_dot > -grc    or  -grc < x_dot
+            # + self.w_grc * np.maximum(0, state- self.grc) # = 0 if x_dot < grc, nonzero if x_dot > grc
         )
 
     def get_dist_stage_cost(  # distributed
@@ -196,20 +202,20 @@ class LtiSystem(
                 [0.0, 0.0, 0.0]    
             ).reshape(self.n, -1)
         elif(sim_time <= 20):   # from t = 10 - 20
-             self.load = 5*np.array(
-                [0.01, 0.0, 0.01]    
+             self.load = np.array(
+                [0.05, 0.0, 0.0]    
             ).reshape(self.n, -1)
         elif(sim_time <= 30):   # from t = 20 - 30
-             self.load = 5*np.array(
-                [0.01, -0.01, 0.0]    
+             self.load = np.array(
+                [0.05, 0.0, 0.0]    
             ).reshape(self.n, -1)
         elif(sim_time <= 40):
-             self.load = 5*np.array(
-                [0.01, -0.01, 0.0]    
+             self.load = np.array(
+                [0.05, 0.0, 0.0]    
             ).reshape(self.n, -1)
         else:
-            self.load = 5*np.array(
-                [0.01, -0.01, -0.01]    
+            self.load = np.array(
+                [0.05, 0.0, 0.0]    
             ).reshape(self.n, -1)
         
         # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
@@ -220,13 +226,16 @@ class LtiSystem(
 
         action = action.full()  # convert action from casadi DM to numpy array
 
-        # x_new = self.A @ self.x + self.B @ action  
-        x_new = self.A @ self.x + self.B @ action  + self.F @ self.load
-        x_new += self.F @ self.load_noise 
+        # x_new = self.A @ self.x + self.B @ action
+        x = self.x
+        for _ in range(int(self.ts/self.ts_env)): 
+            x_new = self.A @ x + self.B @ action  + self.F @ self.load
+            x_new += self.F @ self.load_noise 
+            x = x_new
         
         # Defines the quadratic cost on states
         Qs_l = np.array(
-            [[1e4, 0, 0, 0], 
+            [[1e2, 0, 0, 0], 
              [0, 1e0, 0, 0],
              [0, 0, 1e1, 0],
              [0, 0, 0, 2e1]])
@@ -240,8 +249,9 @@ class LtiSystem(
         r_dist = self.get_dist_stage_cost( # TODO: change for distributed setting
             self.x, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, Qs_l=Qs_l, Qa_l=Qa
         )
+        
+        # store for next step
         self.x = x_new
-
         self.step_counter += 1
 
         # save data for plots

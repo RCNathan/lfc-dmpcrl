@@ -10,6 +10,7 @@ from dmpcrl.utils.solver_options import SolverOptions
 from lfc_model import Model
 from lfc_discretization import lfc_forward_euler_cs, lfc_zero_order_hold
 from block_diag import block_diag
+import control as ct
 
 
 class LearnableMpc(Mpc[cs.SX]):
@@ -40,24 +41,37 @@ class LearnableMpc(Mpc[cs.SX]):
             [[1e3, 1e1, 1e1, 1e1]]  # TODO: change
         )  # penalty weight for slack variables!
         self.w = np.tile(self.w_l, (1, self.n))
+        self.w_grc = np.tile([1e4], (1, self.n))
         self.adj = model.adj
+        self.GRC_l = model.GRC_l
+        self.GRC = np.tile(
+            model.GRC_l, model.n
+        ).reshape(-1, 1)
 
         # standard learnable parameters dictionary for local agent - initial values
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
             "x_lb": np.reshape(
-                [-0.2, -0.3, -0.1, -0.1], (-1, 1)
-            ),  # how does this compare with ub/lb in model? -> this is learned.
+                # [-0.2, -0.3, -0.1, -0.1], (-1, 1)
+                [0, 0, 0, 0], (-1, 1)
+            ),  # how does this compare with ub/lb in model? -> this is learned. TODO: check below statement
+            # I think makes more sense to put at 0 initially? automatica: [0, -1]' + x_lb - sigma <= x <= [1, 1]' + x_ub + sigma
             "x_ub": np.reshape(
-                [0.2, 0.3, 0.1, 0.1], (-1, 1)),
+                # [0.2, 0.3, 0.1, 0.1], (-1, 1)),
+                [0, 0, 0, 0], (-1, 1)),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
             "Qx": np.array(
-            [[1e3, 0, 0, 0], 
+            [[1e2, 0, 0, 0], 
              [0, 1e0, 0, 0],
              [0, 0, 1e1, 0],
-             [0, 0, 0, 1e1]]), # quadratic cost on states (local)
+             [0, 0, 0, 2e1]]), # quadratic cost on states (local)
             "Qu": np.array([0.1]),
+            "Qf": np.array(
+            [[1e2, 0, 0, 0], 
+             [0, 1e0, 0, 0],
+             [0, 0, 1e1, 0],
+             [0, 0, 0, 2e1]]) # quadratic terminal penalty
         }
 
 
@@ -121,6 +135,10 @@ class CentralizedMpc(LearnableMpc):
         Qu_list= [
             self.parameter(f"Qu_{i}", (1,)) for i in range(self.n)
         ]
+        Qf_list = [
+            self.parameter(f"Qf_{i}", (self.nx_l, self.nx_l)) for i in range(self.n)
+        ]
+
         # constraints parameters
         x_lb_list = [self.parameter(f"x_lb_{i}", (self.nx_l,)) for i in range(self.n)]
         x_ub_list = [self.parameter(f"x_ub_{i}", (self.nx_l,)) for i in range(self.n)]
@@ -161,14 +179,21 @@ class CentralizedMpc(LearnableMpc):
         x_ub = cs.vcat(x_ub_list)
         b = cs.vcat(b_list)
         f = cs.vcat(f_list)
-        Qu = cs.vcat(Qu_list)
+        # Qu = cs.vcat(Qu_list)
+        Qu = block_diag(*Qu_list)
         Qx = block_diag(*Qx_list) 
             # -> uses custom block_diag func and *unpacking operator; == block_diag(Qx_list[0], Qx_list[1], Qx_list[2])
+        Qf = block_diag(*Qf_list)
 
         # get centralized symbolic dynamics 
         A, B, F = model.centralized_dynamics_from_local(
             A_list, B_list, A_c_list, F_list, self.ts
         )  # A_c_list has zero's in formulation too.
+
+        # P is solution of DARE, used in terminal cost - ct.dare does not support casadi, so P is fixed.
+        # Qx_dare = block_diag(self.learnable_pars_init_local['Qx'], n=3)
+        # Qu_dare = block_diag(np.array([self.learnable_pars_init_local['Qu']]), n=3) 
+        # P, _, K = ct.dare(model.A, model.B, Qx_dare, Qu_dare) # P is the solution, K the gain matrix, L the closed loop eigenvalues (of [A - BK])
 
         # variables (state, action, slack) | optimized over in mpc
         x, _ = self.state("x", self.nx)
@@ -179,6 +204,7 @@ class CentralizedMpc(LearnableMpc):
             ub=self.u_bnd[1].reshape(-1, 1),
         )
         s, _, _ = self.variable("s", (self.nx, N), lb=0)
+        s_grc, _, _ = self.variable("s_grc", (3, N), lb=0)
 
         # Fixed parameters: load
         Pl = self.parameter("Pl", (3, 1))  # creates parameter obj for load
@@ -190,26 +216,32 @@ class CentralizedMpc(LearnableMpc):
         self.set_dynamics(
             # lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1
             lambda x, u: A @ x + B @ u + F @ Pl + b, n_in=2, n_out=1
-        )  # TODO: b is removed, maybe return later
+        )  
 
         # other constraints
         self.constraint("x_lb", self.x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])
         self.constraint("x_ub", x[:, 1:], "<=", self.x_bnd[1].reshape(-1, 1) + x_ub + s)
+        self.constraint("GRC_lb",  -self.GRC - s_grc, "<=", 1/self.ts * (x[[1,5,9], 1:] - x[[1,5,9], :-1]), soft=False) # generation-rate constraint
+        self.constraint("GRC_ub",  1/self.ts * (x[[1,5,9], 1:] - x[[1,5,9], :-1]),  "<=", self.GRC + s_grc, soft=False) # generation-rate constraint
 
         # objective | x.shape = (nx, N+1), u.shape = (nu, N)    |   sum1 is row-sum, sum2 is col-sum
         gammapowers = cs.DM(gamma ** np.arange(N)).T
         self.minimize( 
             cs.sum1(V0) 
-            # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u)) # f'([x, u]')
+            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u)) # f'([x, u]')
             + cs.sum2(
                 gammapowers * (
-                    Qu.T @ u**2 +
+                    # Qu.T @ u**2 +
                     cs.sum1(
+                        u.T @ Qu @ u +
                         x[:, :-1].T @ Qx @ x[:, :-1] # x' Q_x x 
                     )
                 )
             ) 
-            + cs.sum1(x[:, -1].T @ Qx @ x[:, -1]) # x(N)' Qx x(N))
+            + cs.sum1(x[:, -1].T @ Qf @ x[:, -1]) # x(N)' Qx x(N)) 
+            # + cs.sum1(x[:, -1].T @ P @ x[:, -1]) # x(N)' P x(N)), where P is solution of the DARE
+            + cs.sum2(self.w @ s) # punishes slack variables
+            + cs.sum2(self.w_grc @ s_grc) # punishes slacks on grc
         )
         
         # solver
@@ -268,7 +300,8 @@ class LocalMpc(MpcAdmm, LearnableMpc):
             for j in G[global_index]
             if j != global_index 
         ]
-        Qx = self.parameter("Qx", (self.nx_l, self.nx_l)) # TODO: this is placeholder, needs to be changed in stage cost
+        Qx = self.parameter("Qx", (self.nx_l, self.nx_l)) 
+        Qf = self.parameter("Qf", (self.nx_l, self.nx_l)) 
         Qu = self.parameter("Qu", (1,))
 
         # dictionary containing initial values for local learnable parameters
@@ -337,11 +370,11 @@ class LocalMpc(MpcAdmm, LearnableMpc):
                     )
                 )
             )
-            + cs.sum1(x[:, -1].T @ Qx @ x[:, -1]) # x(N)' Qx x(N))
+            + cs.sum1(x[:, -1].T @ Qf @ x[:, -1]) # x(N)' Qx x(N))
         )
 
         # solver
-        solver = "qpoases"
+        solver = "ipopt"
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 

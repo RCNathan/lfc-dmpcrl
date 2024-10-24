@@ -91,6 +91,7 @@ def vis_large_eps(file:str) -> None:
         axs[3, j].hlines(x_bnd[3, :], 0, t[-1], linestyles='--', color='r') # hlines(y_values, xmin, xmax) 
         axs[4, j].hlines(u_bnd, 0, t[-2], linestyles='--', color='r') # hlines(y_values, xmin, xmax)
         axs[4, j].set_xlabel(r"time $t$") # x-labels (only bottom row)
+        axs[0, j].set_ylim([-0.25, 0.25])
 
     # only set once | y-axis labels (states, input)
     axs[0, 0].set_ylabel(r"$\Delta f_i$")
@@ -186,8 +187,9 @@ def vis_large_eps(file:str) -> None:
     # Plot loads and loads + noise
     _, axs = plt.subplots(1,3, constrained_layout=True, sharey=True, figsize=(5,2)) # figsize: (width, height)
     for j in range(numAgents):
-        axs[j].plot(t[:-1], Pl[-1,:,j] + Pl_noise[-1,:,j], label='last ep.')
-        axs[j].plot(t[:-1], Pl[-1,:,j], linestyle='--', color="black")
+        for n in range(numEpisodes):
+            axs[j].plot(t[:-1], Pl[n,:,j] + Pl_noise[n,:,j], label='last ep.')
+            axs[j].plot(t[:-1], Pl[n,:,j], linestyle='--', color="black")
 
         # only set once for every agent
         axs[j].set_title("Agent {}".format(j+1)) # sets agent-title on every top plot only
@@ -204,6 +206,41 @@ def vis_large_eps(file:str) -> None:
     # wm.window.setGeometry(1000, 570, figdx, figdy)
     wm.window.move(1000, 550)   
 
+
+    # plot for a lot (or all) of learnable params (debug-purposes) 
+    _, axs = plt.subplots(7,6, constrained_layout=True, figsize=(7.5,7))
+
+    i = 1
+    for item in param_dict.keys():
+        # print(param_dict[f'{item}'])
+        plt.subplot(7,6,i)
+        plotdata = param_dict[f'{item}'].squeeze()
+        if len(plotdata.shape) > 2:
+            plt.plot(plotdata[:, 0, 0])
+        elif len(plotdata.shape) == 2:
+            plt.plot(plotdata[:, 0])
+        else:
+            plt.plot(plotdata)
+        plt.title(str(item))
+        i += 1
+    
+    # removes tick-marks (for visibility)
+    for ax in axs.flat:
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    wm = plt.get_current_fig_manager()
+    wm.window.move(0, 0)
+
+    # GRC plot
+    grc = m.GRC_l
+    _, axs = plt.subplots(1,3)
+    for n in range(m.n):
+        axs[n].plot(t[:-1], 1/m.ts*(x[-1, 1:, 4*n + 1] - x[-1, :-1, 4*n + 1]))
+        axs[n].hlines([-grc, grc], 0, t[-2], color='r', linestyle='--') # hlines(y_values, xmin, xmax)
+        # axs[n].set_ylim([-1.1*grc, 1.1*grc])
+
+    print('returns', Rcumsum[:, -1])
     plt.show()
 
 # filename = 'cent'
@@ -223,6 +260,26 @@ filename = 'cent_50epTEST' # holy shit this shit is amazing!
 # filename = 'cent_5epTEST4'
 filename = 'cent_20epTEST4' # incredible. good stuffs!
 
-filename = 'cent_no_learning_1epTEST5'
+
+# Redoing Qs, Qx again, together with sampling time from 0.01s -> 0.1s, changing bounds and constraints (accordance with literature)
+filename = 'cent_no_learning_1epTEST5' # unstable behavior after 20ish seconds, when noise on A,B,F and load.
+filename = 'cent_no_learning_5epTEST5' # very sensitive to values of noise for some reason
+filename = 'cent_5epTEST5'
+
+# Distributed time - see following for baselines: no noise on load or on A,B,F
+filename = 'cent_5epdist_time'
+filename = 'cent_no_learning_1epdist_time'
+
+# added grc
+filename = 'cent_no_learning_1ep_grc'
+# filename = 'cent_no_learning_1ep_grc_P'
+
+# sanity check
+filename = 'cent_no_learning_5ep_sanityCheck'
+
+# Scenario 0
+filename = 'cent_5ep_scenario_0'
+filename = 'cent_2ep_scenario_0'
+
 # vis_large_eps(filename)
 # print('debug')

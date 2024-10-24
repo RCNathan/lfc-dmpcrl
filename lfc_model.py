@@ -17,18 +17,22 @@ class Model:
     nu_l: ClassVar[int] = 1  # local control dimension
 
     ts = 0.1  # sampling time for ZOH discretization/ Forward Euler | 0.1 gives problems, 0.01 seems fine
+    ts_env = 0.01 # sampling time for env, which will approx the real system better.
     
     # noise on matrices for inaccurate guess used by learnable MPC
     noise_A = 1e-1 # default 1e0
     noise_B = 1e-1 # default 1e-1
     noise_F = 1e-1 # default 1e-1
     noise_A, noise_B, noise_F = 0, 0, 0 # Perfect knowledge of system matrices
-    ubnd = 2e-1 # default 1e-1
+    ubnd = 3e-1 # 2e-1 in Zhao et al., 3e-1 in Venkat et al., 0.25 in Mohamed et al., 3e-1 in Ma et al.
+    # GRC_l = 0.00017 # p.u/s in Yan et al.
+    GRC_l = 0.0017 # p.u/s in Ma et al., Zhao et al., Liao et al.
 
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(
         # [[-0.2, -1e3, -1e3, -1e3], [0.2, 1e3, 1e3, 1e3]]
-        [[-0.2, -0.3, -0.5, -0.1], [0.2, 0.3, 0.5, 0.1]]
+        # [[-0.2, -0.3, -0.5, -0.1], [0.2, 0.3, 0.5, 0.1]]
+        [[-0.2, -1, -1, -0.1], [0.2, 1, 1, 0.1]] # with GRC now
     )  # local state bounds x_bnd[0] <= x <= x_bnd[1]
     u_bnd_l: ClassVar[np.ndarray] = np.array(
         [[-ubnd], [ubnd]] # Yan: GRC: |u| <= 2e-4   =/=  input constraint!
@@ -163,7 +167,14 @@ class Model:
             self.A_c_l,  # n by n matrix with coupling matrices (which are nx_l by nx_l)
             [self.F_l_1, self.F_l_2, self.F_l_3],
             self.ts,
-        )        
+        )
+        self.A_env, self.B_env, self.F_env =   self.centralized_dynamics_from_local(
+            [self.A_l_1, self.A_l_2, self.A_l_3],
+            [self.B_l_1, self.B_l_2, self.B_l_3],
+            self.A_c_l,  
+            [self.F_l_1, self.F_l_2, self.F_l_3],
+            self.ts_env, # different sampling time for the env
+        )      
 
     def centralized_dynamics_from_local(
         self,
