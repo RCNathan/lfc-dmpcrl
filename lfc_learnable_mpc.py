@@ -246,7 +246,7 @@ class CentralizedMpc(LearnableMpc):
         )
         
         # solver
-        solver = "qpoases" # qpoases or ipopt
+        solver = "ipopt" # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
@@ -343,13 +343,13 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         )  # store the bits of x that are couplings in a list for ease of access
 
         # dynamics - added manually due to coupling
-        for k in range(N):
-            coup = cs.SX.zeros(self.nx_l, 1)
+        coup = [cs.SX.zeros(self.nx_l, 1) for _ in range(N)]
+        for k in range(N): # N: horizon
             for i in range(num_neighbours):  # get coupling expression
-                coup += A_c_list[i] @ x_c_list[i][:, [k]]
+                coup[k] += A_c_list[i] @ x_c_list[i][:, [k]]
             self.constraint(
                 f"dynam_{k}",
-                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl + coup + b, 
+                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl + coup[k] + b, 
                 "==",
                 x[:, [k + 1]],
             )

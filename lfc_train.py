@@ -154,7 +154,7 @@ def train(
             )
         ),
         level=logging.DEBUG,
-        log_frequencies={"on_timestep_end": 100},
+        log_frequencies={"on_timestep_end": 1},
     )
     agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
 
@@ -257,7 +257,7 @@ make_plots = True
 ### SCENARIO 0: no stochasticities ###
 
 # cent no learn, filename = cent_no_learning_5ep_scenario_0
-train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10)
+# train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10)
 
 # cent learning 
 # train(centralized_flag=True, learning_flag=True, numEpisodes=5, numSteps=500, prediction_horizon=10, 
@@ -269,5 +269,6 @@ train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=500, p
 
 
 # distr working pls
-# train(centralized_flag=False, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10)
+train(centralized_flag=False, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10,
+      admm_iters=10, rho=0.5)
 # filename = cent_no_learning_1ep_scenario_0, return[460.72410733]
