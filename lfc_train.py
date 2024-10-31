@@ -275,16 +275,16 @@ make_plots = True
 
 
 # distr no learn
-train(
-    centralized_flag=False,
-    learning_flag=False,
-    numEpisodes=1,
-    numSteps=500,
-    prediction_horizon=10,
-    admm_iters=10,
-    rho=1,
-    consensus_iters=10,
-)
+# train(
+#     centralized_flag=False,
+#     learning_flag=False,
+#     numEpisodes=1,
+#     numSteps=500,
+#     prediction_horizon=10,
+#     admm_iters=1000,
+#     rho=1,
+#     consensus_iters=50,
+# )
 # default: admm_iters=500, rho=0.5, consensus_iters=100 | so far, rho=1 has smallest error in dist obj func vals
 
 # distr learning
@@ -309,7 +309,7 @@ train(
 ### SCENARIO 1: noise on load disturbance ###
 
 # cent, no learn
-# train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10)
+train(centralized_flag=True, learning_flag=False, numEpisodes=5, numSteps=500, prediction_horizon=10)
 
 # cent, learn
 # train(centralized_flag=True, learning_flag=True, numEpisodes=20, numSteps=500, prediction_horizon=10,

@@ -1,13 +1,15 @@
-from casadi.casadi import DM
 from csnlp import Solution
 from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
 from gymnasium import Env
 from gymnasium.spaces import Box
 from numpy import ndarray
 import pickle
+import numpy as np
+import casadi as cs
 
 from lfc_env import LtiSystem
 from plot_running import plotRunning
+from plot_dual_vars import plotDualVars
 
 from typing import Any, Callable, Literal, Optional, TypeVar, Union
 
@@ -18,10 +20,9 @@ ActType = TypeVar("ActType")
 class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
     """A coordinator for LSTD-Q learning agents - for the Lfc problem. This agent hence handles load changes."""
 
-    saveRunningData = (
-        True  # toggle whether during runtime, every x steps, data gets saved.
-    )
-    plotRunningFlag = True  # toggle whether plotted immediately as well. note: not sure if this causes multiple terminals
+    saveRunningData = True  # toggle whether during runtime, every x steps, data gets saved.
+    plotRunningFlag = False  # toggle whether plotted immediately as well. note: not sure if this causes multiple terminals
+    plotDualVarsFlag = True # toggle whether dual vars are being plotted at every timestep.
 
     def on_timestep_end(
         self, env: Env[ObsType, ActType], episode: int, timestep: int
@@ -86,6 +87,55 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
         return super().on_mpc_failure(episode, timestep, status, raises)
 
     def distributed_state_value(
-        self, state: ndarray, deterministic=False, action_space: Box | None = None
-    ) -> tuple[DM, list[Solution]]:
-        return super().distributed_state_value(state, deterministic, action_space)
+        self,
+        state: np.ndarray,
+        deterministic=False,
+        action_space: Box | None = None,
+    ) -> tuple[cs.DM, list[Solution]]:
+        """Computes the distributed state value function using ADMM.
+
+        Parameters
+        ----------
+        state : cs.DM
+            The centralized state for which to compute the value function.
+        deterministic : bool, optional
+            If `True`, the cost of the MPC is perturbed according to the exploration
+            strategy to induce some exploratory behaviour. Otherwise, no perturbation is
+            performed. By default, `deterministic=False`."""
+        (
+            local_actions,
+            local_sols,
+            info_dict,
+        ) = self.admm_coordinator.solve_admm(
+            state, deterministic=deterministic, action_space=action_space
+        )
+        if self.plotDualVarsFlag:
+            # Save a pkl (to make the plot func)
+            # with open("dualvarstest.pkl", "wb",) as file:
+            #         pickle.dump(
+            #             {"info_dict": info_dict,}, file,
+            #         )
+            plotDualVars(info_dict)
+        return cs.DM(local_actions), local_sols
+
+    def distributed_action_value(
+        self, state: np.ndarray, action: cs.DM
+    ) -> list[Solution]:
+        """Computes the distributed action value function using ADMM.
+
+        Parameters
+        ----------
+        state : cs.DM
+            The centralized state for which to compute the value function.
+        action : cs.DM
+            The centralized action for which to compute the value function.
+        deterministic : bool, optional
+            If `True`, the cost of the MPC is perturbed according to the exploration
+            strategy to induce some exploratory behaviour. Otherwise, no perturbation is
+            performed. By default, `deterministic=False`."""
+        (_, local_sols, info_dict) = self.admm_coordinator.solve_admm(
+            state, action=action, deterministic=True
+        )
+        if self.plotDualVarsFlag:
+            plotDualVars(info_dict)
+        return local_sols
