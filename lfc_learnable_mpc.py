@@ -16,7 +16,7 @@ import control as ct
 class LearnableMpc(Mpc[cs.SX]):
     """Abstract class for learnable MPC controllers. Implemented by centralized and distributed child classes"""
 
-    discount_factor = 1 # was 0.9
+    discount_factor = 1  # was 0.9
 
     def __init__(self, model: Model) -> None:
         """Initializes the learnable MPC controller.
@@ -32,11 +32,8 @@ class LearnableMpc(Mpc[cs.SX]):
         self.nx_l, self.nu_l = model.nx_l, model.nu_l
         self.nx, self.nu = model.n * model.nx_l, model.n * model.nu_l
         self.x_bnd_l, self.u_bnd_l = model.x_bnd_l, model.u_bnd_l
-        self.x_bnd  = np.tile(
-            model.x_bnd_l, model.n)
-        self.u_bnd = np.tile(
-            model.u_bnd_l, model.n
-        )
+        self.x_bnd = np.tile(model.x_bnd_l, model.n)
+        self.u_bnd = np.tile(model.u_bnd_l, model.n)
         self.w_l = np.array(
             [[1e3, 1e1, 1e1, 1e1]]  # TODO: change
         )  # penalty weight for slack variables!
@@ -45,34 +42,31 @@ class LearnableMpc(Mpc[cs.SX]):
         self.w_grc = np.tile(self.w_grc_l, (1, self.n))
         self.adj = model.adj
         self.GRC_l = model.GRC_l
-        self.GRC = np.tile(
-            model.GRC_l, model.n
-        ).reshape(-1, 1)
+        self.GRC = np.tile(model.GRC_l, model.n).reshape(-1, 1)
 
         # standard learnable parameters dictionary for local agent - initial values
         self.learnable_pars_init_local = {
             "V0": np.zeros((1, 1)),
             "x_lb": np.reshape(
                 # [-0.2, -0.3, -0.1, -0.1], (-1, 1)
-                [0, 0, 0, 0], (-1, 1)
+                [0, 0, 0, 0],
+                (-1, 1),
             ),  # how does this compare with ub/lb in model? -> this is learned. TODO: check below statement
             # I think makes more sense to put at 0 initially? automatica: [0, -1]' + x_lb - sigma <= x <= [1, 1]' + x_ub + sigma
             "x_ub": np.reshape(
                 # [0.2, 0.3, 0.1, 0.1], (-1, 1)),
-                [0, 0, 0, 0], (-1, 1)),
+                [0, 0, 0, 0],
+                (-1, 1),
+            ),
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
             "Qx": np.array(
-            [[1e2, 0, 0, 0], 
-             [0, 1e0, 0, 0],
-             [0, 0, 1e1, 0],
-             [0, 0, 0, 2e1]]), # quadratic cost on states (local)
-            "Qu": np.array([0.1]),
+                [[1e2, 0, 0, 0], [0, 1e0, 0, 0], [0, 0, 1e1, 0], [0, 0, 0, 2e1]]
+            ),  # quadratic cost on states (local)
+            "Qu": np.array([0.5]),
             "Qf": np.array(
-            [[1e2, 0, 0, 0], 
-             [0, 1e0, 0, 0],
-             [0, 0, 1e1, 0],
-             [0, 0, 0, 2e1]]) # quadratic terminal penalty
+                [[1e2, 0, 0, 0], [0, 1e0, 0, 0], [0, 0, 1e1, 0], [0, 0, 0, 2e1]]
+            ),  # quadratic terminal penalty
         }
 
 
@@ -114,28 +108,22 @@ class CentralizedMpc(LearnableMpc):
                     self.parameter(f"A_c_{i}_{j}", (self.nx_l, self.nx_l))
                     if self.adj[i, j]
                     else cs.SX.zeros((self.nx_l, self.nx_l))
-                )  
+                )
                 for j in range(self.n)
             ]
             for i in range(self.n)
         ]
-        b_list = [
-            self.parameter(f"b_{i}", (self.nx_l, 1)) for i in range(self.n)
-        ] 
+        b_list = [self.parameter(f"b_{i}", (self.nx_l, 1)) for i in range(self.n)]
 
         # cost parameters
-        V0_list = [
-            self.parameter(f"V0_{i}", (1,)) for i in range(self.n)
-        ]  
+        V0_list = [self.parameter(f"V0_{i}", (1,)) for i in range(self.n)]
         f_list = [
             self.parameter(f"f_{i}", (self.nx_l + self.nu_l, 1)) for i in range(self.n)
-        ] 
+        ]
         Qx_list = [
             self.parameter(f"Qx_{i}", (self.nx_l, self.nx_l)) for i in range(self.n)
         ]
-        Qu_list= [
-            self.parameter(f"Qu_{i}", (1,)) for i in range(self.n)
-        ]
+        Qu_list = [self.parameter(f"Qu_{i}", (1,)) for i in range(self.n)]
         Qf_list = [
             self.parameter(f"Qf_{i}", (self.nx_l, self.nx_l)) for i in range(self.n)
         ]
@@ -161,18 +149,16 @@ class CentralizedMpc(LearnableMpc):
         self.learnable_pars_init.update(
             {f"A_{i}": A_l_inac[i] for i in range(self.n)}
         )  # different inaccurate guesses now
-        self.learnable_pars_init.update(
-            {f"B_{i}": B_l_inac[i] for i in range(self.n)})
+        self.learnable_pars_init.update({f"B_{i}": B_l_inac[i] for i in range(self.n)})
         self.learnable_pars_init.update(
             {
-                f"A_c_{i}_{j}": A_c_l_inac[i][j] 
+                f"A_c_{i}_{j}": A_c_l_inac[i][j]
                 for i in range(self.n)
                 for j in range(self.n)
-                if self.adj[i, j] 
+                if self.adj[i, j]
             }
         )
-        self.learnable_pars_init.update(
-            {f"F_{i}": F_l_inac[i] for i in range(self.n)})
+        self.learnable_pars_init.update({f"F_{i}": F_l_inac[i] for i in range(self.n)})
 
         # concat some params for use in cost and constraint expressions
         V0 = cs.vcat(V0_list)
@@ -182,18 +168,18 @@ class CentralizedMpc(LearnableMpc):
         f = cs.vcat(f_list)
         # Qu = cs.vcat(Qu_list)
         Qu = block_diag(*Qu_list)
-        Qx = block_diag(*Qx_list) 
-            # -> uses custom block_diag func and *unpacking operator; == block_diag(Qx_list[0], Qx_list[1], Qx_list[2])
+        Qx = block_diag(*Qx_list)
+        # -> uses custom block_diag func and *unpacking operator; == block_diag(Qx_list[0], Qx_list[1], Qx_list[2])
         Qf = block_diag(*Qf_list)
 
-        # get centralized symbolic dynamics 
+        # get centralized symbolic dynamics
         A, B, F = model.centralized_dynamics_from_local(
             A_list, B_list, A_c_list, F_list, self.ts
         )  # A_c_list has zero's in formulation too.
 
         # P is solution of DARE, used in terminal cost - ct.dare does not support casadi, so P is fixed.
         # Qx_dare = block_diag(self.learnable_pars_init_local['Qx'], n=3)
-        # Qu_dare = block_diag(np.array([self.learnable_pars_init_local['Qu']]), n=3) 
+        # Qu_dare = block_diag(np.array([self.learnable_pars_init_local['Qu']]), n=3)
         # P, _, K = ct.dare(model.A, model.B, Qx_dare, Qu_dare) # P is the solution, K the gain matrix, L the closed loop eigenvalues (of [A - BK])
 
         # variables (state, action, slack) | optimized over in mpc
@@ -216,37 +202,49 @@ class CentralizedMpc(LearnableMpc):
         # dynamics
         self.set_dynamics(
             # lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1
-            lambda x, u: A @ x + B @ u + F @ Pl + b, n_in=2, n_out=1
-        )  
+            lambda x, u: A @ x + B @ u + F @ Pl + b,
+            n_in=2,
+            n_out=1,
+        )
 
         # other constraints
         self.constraint("x_lb", self.x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])
         self.constraint("x_ub", x[:, 1:], "<=", self.x_bnd[1].reshape(-1, 1) + x_ub + s)
-        self.constraint("GRC_lb",  -self.GRC - s_grc, "<=", 1/self.ts * (x[[1,5,9], 1:] - x[[1,5,9], :-1]), soft=False) # generation-rate constraint
-        self.constraint("GRC_ub",  1/self.ts * (x[[1,5,9], 1:] - x[[1,5,9], :-1]),  "<=", self.GRC + s_grc, soft=False) # generation-rate constraint
+        self.constraint(
+            "GRC_lb",
+            -self.GRC - s_grc,
+            "<=",
+            1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
+            soft=False,
+        )  # generation-rate constraint
+        self.constraint(
+            "GRC_ub",
+            1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
+            "<=",
+            self.GRC + s_grc,
+            soft=False,
+        )  # generation-rate constraint
 
         # objective | x.shape = (nx, N+1), u.shape = (nu, N)    |   sum1 is row-sum, sum2 is col-sum
         gammapowers = cs.DM(gamma ** np.arange(N)).T
-        self.minimize( 
-            cs.sum1(V0) 
-            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u)) # f'([x, u]')
+        self.minimize(
+            cs.sum1(V0)
+            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))  # f'([x, u]')
             + cs.sum2(
-                gammapowers * (
+                gammapowers
+                * (
                     # Qu.T @ u**2 +
-                    cs.sum1(
-                        u.T @ Qu @ u +
-                        x[:, :-1].T @ Qx @ x[:, :-1] # x' Q_x x 
-                    )
+                    cs.sum1(u.T @ Qu @ u + x[:, :-1].T @ Qx @ x[:, :-1])  # x' Q_x x
                 )
-            ) 
-            + cs.sum1(x[:, -1].T @ Qf @ x[:, -1]) # x(N)' Qx x(N)) 
+            )
+            + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
             # + cs.sum1(x[:, -1].T @ P @ x[:, -1]) # x(N)' P x(N)), where P is solution of the DARE
-            + cs.sum2(self.w @ s) # punishes slack variables
-            + cs.sum2(self.w_grc @ s_grc) # punishes slacks on grc
+            + cs.sum2(self.w @ s)  # punishes slack variables
+            + cs.sum2(self.w_grc @ s_grc)  # punishes slacks on grc
         )
-        
+
         # solver
-        solver = "ipopt" # qpoases or ipopt
+        solver = "qpoases"  # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
@@ -297,35 +295,37 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         B = self.parameter("B", (self.nx_l, self.nu_l))
         F = self.parameter("F", (self.nx_l, self.nu_l))
         A_c_list = [
-            self.parameter(f"A_c_{j}", (self.nx_l, self.nx_l)) # always A_c_0, A_c_1 right
+            self.parameter(f"A_c_{j}", (self.nx_l, self.nx_l))
             for j in G[global_index]
-            if j != global_index 
+            if j != global_index
         ]
-        Qx = self.parameter("Qx", (self.nx_l, self.nx_l)) 
-        Qf = self.parameter("Qf", (self.nx_l, self.nx_l)) 
+        Qx = self.parameter("Qx", (self.nx_l, self.nx_l))
+        Qf = self.parameter("Qf", (self.nx_l, self.nx_l))
         Qu = self.parameter("Qu", (1,))
 
         # dictionary containing initial values for local learnable parameters
-        self.learnable_pars_init = self.learnable_pars_init_local.copy() # copies from the LearnableMPC; V0, b, f, etc.
-        self.learnable_pars_init["A"] = model.A_l_inac[global_index] 
+        self.learnable_pars_init = (
+            self.learnable_pars_init_local.copy()
+        )  # copies from the LearnableMPC; V0, b, f, etc.
+        self.learnable_pars_init["A"] = model.A_l_inac[global_index]
         self.learnable_pars_init["B"] = model.B_l_inac[global_index]
         self.learnable_pars_init["F"] = model.F_l_inac[global_index]
         self.learnable_pars_init.update(
             # gets Ac[i][j] from model, when i=/=j, (i,j) in adj(i,j), and where i is local MPCs own global index.
             {
-                f"A_c_{j}": model.A_c_l_inac[global_index][j] 
+                f"A_c_{j}": model.A_c_l_inac[global_index][j]
                 for j in G[global_index]
-                if j != global_index 
-            } # note: name corresponds to neighbours numbers, i.e for agent 1 (i = 0), only Ac1, Ac2 exist
+                if j != global_index
+            }  # note: name corresponds to neighbours numbers, i.e for agent 1 (i = 0), only Ac1, Ac2 exist
         )
 
         # Fixed parameters: load
         # Pl = self.parameter(f"Pl_{global_index}", (1, 1))  # creates parameter obj for local load based on global index.
-        Pl = self.parameter("Pl", (1,1))
+        Pl = self.parameter("Pl", (1, 1))
         self.fixed_pars_init.update(
             # {f"Pl_{global_index}": 0.0}
             {"Pl": 0.0}
-        ) # value changed in lfc_agent
+        )  # value changed in lfc_agent
 
         # variables (state+coupling, action, slack)
         x, x_c = self.augmented_state(num_neighbours, my_index, self.nx_l)
@@ -344,13 +344,13 @@ class LocalMpc(MpcAdmm, LearnableMpc):
 
         # dynamics - added manually due to coupling
         # coup = [cs.SX.zeros(self.nx_l, 1) for _ in range(N)]
-        for k in range(N): # N: horizon
+        for k in range(N):  # N: horizon
             coup = cs.SX.zeros(self.nx_l, 1)
             for i in range(num_neighbours):  # get coupling expression
                 coup += A_c_list[i] @ x_c_list[i][:, [k]]
             self.constraint(
                 f"dynam_{k}",
-                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl + coup + b, 
+                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl + coup + b,
                 "==",
                 x[:, [k + 1]],
             )
@@ -358,8 +358,20 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         # other constraints
         self.constraint(f"x_lb", self.x_bnd_l[0] + x_lb - s, "<=", x[:, 1:])
         self.constraint(f"x_ub", x[:, 1:], "<=", self.x_bnd_l[1] + x_ub + s)
-        self.constraint("GRC_lb", -self.GRC_l -s_grc, "<=", 1/self.ts * (x[1, 1:] - x[1, :-1]), soft=False) # grc constraint
-        self.constraint("GRC_ub", 1/self.ts * (x[1, 1:] - x[1, :-1]), "<=", self.GRC_l + s_grc, soft=False) # grc constraint
+        self.constraint(
+            "GRC_lb",
+            -self.GRC_l - s_grc,
+            "<=",
+            1 / self.ts * (x[1, 1:] - x[1, :-1]),
+            soft=False,
+        )  # grc constraint
+        self.constraint(
+            "GRC_ub",
+            1 / self.ts * (x[1, 1:] - x[1, :-1]),
+            "<=",
+            self.GRC_l + s_grc,
+            soft=False,
+        )  # grc constraint
 
         # objective
         gammapowers = cs.DM(gamma ** np.arange(N)).T
@@ -367,21 +379,19 @@ class LocalMpc(MpcAdmm, LearnableMpc):
             V0
             + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
             + cs.sum2(
-                gammapowers * (
+                gammapowers
+                * (
                     # Qu.T @ u**2 + # u' Q_u u
-                    cs.sum1(
-                        u.T @ Qu @ u +
-                        x[:, :-1].T @ Qx @ x[:, :-1] # x' Q_x x
-                    )
+                    cs.sum1(u.T @ Qu @ u + x[:, :-1].T @ Qx @ x[:, :-1])  # x' Q_x x
                 )
             )
-            + cs.sum1(x[:, -1].T @ Qf @ x[:, -1]) # x(N)' Qx x(N))
-            + cs.sum2(self.w_l @ s) # punishes slack variables
-            + cs.sum2(self.w_grc_l @ s_grc) # punishes slacks on grc
+            + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
+            + cs.sum2(self.w_l @ s)  # punishes slack variables
+            + cs.sum2(self.w_grc_l @ s_grc)  # punishes slacks on grc
         )
 
         # solver
-        solver = "ipopt"
+        solver = "qpoases"
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 

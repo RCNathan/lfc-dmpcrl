@@ -11,6 +11,9 @@ class Model:
     """Class to store model information for the system."""
 
     print("Model instance created")
+    discretizationFlag: ClassVar[str] = (
+        "FE"  # change discretization. Options: 'ZOH' or 'FE' or 'None'
+    )
     n: ClassVar[int] = 3  # number of agents
     nx_l: ClassVar[int] = 4  # local state dimension
     nu_l: ClassVar[int] = 1  # local control dimension
@@ -26,7 +29,6 @@ class Model:
     ubnd = 3e-1  # 2e-1 in Zhao et al., 3e-1 in Venkat et al., 0.25 in Mohamed et al., 3e-1 in Ma et al.
     # GRC_l = 0.00017 # p.u/s in Yan et al.
     GRC_l = 0.0017  # p.u/s in Ma et al., Zhao et al., Liao et al.
-    # GRC_l = 0.017
 
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(
@@ -134,73 +136,54 @@ class Model:
     )  # local coupling matrix A_23 = A_32
     A23[3, 0] = -2 * np.pi * T23
 
-    # Discretize the dynamics using Forward Euler. This way, the centralized, distributed and inaccurate guesses are the same.
-    A_l_1d, B_l_1d, F_l_1d = lfc_forward_euler(A_l_1, B_l_1, F_l_1, ts)
-    A_l_2d, B_l_2d, F_l_2d = lfc_forward_euler(A_l_2, B_l_2, F_l_2, ts)
-    A_l_3d, B_l_3d, F_l_3d = lfc_forward_euler(A_l_3, B_l_3, F_l_3, ts)
-    A12d, A13d, A23d = ts * A12, ts * A13, ts * A23
-
-    # env has different ts_env
-    A_l_1_env, B_l_1_env, F_l_1_env = lfc_forward_euler(A_l_1, B_l_1, F_l_1, ts_env)
-    A_l_2_env, B_l_2_env, F_l_2_env = lfc_forward_euler(A_l_2, B_l_2, F_l_2, ts_env)
-    A_l_3_env, B_l_3_env, F_l_3_env = lfc_forward_euler(A_l_3, B_l_3, F_l_3, ts_env)
-    A12_env, A13_env, A23_env = ts_env * A12, ts_env * A13, ts_env * A23
-
-    # Construct coupling matrix after discretization: combine into one matrix (for ease of change later)
-    A_c_ld = np.array(
-        [
-            [np.zeros((4, 4)), A12d, A13d],
-            [A12d, np.zeros((4, 4)), A23d],
-            [A13d, A23d, np.zeros((4, 4))],
-        ]
-    )  # and, below, for the env (different ts_env)
-    A_c_l_env = np.array(
-        [
-            [np.zeros((4, 4)), A12_env, A13_env],
-            [A12_env, np.zeros((4, 4)), A23_env],
-            [A13_env, A23_env, np.zeros((4, 4))],
-        ]
-    )  # zeros are placeholders/not used
-
-    # adding NOISE | starting point (inaccurate guess) for learning (excluding learnable params)
+    # starting point (inaccurate guess) for learning (excluding learnable params)
     np.random.seed(
         420
     )  # set seed for consistency/repeatability | 2*rand-1 returns uniform distribution in [-1, 1)
     A_l_inac: ClassVar[np.ndarray[np.ndarray]] = noise_A * (
         2 * np.random.random((3, 4, 4)) - 1
     ) + np.array(
-        [A_l_1d, A_l_2d, A_l_3d]
+        [A_l_1, A_l_2, A_l_3]
     )  # inaccurate local state-space matrix A
     B_l_inac: ClassVar[np.ndarray[np.ndarray]] = noise_B * (
         2 * np.random.random((3, 4, 1)) - 1
     ) + np.array(
-        [B_l_1d, B_l_2d, B_l_3d]
+        [B_l_1, B_l_2, B_l_3]
     )  # inaccurate local state-space matrix B
     F_l_inac: ClassVar[np.ndarray[np.ndarray]] = noise_F * (
         2 * np.random.random((3, 4, 1)) - 1
     ) + np.array(
-        [F_l_1d, F_l_2d, F_l_3d]
+        [F_l_1, F_l_2, F_l_3]
     )  # inaccurate local state-space matrix F
+
+    # Coupling matrix: after discretizatoin: combine into one matrix (for ease of change later)
+    A_c_l = np.array(
+        [
+            [np.zeros((4, 4)), A12, A13],
+            [A12, np.zeros((4, 4)), A23],
+            [A13, A23, np.zeros((4, 4))],
+        ]
+    )  # zeros are placeholders/not used
     A_c_l_inac: ClassVar[np.ndarray[np.ndarray[np.ndarray]]] = 0 * np.random.random(
         (3, 3, 4, 4)
     ) + (
-        A_c_ld
+        A_c_l
     )  # inaccurate local coupling matrix A_c
 
     def __init__(self):
         """Initializes the model."""
         self.A, self.B, self.F = self.centralized_dynamics_from_local(
-            [self.A_l_1d, self.A_l_2d, self.A_l_3d],
-            [self.B_l_1d, self.B_l_2d, self.B_l_3d],
-            self.A_c_ld,  # n by n matrix with coupling matrices (which are nx_l by nx_l)
-            [self.F_l_1d, self.F_l_2d, self.F_l_3d],
+            [self.A_l_1, self.A_l_2, self.A_l_3],
+            [self.B_l_1, self.B_l_2, self.B_l_3],
+            self.A_c_l,  # n by n matrix with coupling matrices (which are nx_l by nx_l)
+            [self.F_l_1, self.F_l_2, self.F_l_3],
             self.ts,
         )
         self.A_env, self.B_env, self.F_env = self.centralized_dynamics_from_local(
-            [self.A_l_1_env, self.A_l_2_env, self.A_l_3_env],
-            [self.B_l_1_env, self.B_l_2_env, self.B_l_3_env],
-            self.A_c_l_env,
-            [self.F_l_1_env, self.F_l_2_env, self.F_l_3_env],
+            [self.A_l_1, self.A_l_2, self.A_l_3],
+            [self.B_l_1, self.B_l_2, self.B_l_3],
+            self.A_c_l,
+            [self.F_l_1, self.F_l_2, self.F_l_3],
             self.ts_env,  # different sampling time for the env
         )
 
@@ -225,7 +208,7 @@ class Model:
         F_list: list[npndarray | cs.SX]
             List of local state-space matrices F.
         ts: float
-            sampling time for ZOH discretization. [NOT USED]
+            sampling time for ZOH discretization.
 
         Returns
         -------
@@ -287,10 +270,26 @@ class Model:
                 for i in range(self.n)
             ]
         )
-        return A, B, F
+        #  Toggle between ZOH or FE discretization
+        if self.discretizationFlag == "ZOH":
+            # using Zero-Order Hold | expm(ts*M) of augmented matrix M = [A, I; 0, 0] actually is [expm(A*ts), int_0^ts(expm(A*ts)); 0, I]!
+            Ad, Bd, Fd = lfc_zero_order_hold(A, B, F, ts)
+            print("Using Zero-Order Hold discretization")
+        elif self.discretizationFlag == "FE":
+            # using forward Euler | centralized: x+ = (I + ts*A)x + (ts*B)u | local:  xi+ = (I + ts*Ai)xi + (ts*Bi)ui + (ts*Aij)xj
+            Ad, Bd, Fd = lfc_forward_euler(A, B, F, ts)
+            print("Using Forward Euler discretization")
+        elif self.discretizationFlag == "None":
+            Ad, Bd, Fd = A, B, F
+            print("Not using any discretization (for debugging purposes only!)")
+        else:
+            raise Exception(
+                "No valid option for discretization given. Choose between 'ZOH' or 'FE' for Zero-Order Hold or Forward Euler, respectively."
+            )
+        return Ad, Bd, Fd
 
 
-# m = Model()
+m = Model()
 # # print("\nLocal A matrix for one agent/area: \n", m.A_l_1)
 # print("Sampling time {} s".format(m.ts))
 
@@ -301,4 +300,4 @@ class Model:
 #     print("Rank is smaller than dimension, meaning system (A,B) has uncontrollable modes")
 # # eigvals, eigvec = np.linalg.eig(m.A)
 
-# print("Debug")
+print("Debug")

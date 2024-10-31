@@ -1,9 +1,10 @@
-import numpy as np 
+import numpy as np
 import casadi as cs
 
+
 def block_diag(
-    *arrays : np.ndarray | cs.SX, 
-    n : int = 0,
+    *arrays: np.ndarray | cs.SX,
+    n: int = 0,
 ) -> np.ndarray | cs.SX:
     """
     Returns block-diagonal matrix using either
@@ -12,24 +13,24 @@ def block_diag(
     Works with both numpy and CasADi symbolic matrices.
     """
     # using n copies of first entry
-    if n != 0: 
+    if n != 0:
         if type(n) != int:
             raise Exception("Use an integer for n")
-        
+
         if isinstance(arrays[0], np.ndarray):
             # for np.ndarrays
             total_shape = np.sum(np.array([arrays[0].shape for i in range(n)]), axis=0)
-            diag = np.zeros(total_shape, dtype=arrays[0].dtype) 
+            diag = np.zeros(total_shape, dtype=arrays[0].dtype)
 
             row, col = 0, 0
             for _ in range(n):
-                r,c = arrays[0].shape
-                diag[row:row+r, col:col+c] = arrays[0]
+                r, c = arrays[0].shape
+                diag[row : row + r, col : col + c] = arrays[0]
                 row += r
                 col += c
         elif isinstance(arrays[0], cs.SX):
             # for cs.SX symbolic matrices
-            diag = None # Initialize empty CasADi matrix
+            diag = None  # Initialize empty CasADi matrix
             row, col = 0, 0
             for _ in range(n):
                 if diag is None:
@@ -37,8 +38,8 @@ def block_diag(
                 else:
                     # Vertically concatenate zeros and arrays[0] for a block structure
                     diag = cs.diagcat(diag, arrays[0])
-    # using all entries  
-    else: 
+    # using all entries
+    else:
         if isinstance(arrays[0], np.ndarray):
             # determine total shape
             shapes = np.array([a.shape for a in arrays])
@@ -49,8 +50,8 @@ def block_diag(
 
             row, col = 0, 0
             for a in arrays:
-                r,c = a.shape
-                diag[row:row+r, col:col+c] = a
+                r, c = a.shape
+                diag[row : row + r, col : col + c] = a
                 row += r
                 col += c
         elif isinstance(arrays[0], cs.SX):
@@ -61,7 +62,8 @@ def block_diag(
                     diag = a  # Initialize with the first matrix
                 else:
                     diag = cs.diagcat(diag, a)
-    return diag 
+    return diag
+
 
 # # Example usage with CasADi SX symbolic matrices
 # A = cs.SX.sym('A', 2, 2)

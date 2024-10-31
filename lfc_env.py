@@ -31,25 +31,25 @@ class LtiSystem(
         self.nx = model.n * model.nx_l
         self.nx_l = model.nx_l
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
-        self.ts_env = model.ts_env # different sampling time for env
-        self.ts = model.ts # needed to decide how many times to run loop
+        self.ts_env = model.ts_env  # different sampling time for env
+        self.ts = model.ts  # needed to decide how many times to run loop
         self.w = np.tile(
             [[5e2, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
-        self.w_grc = np.tile([0, 1e4, 0, 0], (1, self.n)) # weight on slacks for grc violation
-            # note: with the way it's set up with dist_cost, I pass entire state (12) or local state (4), 
-            # making this the easiest way to implement 
+        self.w_grc = np.tile(
+            [0, 1e4, 0, 0], (1, self.n)
+        )  # weight on slacks for grc violation
+        # note: with the way it's set up with dist_cost, I pass entire state (12) or local state (4),
+        # making this the easiest way to implement
         self.grc = model.GRC_l
 
         # Initialize step_counter, load and load_noise
-        self.load = np.array([0.0, 0.0, 0.0]).reshape(
-            self.n, -1
-        )
-        self.load_noise = self.load # initialize also at 0 
-        self.step_counter = 0 
+        self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)
+        self.load_noise = self.load  # initialize also at 0
+        self.step_counter = 0
         np.random.seed(1)
 
-        # Saving data on load and noise for plotting 
+        # Saving data on load and noise for plotting
         self.loads: list = []
         self.load_noises: list = []
 
@@ -76,19 +76,22 @@ class LtiSystem(
         if options is not None and "x0" in options:
             self.x = options["x0"]
         else:  # Remember: n:num_agents(=3), nx_l:local_state_dim(=4), nx:n*nx_l(=12) -> reshaping is transposing
-            self.x = np.hstack([[0.1, 0, 0, 0], # x0 for agent 1
-                                [0.1, 0, 0, 0], # x0 for agent 2
-                                [0.1, 0, 0, 0], # x0 for agent 3
-                                ]).reshape(self.nx, 1)
+            self.x = np.hstack(
+                [
+                    [0.1, 0, 0, 0],  # x0 for agent 1
+                    [0.1, 0, 0, 0],  # x0 for agent 2
+                    [0.1, 0, 0, 0],  # x0 for agent 3
+                ]
+            ).reshape(self.nx, 1)
 
         #  Fixed parameters: time, load, load-noise
         self.step_counter = 0
         self.load = np.array([0.0, 0.0, 0.0]).reshape(
             self.n, -1
-        ) # TODO: decide: does this continue past episodes? or reset each time? <- probably reset
+        )  # TODO: decide: does this continue past episodes? or reset each time? <- probably reset
         self.load_noise = np.array([0.0, 0.0, 0.0]).reshape(
             self.n, -1
-        ) # TODO: decide: does this continue past episodes? or reset each time? <- probably continue
+        )  # TODO: decide: does this continue past episodes? or reset each time? <- probably continue
 
         return self.x, {}
 
@@ -133,13 +136,19 @@ class LtiSystem(
             The stage cost."""
         # replaced by ||s||^2_{Q_s} + ||a||^2_{Q_a} + w*(constraint violations)
         return float(
-            state.T.squeeze() @ Qs @ state.squeeze() # s'Qs: quadratic
-            + Qa * np.square(action).sum() # 0.5*a^2
+            state.T.squeeze() @ Qs @ state.squeeze()  # s'Qs: quadratic
+            + Qa * np.square(action).sum()  # 0.5*a^2
             # necessary to punish constraint violation
-            + w @ np.maximum(0, lb[:, np.newaxis] - state) # = 0 if x > x_lower
-            + w @ np.maximum(0, state - ub[:, np.newaxis]) # = 0 if x < x_upper            
-            + w_grc @ np.maximum(0, statekp1-state - self.grc) # = 0 if x_dot > -grc    or  -grc < x_dot
-            + w_grc @ np.maximum(0, -(statekp1-state) - self.grc) # = 0 if x_dot < grc, nonzero if x_dot > grc
+            + w @ np.maximum(0, lb[:, np.newaxis] - state)  # = 0 if x > x_lower
+            + w @ np.maximum(0, state - ub[:, np.newaxis])  # = 0 if x < x_upper
+            + w_grc
+            @ np.maximum(
+                0, statekp1 - state - self.grc
+            )  # = 0 if x_dot > -grc    or  -grc < x_dot
+            + w_grc
+            @ np.maximum(
+                0, -(statekp1 - state) - self.grc
+            )  # = 0 if x_dot < grc, nonzero if x_dot > grc
         )
 
     def get_dist_stage_cost(  # distributed
@@ -188,10 +197,20 @@ class LtiSystem(
             np.split(lb, self.n),
             np.split(ub, self.n),
             np.split(w, self.n, axis=1),
-            np.split(w_grc, self.n, axis=1)
+            np.split(w_grc, self.n, axis=1),
         )  # break into local pieces
         return [
-            self.get_stage_cost(x_l[i], x_lp1[i], u_l[i], lb_l[i], ub_l[i], w_l[i], w_l_grc[i], Qs_l, Qa_l)
+            self.get_stage_cost(
+                x_l[i],
+                x_lp1[i],
+                u_l[i],
+                lb_l[i],
+                ub_l[i],
+                w_l[i],
+                w_l_grc[i],
+                Qs_l,
+                Qa_l,
+            )
             for i in range(self.n)
         ]
 
@@ -211,60 +230,65 @@ class LtiSystem(
             The new state, the reward, truncated flag, terminated flag, and an info dictionary.
         """
         #  step function for load | time = step_counter*ts
-        sim_time = self.step_counter*self.ts
-        if(sim_time <= 10):
-            self.load = np.array(
-                [0.0, 0.0, 0.0]    
-            ).reshape(self.n, -1)
-        elif(sim_time <= 20):   # from t = 10 - 20
-             self.load = np.array(
-                [0.03, 0.0, 0.0]    
-            ).reshape(self.n, -1)
-        elif(sim_time <= 30):   # from t = 20 - 30
-             self.load = np.array(
-                [0.03, 0.0, -0.02]    
-            ).reshape(self.n, -1)
-        elif(sim_time <= 40):
-             self.load = np.array(
-                [0.03, 0.0, -0.02]    
-            ).reshape(self.n, -1)
+        sim_time = self.step_counter * self.ts
+        if sim_time <= 10:
+            self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)
+        elif sim_time <= 20:  # from t = 10 - 20
+            self.load = np.array([0.03, 0.0, 0.0]).reshape(self.n, -1)
+        elif sim_time <= 30:  # from t = 20 - 30
+            self.load = np.array([0.03, 0.0, -0.02]).reshape(self.n, -1)
+        elif sim_time <= 40:
+            self.load = np.array([0.03, 0.0, -0.02]).reshape(self.n, -1)
         else:
-            self.load = np.array(
-                [0.03, 0.0, -0.02]    
-            ).reshape(self.n, -1)
-        
+            self.load = np.array([0.03, 0.0, -0.02]).reshape(self.n, -1)
+
         # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
-        self.load_noise = (0.01*(np.random.uniform(0, 2, (3,1)) -1)) # (low, high, size) -> in [-1, 1)
-        
+        self.load_noise = 0.01 * (
+            np.random.uniform(0, 2, (3, 1)) - 1
+        )  # (low, high, size) -> in [-1, 1)
+
         # self.load = np.zeros((3,1)) # to toggle load on/off
-        self.load_noise =  np.zeros((3,1)) 
+        self.load_noise = np.zeros((3, 1))
 
         action = action.full()  # convert action from casadi DM to numpy array
 
         # x_new = self.A @ self.x + self.B @ action
         x = self.x
-        for _ in range(int(self.ts/self.ts_env)): 
-            x_new = self.A @ x + self.B @ action  + self.F @ self.load
-            x_new += self.F @ self.load_noise 
+        for _ in range(int(self.ts / self.ts_env)):
+            x_new = self.A @ x + self.B @ action + self.F @ self.load
+            x_new += self.F @ self.load_noise
             x = x_new
-        
+
         # Defines the quadratic cost on states
         Qs_l = np.array(
-            [[1e2, 0, 0, 0], 
-             [0, 1e0, 0, 0],
-             [0, 0, 1e1, 0],
-             [0, 0, 0, 2e1]])
+            [[1e2, 0, 0, 0], [0, 1e0, 0, 0], [0, 0, 1e1, 0], [0, 0, 0, 2e1]]
+        )
         Qs = block_diag(Qs_l, n=self.n)
         Qa = 0.5
 
-
         r = self.get_stage_cost(
-            self.x, x_new, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, w_grc=self.w_grc, Qs=Qs, Qa=Qa
+            self.x,
+            x_new,
+            action,
+            lb=self.x_bnd[0],
+            ub=self.x_bnd[1],
+            w=self.w,
+            w_grc=self.w_grc,
+            Qs=Qs,
+            Qa=Qa,
         )
-        r_dist = self.get_dist_stage_cost( # TODO: change for distributed setting
-            self.x, x_new, action, lb=self.x_bnd[0], ub=self.x_bnd[1], w=self.w, w_grc=self.w_grc, Qs_l=Qs_l, Qa_l=Qa
+        r_dist = self.get_dist_stage_cost(  # TODO: change for distributed setting
+            self.x,
+            x_new,
+            action,
+            lb=self.x_bnd[0],
+            ub=self.x_bnd[1],
+            w=self.w,
+            w_grc=self.w_grc,
+            Qs_l=Qs_l,
+            Qa_l=Qa,
         )
-        
+
         # store for next step
         self.x = x_new
         self.step_counter += 1

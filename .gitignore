@@ -11,6 +11,7 @@ __pycache__/
 data_large/
 *.pkl
 logs/
+running_pkls/
 
 # Distribution / packaging
 .Python
