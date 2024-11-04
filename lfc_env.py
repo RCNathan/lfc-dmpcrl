@@ -277,7 +277,7 @@ class LtiSystem(
             Qs=Qs,
             Qa=Qa,
         )
-        r_dist = self.get_dist_stage_cost(  # TODO: change for distributed setting
+        r_dist = self.get_dist_stage_cost(
             self.x,
             x_new,
             action,

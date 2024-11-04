@@ -59,6 +59,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
         return super().on_timestep_end(env, episode, timestep)
 
     def on_episode_start(self, env: LtiSystem, episode: int, state) -> None:
+        # env.reset()
         if self.centralized_flag:
             self.fixed_parameters["Pl"] = env.unwrapped.load
         else:

@@ -172,7 +172,7 @@ def train(
                 hessian_type="none",
                 record_td_errors=True,
                 centralized_flag=centralized_flag,
-                centralized_debug=True,
+                centralized_debug=False,
                 name="coordinator",
             )
         ),
@@ -309,7 +309,7 @@ make_plots = True
 ### SCENARIO 1: noise on load disturbance ###
 
 # cent, no learn
-train(centralized_flag=True, learning_flag=False, numEpisodes=5, numSteps=500, prediction_horizon=10)
+train(centralized_flag=True, learning_flag=False, numEpisodes=3, numSteps=5000, prediction_horizon=10)
 
 # cent, learn
 # train(centralized_flag=True, learning_flag=True, numEpisodes=20, numSteps=500, prediction_horizon=10,

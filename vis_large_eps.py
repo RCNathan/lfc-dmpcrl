@@ -355,5 +355,10 @@ filename = "distr_1ep_scenario_0"
 # filename = 'cent_no_learning_1ep_scenario_1' # [531.66506515]
 # filename = 'cent_5ep_scenario_1' # [559.64513404 551.25032843 647.12568547 453.05172057 454.00744462]
 
+
+# other stuff in between, mainly dual vars checking
+filename = 'cent_no_learning_5ep_scenario_0.1' # WHY IS THERE NON DETERMINISM HAPPENING AGAIN - no noise whatsoever
+filename = 'cent_no_learning_3ep_scenario_0.1'
+
 # vis_large_eps(filename)
 # print('debug')

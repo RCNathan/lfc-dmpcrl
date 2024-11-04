@@ -234,7 +234,7 @@ class CentralizedMpc(LearnableMpc):
             + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
             # + cs.sum1(x[:, -1].T @ P @ x[:, -1]) # x(N)' P x(N)), where P is solution of the DARE
             + cs.sum2(self.w @ s)  # punishes slack variables
-            # + cs.sum2(self.w_grc @ s_grc)  # punishes slacks on grc
+            + cs.sum2(self.w_grc @ s_grc)  # punishes slacks on grc
         )
 
         # solver
@@ -381,7 +381,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
             )
             + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
             + cs.sum2(self.w_l @ s)  # punishes slack variables
-            # + cs.sum2(self.w_grc_l @ s_grc)  # punishes slacks on grc
+            + cs.sum2(self.w_grc_l @ s_grc)  # punishes slacks on grc
         )
 
         # solver
