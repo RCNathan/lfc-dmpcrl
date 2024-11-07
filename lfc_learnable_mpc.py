@@ -10,7 +10,6 @@ from dmpcrl.utils.solver_options import SolverOptions
 from lfc_model import Model
 from lfc_discretization import lfc_forward_euler_cs, lfc_zero_order_hold
 from block_diag import block_diag
-import control as ct
 
 
 class LearnableMpc(Mpc[cs.SX]):
@@ -61,7 +60,10 @@ class LearnableMpc(Mpc[cs.SX]):
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
             "Qx": np.array(
-                [[1e2, 0, 0, 0], [0, 1e0, 0, 0], [0, 0, 1e1, 0], [0, 0, 0, 2e1]]
+                [[1e2, 0, 0, 0], 
+                 [0, 1e0, 0, 0], 
+                 [0, 0, 1e1, 0], 
+                 [0, 0, 0, 2e1]]
             ),  # quadratic cost on states (local)
             "Qu": np.array([0.5]),
             "Qf": np.array(
@@ -204,20 +206,20 @@ class CentralizedMpc(LearnableMpc):
         # other constraints
         self.constraint("x_lb", self.x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])
         self.constraint("x_ub", x[:, 1:], "<=", self.x_bnd[1].reshape(-1, 1) + x_ub + s)
-        # self.constraint(
-        #     "GRC_lb",
-        #     -self.GRC - s_grc,
-        #     "<=",
-        #     1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
-        #     soft=False,
-        # )  # generation-rate constraint
-        # self.constraint(
-        #     "GRC_ub",
-        #     1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
-        #     "<=",
-        #     self.GRC + s_grc,
-        #     soft=False,
-        # )  # generation-rate constraint
+        self.constraint(
+            "GRC_lb",
+            -self.GRC - s_grc,
+            "<=",
+            1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
+            soft=False,
+        )  # generation-rate constraint
+        self.constraint(
+            "GRC_ub",
+            1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
+            "<=",
+            self.GRC + s_grc,
+            soft=False,
+        )  # generation-rate constraint
 
         # objective | x.shape = (nx, N+1), u.shape = (nu, N)    |   sum1 is row-sum, sum2 is col-sum
         gammapowers = cs.DM(gamma ** np.arange(N)).T
@@ -238,7 +240,7 @@ class CentralizedMpc(LearnableMpc):
         )
 
         # solver
-        solver = "qpoases"  # qpoases or ipopt
+        solver = "ipopt"  # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
@@ -317,7 +319,6 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         # Pl = self.parameter(f"Pl_{global_index}", (1, 1))  # creates parameter obj for local load based on global index.
         Pl = self.parameter("Pl", (1, 1))
         self.fixed_pars_init.update(
-            # {f"Pl_{global_index}": 0.0}
             {"Pl": 0.0}
         )  # value changed in lfc_agent
 
@@ -352,20 +353,20 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         # other constraints
         self.constraint(f"x_lb", self.x_bnd_l[0] + x_lb - s, "<=", x[:, 1:])
         self.constraint(f"x_ub", x[:, 1:], "<=", self.x_bnd_l[1] + x_ub + s)
-        # self.constraint(
-        #     "GRC_lb",
-        #     -self.GRC_l - s_grc,
-        #     "<=",
-        #     1 / self.ts * (x[1, 1:] - x[1, :-1]),
-        #     soft=False,
-        # )  # grc constraint
-        # self.constraint(
-        #     "GRC_ub",
-        #     1 / self.ts * (x[1, 1:] - x[1, :-1]),
-        #     "<=",
-        #     self.GRC_l + s_grc,
-        #     soft=False,
-        # )  # grc constraint
+        self.constraint(
+            "GRC_lb",
+            -self.GRC_l - s_grc,
+            "<=",
+            1 / self.ts * (x[1, 1:] - x[1, :-1]),
+            soft=False,
+        )  # grc constraint
+        self.constraint(
+            "GRC_ub",
+            1 / self.ts * (x[1, 1:] - x[1, :-1]),
+            "<=",
+            self.GRC_l + s_grc,
+            soft=False,
+        )  # grc constraint
 
         # objective
         gammapowers = cs.DM(gamma ** np.arange(N)).T
@@ -385,7 +386,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         )
 
         # solver
-        solver = "qpoases"
+        solver = "ipopt"
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 

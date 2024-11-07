@@ -179,7 +179,10 @@ def train(
         level=logging.DEBUG,
         log_frequencies={"on_timestep_end": 100},
     )
-    agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
+    if learning_flag:
+        agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
+    else:
+        agent.evaluate(env=env, episodes=numEpisodes, seed=1, raises=False)
 
     # extract data
     # from agent
@@ -309,15 +312,30 @@ make_plots = True
 ### SCENARIO 1: noise on load disturbance ###
 
 # cent, no learn
-train(centralized_flag=True, learning_flag=False, numEpisodes=3, numSteps=5000, prediction_horizon=10)
+t_end = 10 # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
+numSteps = int(t_end/model.ts)
+# train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=numSteps, prediction_horizon=10)
+
 
 # cent, learn
-# train(centralized_flag=True, learning_flag=True, numEpisodes=20, numSteps=500, prediction_horizon=10,
+# train(centralized_flag=True, learning_flag=True, numEpisodes=10, numSteps=numSteps, prediction_horizon=10,
 #       update_strategy=10,
 #       learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
 #       epsilon=ExponentialScheduler(0.9, factor=0.99),
 #       eps_strength=2000, # values depend on setup, might need large values!
 #       experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1))
+
+# dist, no learn
+train(
+    centralized_flag=False,
+    learning_flag=False,
+    numEpisodes=1,
+    numSteps=numSteps,
+    prediction_horizon=10,
+    admm_iters=200,
+    rho=0.5,
+    consensus_iters=200,
+)
 
 # Comparison:
 # filename = cent_no_learning_1ep_scenario_1, return [531.66506515]

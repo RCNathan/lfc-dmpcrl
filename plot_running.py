@@ -8,6 +8,7 @@ def plotRunning(running_filename):
     """Makes plots to visualize states during running. Note: manually change the centralized counterpart."""
 
     filename = "cent_no_learning_1ep_scenario_0"  # centralized, return [460.55373678]
+    filename = "cent_no_learning_1ep_scenario_0.1" # TODO: use centralized_debug's validation sol, but for now, manual :(
     with open(
         filename + ".pkl",
         "rb",
@@ -60,13 +61,15 @@ def plotRunning(running_filename):
         axs[4, j].plot(t[:-1], u2[0, :, j], label="dist", linestyle="--")  # dist
     axs[0, 0].legend()
     # TD
-    axs[0, 3].plot(t[:-1], TD[0, : x_len - 1], label="cent")
-    axs[0, 3].plot(t[:-1], TD2[0, :], label="dist", linestyle="--")
-    axs[0, 3].set_title("TD error over time")
-    axs[1, 3].plot(t[:-1], TD[0, : x_len - 1] - TD2[0, :], label="difference")
-    axs[1, 3].set_title("TD error difference between distributed and centralized")
-    axs[0, 3].legend()
-    axs[1, 3].legend()
+    # after changing to use agent.evaluate() for non-learning; TD is non-existent in that case
+    if TD2.shape[1] != 0:
+        axs[0, 3].plot(t[:-1], TD[0, : x_len - 1], label="cent")
+        axs[0, 3].plot(t[:-1], TD2[0, :], label="dist", linestyle="--")
+        axs[0, 3].set_title("TD error over time")
+        axs[1, 3].plot(t[:-1], TD[0, : x_len - 1] - TD2[0, :], label="difference")
+        axs[1, 3].set_title("TD error difference between distributed and centralized")
+        axs[0, 3].legend()
+        axs[1, 3].legend()
 
     # plt.get_current_fig_manager().full_screen_toggle()
     # plt.show()

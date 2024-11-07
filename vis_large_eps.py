@@ -159,10 +159,12 @@ def vis_large_eps(file: str) -> None:
 
     # plot TD error, reward and cumulative reward
     _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(5, 5))
-    axs[0].plot(t[:-1], TDmax, linestyle="--", label="max")
-    axs[0].plot(t[:-1], TDmin, linestyle="--", label="min")
-    axs[0].plot(t[:-1], TD[0, :], color="green", label="first")
-    axs[0].plot(t[:-1], TD[-1, :], color="black", label="last")
+    # using agent.evaluate() to speed up in lfc_train.py, yields no TD data if not learning, so we dont plot for no learning.
+    if TD.shape[1] != 0:
+        axs[0].plot(t[:-1], TDmax, linestyle="--", label="max")
+        axs[0].plot(t[:-1], TDmin, linestyle="--", label="min")
+        axs[0].plot(t[:-1], TD[0, :], color="green", label="first")
+        axs[0].plot(t[:-1], TD[-1, :], color="black", label="last")
     axs[1].plot(t[:-1], Rmax, linestyle="--", label="max")
     axs[1].plot(t[:-1], Rmin, linestyle="--", label="min")
     axs[1].plot(t[:-1], R[0, :], color="green", label="first")
@@ -197,9 +199,10 @@ def vis_large_eps(file: str) -> None:
     )  # reverting back to (1, eps*steps)
     tlong = m.ts * np.linspace(0, len(TDlong) - 1, len(TDlong))
     _, axs = plt.subplots(4, 1, constrained_layout=True, sharex=False, figsize=(4, 7.5))
-    axs[0].plot(tlong, TDlong)
-    axs[0].set_title("Temporal difference error (TD)")
-    axs[0].set_xlabel(r"time $t$")
+    if TD.shape[1] != 0:
+        axs[0].plot(tlong, TDlong)
+        axs[0].set_title("Temporal difference error (TD)")
+        axs[0].set_xlabel(r"time $t$")
     axs[1].plot(
         np.linspace(1, numEpisodes, numEpisodes), Rcumsum[:, -1], linestyle="--"
     )
@@ -208,14 +211,15 @@ def vis_large_eps(file: str) -> None:
         Rcumsum[:, -1],
         label="cumulative cost",
     )
-    axs[1].plot(
-        np.linspace(1, numEpisodes, numEpisodes), np.sum(TD, axis=1), linestyle="--"
-    )
-    axs[1].scatter(
-        np.linspace(1, numEpisodes, numEpisodes),
-        np.sum(TD, axis=1),
-        label="sum of TD error",
-    )
+    if TD.shape[1] != 0:
+        axs[1].plot(
+            np.linspace(1, numEpisodes, numEpisodes), np.sum(TD, axis=1), linestyle="--"
+        )
+        axs[1].scatter(
+            np.linspace(1, numEpisodes, numEpisodes),
+            np.sum(TD, axis=1),
+            label="sum of TD error",
+        )
     # axs[1].set_ylim(bottom=0)
     axs[1].set_title("Per episode")
     axs[1].set_xlabel("Episodes")
@@ -257,30 +261,31 @@ def vis_large_eps(file: str) -> None:
     # wm.window.setGeometry(1000, 570, figdx, figdy)
     wm.window.move(1000, 550)
 
-    # plot for a lot (or all) of learnable params (debug-purposes)
-    _, axs = plt.subplots(7, 6, constrained_layout=True, figsize=(7.5, 7))
+    if TD.shape[1] != 0:
+        # plot for a lot (or all) of learnable params (debug-purposes)
+        _, axs = plt.subplots(7, 6, constrained_layout=True, figsize=(7.5, 7))
 
-    i = 1
-    for item in param_dict.keys():
-        # print(param_dict[f'{item}'])
-        plt.subplot(7, 6, i)
-        plotdata = param_dict[f"{item}"].squeeze()
-        if len(plotdata.shape) > 2:
-            plt.plot(plotdata[:, 0, 0])
-        elif len(plotdata.shape) == 2:
-            plt.plot(plotdata[:, 0])
-        else:
-            plt.plot(plotdata)
-        plt.title(str(item))
-        i += 1
+        i = 1
+        for item in param_dict.keys():
+            # print(param_dict[f'{item}'])
+            plt.subplot(7, 6, i)
+            plotdata = param_dict[f"{item}"].squeeze()
+            if len(plotdata.shape) > 2:
+                plt.plot(plotdata[:, 0, 0])
+            elif len(plotdata.shape) == 2:
+                plt.plot(plotdata[:, 0])
+            else:
+                plt.plot(plotdata)
+            plt.title(str(item))
+            i += 1
 
-    # removes tick-marks (for visibility)
-    for ax in axs.flat:
-        ax.set_xticks([])
-        ax.set_yticks([])
+        # removes tick-marks (for visibility)
+        for ax in axs.flat:
+            ax.set_xticks([])
+            ax.set_yticks([])
 
-    wm = plt.get_current_fig_manager()
-    wm.window.move(0, 0)
+        wm = plt.get_current_fig_manager()
+        wm.window.move(0, 0)
 
     # GRC plot | x: (eps, steps, states)
     grc = m.GRC_l

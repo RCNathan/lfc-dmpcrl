@@ -21,8 +21,8 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
     """A coordinator for LSTD-Q learning agents - for the Lfc problem. This agent hence handles load changes."""
 
     saveRunningData = True  # toggle whether during runtime, every x steps, data gets saved.
-    plotRunningFlag = False  # toggle whether plotted immediately as well. note: not sure if this causes multiple terminals
-    plotDualVarsFlag = True # toggle whether dual vars are being plotted at every timestep.
+    plotRunningFlag = True  # toggle whether plotted immediately as well. TODO: change centralized to the centralized_debug
+    plotDualVarsFlag = True # toggle whether dual vars are being plotted at every timestep. TODO: u*, x*, f* from cent_debug
 
     def on_timestep_end(
         self, env: Env[ObsType, ActType], episode: int, timestep: int
@@ -86,6 +86,9 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
         else:
             self.numInfeasibles[episode] = [timestep]
         return super().on_mpc_failure(episode, timestep, status, raises)
+    
+    def train_one_episode(self, env: Env, episode: int, init_state: ndarray, raises: bool = True) -> float:
+        return super().train_one_episode(env, episode, init_state, raises)
 
     def distributed_state_value(
         self,

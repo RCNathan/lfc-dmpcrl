@@ -16,7 +16,7 @@ class Model:
     nu_l: ClassVar[int] = 1  # local control dimension
 
     ts = 0.01  # sampling time for ZOH discretization/ Forward Euler | 0.1 gives problems, 0.01 seems fine
-    ts_env = 0.001  # sampling time for env, which will approx the real system better.
+    ts_env = 0.1*ts  # sampling time for env, which will approx the real system better.
 
     # noise on matrices for inaccurate guess used by learnable MPC
     noise_A = 1e-1  # default 1e0
@@ -25,8 +25,8 @@ class Model:
     noise_A, noise_B, noise_F = 0, 0, 0  # Perfect knowledge of system matrices
     ubnd = 3e-1  # 2e-1 in Zhao et al., 3e-1 in Venkat et al., 0.25 in Mohamed et al., 3e-1 in Ma et al.
     # GRC_l = 0.00017 # p.u/s in Yan et al.
-    GRC_l = 0.0017  # p.u/s in Ma et al., Zhao et al., Liao et al.
-    # GRC_l = 0.017
+    # GRC_l = 0.0017  # p.u/s in Ma et al., Zhao et al., Liao et al. <- most stable..
+    GRC_l = 1
 
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(

@@ -231,19 +231,25 @@ class LtiSystem(
         """
         #  step function for load | time = step_counter*ts
         sim_time = self.step_counter * self.ts
-        if sim_time <= 10:
+        # with ts = 0.1 
+        # c1, c2 = 0.03, -0.02 
+        # t1, t2, t3 = 10, 20, 30
+        # with ts = 0.01
+        c1, c2 = 0.08, -0.1
+        t1, t2, t3 = 1, 2, 3
+        if sim_time <= t1:
             self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)
-        elif sim_time <= 20:  # from t = 10 - 20
-            self.load = np.array([0.03, 0.0, 0.0]).reshape(self.n, -1)
-        elif sim_time <= 30:  # from t = 20 - 30
-            self.load = np.array([0.03, 0.0, -0.02]).reshape(self.n, -1)
+        elif sim_time <= t2:  # from t = 10 - 20
+            self.load = np.array([c1, 0.0, 0.0]).reshape(self.n, -1)
+        elif sim_time <= t3:  # from t = 20 - 30
+            self.load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
         elif sim_time <= 40:
-            self.load = np.array([0.03, 0.0, -0.02]).reshape(self.n, -1)
+            self.load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
         else:
-            self.load = np.array([0.03, 0.0, -0.02]).reshape(self.n, -1)
+            self.load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
 
         # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
-        self.load_noise = 0.01 * (
+        self.load_noise = 0.03 * (
             np.random.uniform(0, 2, (3, 1)) - 1
         )  # (low, high, size) -> in [-1, 1)
 
