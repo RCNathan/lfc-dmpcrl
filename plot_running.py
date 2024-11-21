@@ -62,7 +62,7 @@ def plotRunning(running_filename):
     axs[0, 0].legend()
     # TD
     # after changing to use agent.evaluate() for non-learning; TD is non-existent in that case
-    if TD2.shape[1] != 0:
+    if TD.shape[1] != 0 and TD2.shape[1] != 0:
         axs[0, 3].plot(t[:-1], TD[0, : x_len - 1], label="cent")
         axs[0, 3].plot(t[:-1], TD2[0, :], label="dist", linestyle="--")
         axs[0, 3].set_title("TD error over time")
@@ -76,14 +76,17 @@ def plotRunning(running_filename):
     info = data_dist.get("info")
     admm, gac = info["admm_iters"], info["consensus_iters"]
     saveloc = r"running_pkls\figs"
+    savename = r"\admm" + f"{admm}_gac{gac}_{running_filename}"
     plt.savefig(
-        saveloc + r"\admm" + f"{admm}_gac{gac}_{running_filename}.png",
+        saveloc + savename +".png",
         bbox_inches="tight",
     )  # save so that it can continue running
-    print(f"File saved in {saveloc}")
-    print(f"\nADMM iterations used: {admm}, Consensus iterations used:{gac}")
+    print(f"File {savename} saved in {saveloc}")
+    # plt.close() # figures are retained until explicitly closed and may consume too much memory TODO: check out
+    # print(f"\nADMM iterations used: {admm}, Consensus iterations used:{gac}")
 
 
+# filename = 'ep0timestep10'
 # filename = 'ep0timestep60'
 # filename = 'ep0timestep500'
 # plotRunning(filename)

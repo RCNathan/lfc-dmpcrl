@@ -182,6 +182,7 @@ def train(
     if learning_flag:
         agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
     else:
+        # agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
         agent.evaluate(env=env, episodes=numEpisodes, seed=1, raises=False)
 
     # extract data
@@ -228,7 +229,7 @@ def train(
             pklname = "distr"
         if learning_flag == False:
             pklname = pklname + "_no_learning"
-        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_0.1"
+        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_0.2"
         with open(
             f"{pklname}.pkl",
             "wb",  # w: write mode, creates new or truncates existing. b: binary mode
@@ -332,7 +333,7 @@ train(
     numEpisodes=1,
     numSteps=numSteps,
     prediction_horizon=10,
-    admm_iters=200,
+    admm_iters=50,
     rho=0.5,
     consensus_iters=200,
 )

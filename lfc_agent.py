@@ -53,7 +53,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
                     },
                     file,
                 )
-            print(f"Episode {episode}, timestep {timestep}")
+            print(f"Episode {episode}, timestep {timestep}, ADMM iters {self.admm_coordinator.iters}, GAC iters {self.consensus_coordinator.iters}")
             if self.plotRunningFlag:
                 plotRunning(f"ep{episode}timestep{timestep}")
         return super().on_timestep_end(env, episode, timestep)
