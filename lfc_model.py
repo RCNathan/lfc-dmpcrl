@@ -16,7 +16,9 @@ class Model:
     nu_l: ClassVar[int] = 1  # local control dimension
 
     ts = 0.01  # sampling time for ZOH discretization/ Forward Euler | 0.1 gives problems, 0.01 seems fine
-    ts_env = 0.1*ts  # sampling time for env, which will approx the real system better.
+    ts_env = (
+        0.1 * ts
+    )  # sampling time for env, which will approx the real system better.
 
     # noise on matrices for inaccurate guess used by learnable MPC
     noise_A = 1e-1  # default 1e0

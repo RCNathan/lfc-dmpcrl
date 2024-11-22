@@ -8,7 +8,7 @@ def plotRunning(running_filename):
     """Makes plots to visualize states during running. Note: manually change the centralized counterpart."""
 
     filename = "cent_no_learning_1ep_scenario_0"  # centralized, return [460.55373678]
-    filename = "cent_no_learning_1ep_scenario_0.1" # TODO: use centralized_debug's validation sol, but for now, manual :(
+    filename = "cent_no_learning_1ep_scenario_0.1"  # TODO: use centralized_debug's validation sol, but for now, manual :(
     with open(
         filename + ".pkl",
         "rb",
@@ -78,7 +78,7 @@ def plotRunning(running_filename):
     saveloc = r"running_pkls\figs"
     savename = r"\admm" + f"{admm}_gac{gac}_{running_filename}"
     plt.savefig(
-        saveloc + savename +".png",
+        saveloc + savename + ".png",
         bbox_inches="tight",
     )  # save so that it can continue running
     print(f"File {savename} saved in {saveloc}")

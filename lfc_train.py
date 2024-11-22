@@ -50,6 +50,7 @@ def train(
         maxlen=100, sample_size=20, include_latest=10, seed=1
     ),  # experience replay
     prediction_horizon=10,  # MPC prediction horizon N
+    centralized_debug=False,  # debug flag for centralized mpc
 ) -> None:
 
     # centralised mpc and params
@@ -172,7 +173,7 @@ def train(
                 hessian_type="none",
                 record_td_errors=True,
                 centralized_flag=centralized_flag,
-                centralized_debug=False,
+                centralized_debug=centralized_debug,
                 name="coordinator",
             )
         ),
@@ -182,8 +183,8 @@ def train(
     if learning_flag:
         agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
     else:
-        # agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
-        agent.evaluate(env=env, episodes=numEpisodes, seed=1, raises=False)
+        agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
+        # agent.evaluate(env=env, episodes=numEpisodes, seed=1, raises=False) # bugged atm
 
     # extract data
     # from agent
@@ -313,8 +314,8 @@ make_plots = True
 ### SCENARIO 1: noise on load disturbance ###
 
 # cent, no learn
-t_end = 10 # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
-numSteps = int(t_end/model.ts)
+t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
+numSteps = int(t_end / model.ts)
 # train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=numSteps, prediction_horizon=10)
 
 
@@ -335,7 +336,8 @@ train(
     prediction_horizon=10,
     admm_iters=50,
     rho=0.5,
-    consensus_iters=200,
+    consensus_iters=50,
+    centralized_debug=True,
 )
 
 # Comparison:

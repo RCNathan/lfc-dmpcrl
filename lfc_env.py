@@ -231,8 +231,8 @@ class LtiSystem(
         """
         #  step function for load | time = step_counter*ts
         sim_time = self.step_counter * self.ts
-        # with ts = 0.1 
-        # c1, c2 = 0.03, -0.02 
+        # with ts = 0.1
+        # c1, c2 = 0.03, -0.02
         # t1, t2, t3 = 10, 20, 30
         # with ts = 0.01
         c1, c2 = 0.08, -0.1

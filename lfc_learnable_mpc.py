@@ -60,10 +60,7 @@ class LearnableMpc(Mpc[cs.SX]):
             "b": np.zeros(self.nx_l),
             "f": np.zeros(self.nx_l + self.nu_l),
             "Qx": np.array(
-                [[1e2, 0, 0, 0], 
-                 [0, 1e0, 0, 0], 
-                 [0, 0, 1e1, 0], 
-                 [0, 0, 0, 2e1]]
+                [[1e2, 0, 0, 0], [0, 1e0, 0, 0], [0, 0, 1e1, 0], [0, 0, 0, 2e1]]
             ),  # quadratic cost on states (local)
             "Qu": np.array([0.5]),
             "Qf": np.array(
@@ -318,9 +315,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         # Fixed parameters: load
         # Pl = self.parameter(f"Pl_{global_index}", (1, 1))  # creates parameter obj for local load based on global index.
         Pl = self.parameter("Pl", (1, 1))
-        self.fixed_pars_init.update(
-            {"Pl": 0.0}
-        )  # value changed in lfc_agent
+        self.fixed_pars_init.update({"Pl": 0.0})  # value changed in lfc_agent
 
         # variables (state+coupling, action, slack)
         x, x_c = self.augmented_state(num_neighbours, my_index, self.nx_l)
