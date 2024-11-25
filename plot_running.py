@@ -78,7 +78,7 @@ def plotRunning(running_filename):
     saveloc = r"running_pkls\figs"
     savename = r"\admm" + f"{admm}_gac{gac}_{running_filename}"
     plt.savefig(
-        saveloc + savename + ".png",
+        saveloc + ".png",
         bbox_inches="tight",
     )  # save so that it can continue running
     print(f"File {savename} saved in {saveloc}")
@@ -89,4 +89,5 @@ def plotRunning(running_filename):
 # filename = 'ep0timestep10'
 # filename = 'ep0timestep60'
 # filename = 'ep0timestep500'
-# plotRunning(filename)
+filename = 'ep0timestep10'
+plotRunning(filename)

@@ -71,8 +71,8 @@ def plotDualVars(dist, debug):
         axs[j, 0].set_title(r"|$\tilde{x}$-$\tilde{z}$|" + f" for Agent {j+1}")
         axs[j, 0].set_xlabel("ADMM iters")
 
-        axs[j, 1].plot(it, vars)
-        axs[j, 1].set_title(f"Dual vars for Agent {j+1}")
+        axs[0, 1].plot(it, vars-vars[-1], label=f"Agent {j+1}")
+        axs[0, 1].set_title(r"Dual vars $y$-$y_{\text{final}}$")
 
         # plot augmented x and [... optimal x from debug]
         axs[0, 2].plot(
@@ -94,14 +94,26 @@ def plotDualVars(dist, debug):
         it, np.sum(u_opt) * np.ones(it.shape), linestyle=":", color="r", label="Optimal"
     )  # summed
 
+    axs[0, 1].legend()
+    axs[0, 1].set_xlabel("ADMM iters")
     axs[1, 2].legend()
     axs[1, 2].set_title(r"$\tilde{u}$ compared to optimal $u^*$")
     axs[0, 2].legend()
+    axs[0, 2].set_xlabel("ADMM iters")
     axs[0, 2].set_title(r"$\tilde{x}_i$ compared to optimal $x^*$")
     axs[2, 0].legend()
+    
+    # dual vars lambda for dynamics
+    dist_lambda_g = np.array([[info_dict['local_dual_vals'][0][f'lam_g_dynam_{k}'] for k in range(10)] for i in range(3)]).reshape(120,1)
+    cent_lambda_g = debug_dict['dual_vals']['lam_g_dyn']
+    axs[1, 1].scatter(np.arange(120), np.abs(dist_lambda_g - cent_lambda_g))
+    axs[1, 1].set_title(r"Dual vars $\lambda_{\text{g\_dyn, dist}}$ - $\lambda_{\text{g\_dyn, cent}}$")
+    axs[1, 1].set_xlabel("Scatterplot of final iteration")
+    
     plt.show()
+    
 
 
 dist_dict = r"dual_vars\dist_sv.pkl"
 debug_dict = r"dual_vars\centdebug_sv.pkl"
-plotDualVars(dist_dict, debug_dict)
+# plotDualVars(dist_dict, debug_dict)

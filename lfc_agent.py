@@ -28,7 +28,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
         True  # toggle whether during runtime, every x steps, data gets saved.
     )
     plotRunningFlag = True  # toggle whether plotted immediately as well. TODO: change centralized to the centralized_debug
-    plotDualVarsFlag = True  # toggle whether dual vars are being plotted at every timestep. TODO: u*, x*, f* from cent_debug
+    plotDualVarsFlag = False  # toggle whether dual vars are being plotted at every timestep. TODO: f* from cent_debug
 
     def on_timestep_end(
         self, env: Env[ObsType, ActType], episode: int, timestep: int
@@ -42,7 +42,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
             X = [env.observations, env.ep_observations]
             U = [env.actions, env.ep_actions]
             R = [env.rewards, env.ep_rewards]
-            TD = self.agents[0].agent.td_errors
+            TD = self.agents[0].agent.td_errors # TODO: maybe add a loop for all agents
             info = {
                 "admm_iters": self.admm_coordinator.iters,
                 "consensus_iters": self.consensus_coordinator.iters,
@@ -131,10 +131,13 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
                 print(
                     "Warning: centralized_debug is False, so no centralized solution is being saved."
                 )
-            # Save a pkl (to make the plot func)
+            # Save a pkl (to make the plot func) - add to existing info_dict: local_actions, local_sols
             info_dict["local_actions"] = local_actions
             # -> == info_dict['u_iters'][-1, :, 0], i.e. final iteration of first timestep
             info_dict["local_sols"] = np.array([local_sols[i].f for i in range(self.n)])
+            info_dict["local_dual_vals"] = [{
+                key: val.toarray() for key, val in local_sols[i].dual_vals.items()
+            } for i in range(self.n)]
             with open(
                 "dual_vars\dist_sv.pkl",
                 "wb",
@@ -218,7 +221,9 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
                 "action_opt": action_opt.toarray(),
                 "cent_sol": sol.f,
                 # "dual_vars": sol.dual_vars['lam_g_dyn'].reshape((-1, self.N))
-                "dual_vars": sol.dual_vars,
+                "dual_vals": {
+                    key: val.toarray() for key, val in sol.dual_vals.items()
+                }
             }
             with open(
                 "dual_vars\centdebug_sv.pkl",
