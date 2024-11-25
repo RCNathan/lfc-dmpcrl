@@ -53,7 +53,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
             X = [env.observations, env.ep_observations]
             U = [env.actions, env.ep_actions]
             R = [env.rewards, env.ep_rewards]
-            TD = self.agents[0].agent.td_errors # TODO: maybe add a loop for all agents
+            TD = self.agents[0].agent.td_errors  # TODO: maybe add a loop for all agents
             debug_flag = self.centralized_debug
             info = {
                 "admm_iters": self.admm_coordinator.iters,
@@ -149,9 +149,10 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
             info_dict["local_actions"] = local_actions
             # -> == info_dict['u_iters'][-1, :, 0], i.e. final iteration of first timestep
             info_dict["local_sols"] = np.array([local_sols[i].f for i in range(self.n)])
-            info_dict["local_dual_vals"] = [{
-                key: val.toarray() for key, val in local_sols[i].dual_vals.items()
-            } for i in range(self.n)]
+            info_dict["local_dual_vals"] = [
+                {key: val.toarray() for key, val in local_sols[i].dual_vals.items()}
+                for i in range(self.n)
+            ]
             with open(
                 "dual_vars\dist_sv.pkl",
                 "wb",
@@ -231,7 +232,6 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
             self.cent_debug_info_dict["action_opt"].append(action_opt.toarray())
             self.cent_debug_info_dict["cent_sol"].append(sol.f)
 
-
         # Save it in a pkl
         if self.plotDualVarsFlag:
             # Save a pkl (to make the plot func)
@@ -241,9 +241,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
                 "action_opt": action_opt.toarray(),
                 "cent_sol": sol.f,
                 # "dual_vars": sol.dual_vars['lam_g_dyn'].reshape((-1, self.N))
-                "dual_vals": {
-                    key: val.toarray() for key, val in sol.dual_vals.items()
-                }
+                "dual_vals": {key: val.toarray() for key, val in sol.dual_vals.items()},
             }
             with open(
                 "dual_vars\centdebug_sv.pkl",

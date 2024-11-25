@@ -9,7 +9,9 @@ def plotRunning(running_filename):
     """Makes plots to visualize states during running. Note: manually change the centralized counterpart."""
 
     filename = "cent_no_learning_1ep_scenario_0"  # centralized, return [460.55373678]
-    filename = "cent_no_learning_1ep_scenario_0.1"  # used when centralized_debug is False
+    filename = (
+        "cent_no_learning_1ep_scenario_0.1"  # used when centralized_debug is False
+    )
     with open(
         filename + ".pkl",
         "rb",
@@ -23,26 +25,29 @@ def plotRunning(running_filename):
     ) as file:
         data_dist = pickle.load(file)
 
-    centralized_debug = data_dist['debug_flag']
+    centralized_debug = data_dist["debug_flag"]
     if centralized_debug == False:
         # cent
         x = data_cent.get("X")
-        x = x.reshape(x.shape[0], x.shape[1], -1)  # (4, 201, 12)    | (eps, steps, states)
+        x = x.reshape(
+            x.shape[0], x.shape[1], -1
+        )  # (4, 201, 12)    | (eps, steps, states)
         u = data_cent.get("U")
-        u = u.reshape(u.shape[0], u.shape[1], -1)  # (4, 201, 3)     | (eps, steps, inputs)
+        u = u.reshape(
+            u.shape[0], u.shape[1], -1
+        )  # (4, 201, 3)     | (eps, steps, inputs)
         R = data_cent.get("R")  # shape = (4, 200)                        | (eps, steps)
         TD = np.asarray(data_cent.get("TD")).reshape(
             1, -1
         )  # e.g (1,800) for 4 eps at 200 steps  | (1, eps*steps)
     else:
-        data_cent = data_dist['cent_debug_info_dict']
+        data_cent = data_dist["cent_debug_info_dict"]
         # get x from data_cent's state, u from action_opt and f from cent_sol
         x = np.array(data_cent["state"])
         x = x.reshape(1, x.shape[0], x.shape[1])
         u = np.array(data_cent["action_opt"])
         u = u.reshape(1, u.shape[0], u.shape[1])
-        TD = np.array([]).reshape(1, -1) # placeholder
-
+        TD = np.array([]).reshape(1, -1)  # placeholder
 
     # dist
     x2 = data_dist.get("X")
@@ -110,12 +115,12 @@ def plotRunning(running_filename):
         bbox_inches="tight",
     )  # save so that it can continue running
     print(f"File saved as {testname}" + ".png")
-    plt.close() # figures are retained until explicitly closed and may consume too much memory TODO: check out
+    plt.close()  # figures are retained until explicitly closed and may consume too much memory TODO: check out
     # print(f"\nADMM iterations used: {admm}, Consensus iterations used:{gac}")
 
 
 # filename = 'ep0timestep10'
 # filename = 'ep0timestep60'
 # filename = 'ep0timestep500'
-filename = 'ep0timestep10'
+filename = "ep0timestep10"
 # plotRunning(filename)

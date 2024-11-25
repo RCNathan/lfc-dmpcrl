@@ -180,7 +180,7 @@ def vis_large_eps(file: str) -> None:
     axs[0].set_title("TD error")
     axs[0].set_xlabel(r"time $t$")
     axs[0].legend(loc="upper right")
-    axs[1].set_title("Costs (R)") # for different episodes 
+    axs[1].set_title("Costs (R)")  # for different episodes
     axs[1].set_xlabel(r"time $t$")
     axs[1].legend()
     axs[2].set_title("Cumulative cost")
@@ -230,7 +230,6 @@ def vis_large_eps(file: str) -> None:
     axs[2].set_title("TD per episode")
     axs[2].set_xlabel("Episodes")
     axs[2].set_ylim(bottom=0, top=1.1 * np.max(np.sum(TD, axis=1)))
-    
 
     wm = plt.get_current_fig_manager()
     # wm.window.move(1500,0)
@@ -267,7 +266,9 @@ def vis_large_eps(file: str) -> None:
 
     # GRC plot | x: (eps, steps, states)
     grc = m.GRC_l
-    fig, axs = plt.subplots(1, 3, constrained_layout=True, figsize=(3, 1.9), sharey=True)
+    fig, axs = plt.subplots(
+        1, 3, constrained_layout=True, figsize=(3, 1.9), sharey=True
+    )
     for n in range(m.n):
         axs[n].plot(
             t[:-1],
@@ -379,6 +380,6 @@ filename = "cent_no_learning_3ep_scenario_0.1"
 filename = "distr_no_learning_1ep_scenario_0.1"
 
 # Scenario 0 | GRC = 1 (basically turned off)
-filename = 'cent_no_learning_5ep_scenario_0.2' # 5x [658.71297405] 
+filename = "cent_no_learning_5ep_scenario_0.2"  # 5x [658.71297405]
 
-vis_large_eps(filename)
+# vis_large_eps(filename)

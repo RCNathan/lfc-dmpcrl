@@ -235,7 +235,7 @@ class LtiSystem(
         # c1, c2 = 0.03, -0.02
         # t1, t2, t3 = 10, 20, 30
         # with ts = 0.01
-        c1, c2 = 0.08, -0.1
+        c1, c2 = 0.08, -0.08
         t1, t2, t3 = 1, 2, 3
         if sim_time <= t1:
             self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)

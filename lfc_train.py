@@ -316,7 +316,13 @@ make_plots = True
 # cent, no learn
 t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
 numSteps = int(t_end / model.ts)
-train(centralized_flag=True, learning_flag=False, numEpisodes=2, numSteps=numSteps, prediction_horizon=10)
+train(
+    centralized_flag=True,
+    learning_flag=False,
+    numEpisodes=1,
+    numSteps=numSteps,
+    prediction_horizon=10,
+)
 
 
 # cent, learn
