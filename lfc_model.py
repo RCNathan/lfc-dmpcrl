@@ -28,7 +28,7 @@ class Model:
     ubnd = 3e-1  # 2e-1 in Zhao et al., 3e-1 in Venkat et al., 0.25 in Mohamed et al., 3e-1 in Ma et al.
     # GRC_l = 0.00017 # p.u/s in Yan et al.
     # GRC_l = 0.0017  # p.u/s in Ma et al., Zhao et al., Liao et al. <- most stable..
-    GRC_l = 1
+    GRC_l = 0.1
 
     # note: changed dimensions only (physical constraints?)
     x_bnd_l: ClassVar[np.ndarray] = np.array(

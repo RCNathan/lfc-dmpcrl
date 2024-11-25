@@ -49,8 +49,10 @@ def vis_large_eps(file: str) -> None:
         # print("Keys inside param_dict:", param_keys)
     else:
         print("The loaded data is not a dictionary.")
+    learningFlag = True
     if (param_dict["A_0"][0] == param_dict["A_0"][-1]).all():
         print("\nNo learning of A_0")
+        learningFlag = False
 
     m = Model()
     numAgents = m.n
@@ -75,7 +77,7 @@ def vis_large_eps(file: str) -> None:
         3,
         constrained_layout=True,
         sharex=True,
-        figsize=(10, 7.5),
+        figsize=(8, 7.5),
     )  # figsize: (width, height)
     for j in range(numAgents):
         axs[0, j].plot(t, xmax[:, 4 * j], linestyle="--", label="upper bound")
@@ -158,7 +160,7 @@ def vis_large_eps(file: str) -> None:
     Rcmin = np.min(Rcumsum, axis=0)
 
     # plot TD error, reward and cumulative reward
-    _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(5, 5))
+    _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(3, 5))
     # using agent.evaluate() to speed up in lfc_train.py, yields no TD data if not learning, so we dont plot for no learning.
     if TD.shape[1] != 0:
         axs[0].plot(t[:-1], TDmax, linestyle="--", label="max")
@@ -175,10 +177,10 @@ def vis_large_eps(file: str) -> None:
     axs[2].plot(t[:-1], Rcmin, linestyle="--", label="min")
 
     # only set once
-    axs[0].set_title("Temporal difference error (TD)")
+    axs[0].set_title("TD error")
     axs[0].set_xlabel(r"time $t$")
-    axs[0].legend()
-    axs[1].set_title("Centralized costs (R)")
+    axs[0].legend(loc="upper right")
+    axs[1].set_title("Costs (R)") # for different episodes 
     axs[1].set_xlabel(r"time $t$")
     axs[1].legend()
     axs[2].set_title("Cumulative cost")
@@ -191,17 +193,17 @@ def vis_large_eps(file: str) -> None:
     # print(wm.window.geometry()) # (x,y,dx,dy)
     # figx, figy, figdx, figdy = wm.window.geometry().getRect()
     # wm.window.setGeometry(1000, 0, figdx, figdy)
-    wm.window.move(1000, 0)
+    wm.window.move(800, 0)
 
     # Plot TD error continously, (avg) rewards & TD per episode and evolution of learnable params over time
     TDlong = TD.reshape(
         -1,
     )  # reverting back to (1, eps*steps)
     tlong = m.ts * np.linspace(0, len(TDlong) - 1, len(TDlong))
-    _, axs = plt.subplots(4, 1, constrained_layout=True, sharex=False, figsize=(4, 7.5))
+    _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=False, figsize=(3, 5))
     if TD.shape[1] != 0:
         axs[0].plot(tlong, TDlong)
-        axs[0].set_title("Temporal difference error (TD)")
+        axs[0].set_title("Continuous TD error (all eps)")
         axs[0].set_xlabel(r"time $t$")
     axs[1].plot(
         np.linspace(1, numEpisodes, numEpisodes), Rcumsum[:, -1], linestyle="--"
@@ -212,22 +214,27 @@ def vis_large_eps(file: str) -> None:
         label="cumulative cost",
     )
     if TD.shape[1] != 0:
-        axs[1].plot(
+        axs[2].plot(
             np.linspace(1, numEpisodes, numEpisodes), np.sum(TD, axis=1), linestyle="--"
         )
-        axs[1].scatter(
+        axs[2].scatter(
             np.linspace(1, numEpisodes, numEpisodes),
             np.sum(TD, axis=1),
             label="sum of TD error",
         )
     # axs[1].set_ylim(bottom=0)
-    axs[1].set_title("Per episode")
+    axs[1].set_title("Cost per episode")
     axs[1].set_xlabel("Episodes")
-    axs[1].legend()
+    axs[1].set_ylim(bottom=0, top=1.1 * np.max(Rcumsum[:, -1]))
+    axs[1].margins(y=0.5)
+    axs[2].set_title("TD per episode")
+    axs[2].set_xlabel("Episodes")
+    axs[2].set_ylim(bottom=0, top=1.1 * np.max(np.sum(TD, axis=1)))
+    
 
     wm = plt.get_current_fig_manager()
     # wm.window.move(1500,0)
-    wm.window.move(650, 0)
+    wm.window.move(1100, 0)
 
     if numEpisodes != 1:
         Pl = Pl.reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
@@ -235,7 +242,7 @@ def vis_large_eps(file: str) -> None:
 
     # Plot loads and loads + noise
     _, axs = plt.subplots(
-        1, 3, constrained_layout=True, sharey=True, figsize=(5, 2)
+        1, 3, constrained_layout=True, sharey=True, figsize=(3, 1.9)
     )  # figsize: (width, height)
     for j in range(numAgents):
         for n in range(numEpisodes):
@@ -256,12 +263,35 @@ def vis_large_eps(file: str) -> None:
     wm = (
         plt.get_current_fig_manager()
     )  # using pyqt5 allows .setGeometry() and changes behavior of geometry()
-    # print(wm.window.geometry()) # (x,y,dx,dy)
-    # figx, figy, figdx, figdy = wm.window.geometry().getRect()
-    # wm.window.setGeometry(1000, 570, figdx, figdy)
-    wm.window.move(1000, 550)
+    wm.window.move(1100, 560)
 
-    if TD.shape[1] != 0:
+    # GRC plot | x: (eps, steps, states)
+    grc = m.GRC_l
+    fig, axs = plt.subplots(1, 3, constrained_layout=True, figsize=(3, 1.9), sharey=True)
+    for n in range(m.n):
+        axs[n].plot(
+            t[:-1],
+            1 / m.ts * (x[0, 1:, 4 * n + 1] - x[0, :-1, 4 * n + 1]),
+            color="green",
+        )
+        axs[n].plot(
+            t[:-1],
+            1 / m.ts * (x[-1, 1:, 4 * n + 1] - x[-1, :-1, 4 * n + 1]),
+            color="black",
+        )
+        axs[n].hlines(
+            [-grc, grc], 0, t[-2], color="r", linestyle="--", label="GRC"
+        )  # hlines(y_values, xmin, xmax)
+        # axs[n].set_ylim([-1.1*grc, 1.1*grc])
+        axs[n].set_title(f"Agent {n+1}")
+    axs[0].set_ylabel(r"$\Delta P_{m,i}(k+1)$ - $\Delta P_{m,i}(k)$")
+    axs[2].legend(loc="lower right")
+    # fig.suptitle("$\Delta P_{m,i}(k+1)$ - $\Delta P_{m,i}(k)$")
+    wm = plt.get_current_fig_manager()
+    wm.window.move(800, 560)
+
+    # Plot evolution of learnable parameters over time
+    if TD.shape[1] != 0 and learningFlag:
         # plot for a lot (or all) of learnable params (debug-purposes)
         _, axs = plt.subplots(7, 6, constrained_layout=True, figsize=(7.5, 7))
 
@@ -286,25 +316,6 @@ def vis_large_eps(file: str) -> None:
 
         wm = plt.get_current_fig_manager()
         wm.window.move(0, 0)
-
-    # GRC plot | x: (eps, steps, states)
-    grc = m.GRC_l
-    _, axs = plt.subplots(1, 3)
-    for n in range(m.n):
-        axs[n].plot(
-            t[:-1],
-            1 / m.ts * (x[0, 1:, 4 * n + 1] - x[0, :-1, 4 * n + 1]),
-            color="green",
-        )
-        axs[n].plot(
-            t[:-1],
-            1 / m.ts * (x[-1, 1:, 4 * n + 1] - x[-1, :-1, 4 * n + 1]),
-            color="black",
-        )
-        axs[n].hlines(
-            [-grc, grc], 0, t[-2], color="r", linestyle="--"
-        )  # hlines(y_values, xmin, xmax)
-        # axs[n].set_ylim([-1.1*grc, 1.1*grc])
 
     print("returns", Rcumsum[:, -1])
     plt.show()
@@ -367,5 +378,7 @@ filename = "cent_no_learning_3ep_scenario_0.1"
 
 filename = "distr_no_learning_1ep_scenario_0.1"
 
-# vis_large_eps(filename)
-# print('debug')
+# Scenario 0 | GRC = 1 (basically turned off)
+filename = 'cent_no_learning_5ep_scenario_0.2' # 5x [658.71297405] 
+
+vis_large_eps(filename)

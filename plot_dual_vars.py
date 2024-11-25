@@ -43,6 +43,7 @@ def plotDualVars(dist, debug):
     u_iters = u_iters.reshape((iters, 3, -1))
     z_iters = info_dict["z_iters"]  # (iters, 3, 4, N+1)
     z_iters = z_iters.reshape((iters, 12, -1))
+    f_iters = info_dict["f_iters"]  # (iters, 3)
     local_actions = info_dict[
         "local_actions"
     ]  # == u_iters[-1, :, 0], i.e the last iteration of the first timestep
@@ -79,28 +80,30 @@ def plotDualVars(dist, debug):
             it, np.sum(x_aug_iters[j][:, :, 0], axis=1), label=f"Agent {j+1}"
         )  # for each agent, sums the states of the first timestep in the horizon to compare it to the sum of the optimal states
 
-        # axs[1, 2].plot(
-        #     it, u_iters[:, j, 0], label=f"Agent {j+1}"
-        # ) # seperately
-
     # optimal x from debug
     axs[0, 2].plot(
         it, np.sum(x_opt) * np.ones(it.shape), linestyle=":", color="r", label="Optimal"
     )
-    # plot optimal u from
-    # axs[1, 2].plot(it, (u_opt*np.ones(it.shape)).T, linestyle=":", label="Optimal") # seperately
+    # plot optimal u from debug
     axs[1, 2].plot(it, np.sum(u_iters[:, :, 0], axis=1), label=f"Agents'")  # summed
     axs[1, 2].plot(
         it, np.sum(u_opt) * np.ones(it.shape), linestyle=":", color="r", label="Optimal"
     )  # summed
+    axs[2, 2].plot(it, np.sum(f_iters, axis=1), label="Agents'")  # summed
+    axs[2, 2].plot(it, f_opt * np.ones(it.shape), linestyle=":", color="r", label="Optimal")
+
 
     axs[0, 1].legend()
     axs[0, 1].set_xlabel("ADMM iters")
-    axs[1, 2].legend()
-    axs[1, 2].set_title(r"$\tilde{u}$ compared to optimal $u^*$")
     axs[0, 2].legend()
     axs[0, 2].set_xlabel("ADMM iters")
     axs[0, 2].set_title(r"$\tilde{x}_i$ compared to optimal $x^*$")
+    axs[1, 2].legend()
+    axs[1, 2].set_title(r"$\tilde{u}$ compared to optimal $u^*$")
+    axs[1, 2].set_xlabel("ADMM iters")
+    axs[2, 2].legend()
+    axs[2, 2].set_title(r"$\tilde{f}$ compared to optimal $f^*$")
+    axs[2, 2].set_xlabel("ADMM iters")
     axs[2, 0].legend()
     
     # dual vars lambda for dynamics

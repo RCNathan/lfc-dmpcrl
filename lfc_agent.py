@@ -28,7 +28,13 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
         True  # toggle whether during runtime, every x steps, data gets saved.
     )
     plotRunningFlag = True  # toggle whether plotted immediately as well. TODO: change centralized to the centralized_debug
-    plotDualVarsFlag = False  # toggle whether dual vars are being plotted at every timestep. TODO: f* from cent_debug
+    plotDualVarsFlag = True  # toggle whether dual vars are being plotted at every timestep. TODO: f* from cent_debug
+
+    cent_debug_info_dict = {
+        "state": [],
+        "action_opt": [],
+        "cent_sol": [],
+    }  # make empty dict to store centralized solution
 
     def on_timestep_end(
         self, env: Env[ObsType, ActType], episode: int, timestep: int
@@ -38,11 +44,17 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
         ):  # if centralized, don't save running data
             return super().on_timestep_end(env, episode, timestep)
 
+        if self.centralized_debug == False:
+            print(
+                "Warning: centralized_debug is False, so no centralized solution is being saved."
+            )
+
         if timestep % 10 == 0:
             X = [env.observations, env.ep_observations]
             U = [env.actions, env.ep_actions]
             R = [env.rewards, env.ep_rewards]
             TD = self.agents[0].agent.td_errors # TODO: maybe add a loop for all agents
+            debug_flag = self.centralized_debug
             info = {
                 "admm_iters": self.admm_coordinator.iters,
                 "consensus_iters": self.consensus_coordinator.iters,
@@ -58,6 +70,8 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
                         "U": U,
                         "R": R,
                         "info": info,
+                        "debug_flag": debug_flag,
+                        "cent_debug_info_dict": self.cent_debug_info_dict,
                     },
                     file,
                 )
@@ -211,6 +225,12 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
         action_opt, sol = super().state_value(
             state, deterministic, vals0, action_space, **kwargs
         )
+
+        if self.plotRunningFlag:
+            self.cent_debug_info_dict["state"].append(state)
+            self.cent_debug_info_dict["action_opt"].append(action_opt.toarray())
+            self.cent_debug_info_dict["cent_sol"].append(sol.f)
+
 
         # Save it in a pkl
         if self.plotDualVarsFlag:

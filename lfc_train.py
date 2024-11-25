@@ -316,7 +316,7 @@ make_plots = True
 # cent, no learn
 t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
 numSteps = int(t_end / model.ts)
-# train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=numSteps, prediction_horizon=10)
+train(centralized_flag=True, learning_flag=False, numEpisodes=2, numSteps=numSteps, prediction_horizon=10)
 
 
 # cent, learn
@@ -328,17 +328,17 @@ numSteps = int(t_end / model.ts)
 #       experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1))
 
 # dist, no learn
-train(
-    centralized_flag=False,
-    learning_flag=False,
-    numEpisodes=1,
-    numSteps=numSteps,
-    prediction_horizon=10,
-    admm_iters=50,
-    rho=0.5,
-    consensus_iters=50,
-    centralized_debug=True,
-)
+# train(
+#     centralized_flag=False,
+#     learning_flag=False,
+#     numEpisodes=1,
+#     numSteps=numSteps,
+#     prediction_horizon=10,
+#     admm_iters=50,
+#     rho=0.5,
+#     consensus_iters=50,
+#     centralized_debug=True,
+# )
 
 # Comparison:
 # filename = cent_no_learning_1ep_scenario_1, return [531.66506515]
