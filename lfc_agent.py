@@ -53,7 +53,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
             X = [env.observations, env.ep_observations]
             U = [env.actions, env.ep_actions]
             R = [env.rewards, env.ep_rewards]
-            TD = self.agents[0].agent.td_errors  # TODO: maybe add a loop for all agents
+            TD = [self.agents[i].agent.td_errors for i in range(self.n)]
             debug_flag = self.centralized_debug
             info = {
                 "admm_iters": self.admm_coordinator.iters,

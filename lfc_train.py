@@ -326,9 +326,9 @@ train(
 
 
 # cent, learn
-# train(centralized_flag=True, learning_flag=True, numEpisodes=10, numSteps=numSteps, prediction_horizon=10,
+# train(centralized_flag=True, learning_flag=True, numEpisodes=5, numSteps=numSteps, prediction_horizon=10,
 #       update_strategy=10,
-#       learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
+#       learning_rate=ExponentialScheduler(1e-15, factor=0.9999),
 #       epsilon=ExponentialScheduler(0.9, factor=0.99),
 #       eps_strength=2000, # values depend on setup, might need large values!
 #       experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1))
