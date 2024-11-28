@@ -221,7 +221,7 @@ def vis_large_eps(file: str) -> None:
     )
     if TD.shape[1] != 0:
         axs[2].plot(
-            np.linspace(1, numEpisodes, numEpisodes), np.sum(TD, axis=1), linestyle="--"
+            np.linspace(1, numEpisodes, numEpisodes), np.sum(np.abs(TD), axis=1), linestyle="--"
         )
         axs[2].scatter(
             np.linspace(1, numEpisodes, numEpisodes),
