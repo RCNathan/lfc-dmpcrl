@@ -39,6 +39,13 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
     def on_timestep_end(
         self, env: Env[ObsType, ActType], episode: int, timestep: int
     ) -> None:
+        # Update load at end of timestep
+        if self.centralized_flag:
+            self.fixed_parameters["Pl"] = env.unwrapped.load
+        else:
+            for i in range(len(self.agents)):
+                self.agents[i].fixed_parameters["Pl"] = env.unwrapped.load[i]
+
         if (
             not self.saveRunningData or self.centralized_flag
         ):  # if centralized, don't save running data
@@ -85,7 +92,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
             plotDualVars(r"dual_vars\dist_sv.pkl", r"dual_vars\centdebug_sv.pkl")
         return super().on_timestep_end(env, episode, timestep)
 
-    # For updating load values
+    # For updating load values 
     def on_episode_start(self, env: LtiSystem, episode: int, state) -> None:
         # env.reset()
         if self.centralized_flag:
@@ -95,14 +102,14 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
                 self.agents[i].fixed_parameters["Pl"] = env.unwrapped.load[i]
         return super().on_episode_start(env, episode, state)
 
-    # For updating load values
-    def on_env_step(self, env: LtiSystem, episode: int, timestep: int) -> None:
-        if self.centralized_flag:
-            self.fixed_parameters["Pl"] = env.unwrapped.load
-        else:
-            for i in range(len(self.agents)):
-                self.agents[i].fixed_parameters["Pl"] = env.unwrapped.load[i]
-        return super().on_env_step(env, episode, timestep)
+    # For updating load values-> moved to on_timestep_end since it causes spikes in TD when s+ and s dont align (V(s+), Q(s,a))
+    # def on_env_step(self, env: LtiSystem, episode: int, timestep: int) -> None:
+    #     if self.centralized_flag:
+    #         self.fixed_parameters["Pl"] = env.unwrapped.load
+    #     else:
+    #         for i in range(len(self.agents)):
+    #             self.agents[i].fixed_parameters["Pl"] = env.unwrapped.load[i]
+    #     return super().on_env_step(env, episode, timestep)
 
     # To store infeasible timesteps when MPC fails
     numInfeasibles = {}  # make empty dict to store infeasible timesteps
