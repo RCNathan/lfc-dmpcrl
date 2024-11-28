@@ -30,12 +30,13 @@ def vis_large_eps(file: str) -> None:
     R = data.get("R")  # shape = (4, 200)                        | (eps, steps)
 
 
-    # TD now saved as agents[i].td_errors instead of agents[0], to compare to centralized. 
-    # To account for that, we sum over all agents 
-    TD = np.asarray(data.get("TD"))
+    # TD now saved as agents[i].td_errors instead of agents[0], to compare to centralized. <- THIS IS WRONG!!
+    # To account for that, we sum over all agents <- no. using the GAC td[0] = td[1] = td[2] = td_cent!!
+    TD = np.asarray(data.get("TD")) 
     centralized_flag = data.get("cent_flag")
     if centralized_flag == False: # i.e: distributed, so TD has shape (n, eps*steps)
-        TD = np.sum(TD, axis=0) # sum over agents to shape (eps*steps)
+        # TD = np.sum(TD, axis=0) # sum over agents to shape (eps*steps) # no!
+        TD =  TD[0, :] # sum over agents to shape (eps*steps)
 
     # bit trickier, TD, Pl and Pl_noise are reshaped later if numEps > 1
     TD = TD.reshape(
@@ -149,9 +150,6 @@ def vis_large_eps(file: str) -> None:
     wm = (
         plt.get_current_fig_manager()
     )  # using pyqt5 allows .setGeometry() and changes behavior of geometry()
-    # print(wm.window.geometry()) # (x,y,dx,dy)
-    # figx, figy, figdx, figdy = wm.window.geometry().getRect()
-    # wm.window.setGeometry(-10, 0, figdx, figdy)
     wm.window.move(-10, 0)
 
     if numEpisodes != 1:
