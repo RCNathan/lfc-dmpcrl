@@ -189,7 +189,8 @@ def train(
     # extract data
     # from agent
     TD = (
-        agent.td_errors if centralized_flag else agent.agents[0].td_errors
+        # agent.td_errors if centralized_flag else agent.agents[0].td_errors
+        agent.td_errors if centralized_flag else [agent.agents[i].td_errors for i in range(Model.n)]
     )  # all smaller agents have global TD error
     param_dict = {}
     if centralized_flag:
@@ -246,6 +247,7 @@ def train(
                     "Pl_noise": Pl_noise,
                     "learning_params": learning_params,
                     "infeasibles": infeasibles,
+                    "cent_flag": centralized_flag,
                 },
                 file,
             )
@@ -316,6 +318,7 @@ make_plots = True
 # cent, no learn
 t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
 numSteps = int(t_end / model.ts)
+# numSteps = 10
 train(
     centralized_flag=True,
     learning_flag=False,

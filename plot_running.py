@@ -48,6 +48,8 @@ def plotRunning(running_filename):
         u = np.array(data_cent["action_opt"])
         u = u.reshape(1, u.shape[0], u.shape[1])
         TD = np.array([]).reshape(1, -1)  # placeholder
+        R = np.array(data_cent["cent_sol"])
+        
 
     # dist
     x2 = data_dist.get("X")
@@ -61,7 +63,7 @@ def plotRunning(running_filename):
     else:
         x2 = np.array(x2[0])
         u2 = np.array(u2[0])
-        R2 = np.array(R2[0])
+        R2 = np.array(R2[0]).squeeze()
 
     x_len = x2.shape[1]
     t = np.linspace(
@@ -85,8 +87,14 @@ def plotRunning(running_filename):
     axs[3, 0].set_ylabel(r"$x_4$")
     axs[4, 0].set_ylabel(r"$u$")
     axs[0, 0].legend()
+    # costs
+    axs[0, 3].plot(t[:-1], R[: x_len - 1], label="cent")
+    axs[0, 3].plot(t[:-1], R2[:], label="dist", linestyle="--")
+    axs[0, 3].set_title("Cost over time")
+    axs[0, 3].legend()
     # TD
     # after changing to use agent.evaluate() for non-learning; TD is non-existent in that case
+        # update: using .train() again. But: for no learning, not important. For learning: they differ significantly.
     if TD.shape[1] != 0 and TD2.shape[1] != 0:
         axs[0, 3].plot(t[:-1], TD[0, : x_len - 1], label="cent")
         axs[0, 3].plot(t[:-1], TD2[0, :], label="dist", linestyle="--")
@@ -119,8 +127,7 @@ def plotRunning(running_filename):
     # print(f"\nADMM iterations used: {admm}, Consensus iterations used:{gac}")
 
 
-# filename = 'ep0timestep10'
+filename = 'ep0timestep10'
 # filename = 'ep0timestep60'
 # filename = 'ep0timestep500'
-filename = "ep0timestep10"
 # plotRunning(filename)

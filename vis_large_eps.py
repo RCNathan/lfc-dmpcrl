@@ -29,8 +29,16 @@ def vis_large_eps(file: str) -> None:
     u = u.reshape(u.shape[0], u.shape[1], -1)  # (4, 201, 3)     | (eps, steps, inputs)
     R = data.get("R")  # shape = (4, 200)                        | (eps, steps)
 
+
+    # TD now saved as agents[i].td_errors instead of agents[0], to compare to centralized. 
+    # To account for that, we sum over all agents 
+    TD = np.asarray(data.get("TD"))
+    centralized_flag = data.get("cent_flag")
+    if centralized_flag == False: # i.e: distributed, so TD has shape (n, eps*steps)
+        TD = np.sum(TD, axis=0) # sum over agents to shape (eps*steps)
+
     # bit trickier, TD, Pl and Pl_noise are reshaped later if numEps > 1
-    TD = np.asarray(data.get("TD")).reshape(
+    TD = TD.reshape(
         1, -1
     )  # e.g (1,800) for 4 eps at 200 steps  | (1, eps*steps)
     Pl = (
@@ -321,16 +329,6 @@ def vis_large_eps(file: str) -> None:
     print("returns", Rcumsum[:, -1])
     plt.show()
 
-
-# filename = 'cent'
-# filename = 'cent_no_learning_1ep'
-# filename = 'cent_no_learning_4ep'
-# filename = 'cent_4ep'
-# filename = 'cent_5ep' # this one shows really promising results!
-# filename = 'cent_10ep'
-# filename = 'cent_20ep'
-# filename = 'cent_50ep'
-
 # changed Qs,Qx and other stuff -> to get TD error down for numerical stability
 filename = "cent_5ep"  # this one shows really promising results!
 filename = "cent_50epTEST"  # holy shit this shit is amazing!
@@ -382,5 +380,9 @@ filename = "distr_no_learning_1ep_scenario_0.1"
 # Scenario 0 | GRC = 1 (basically turned off)
 filename = "cent_no_learning_5ep_scenario_0.2"  # 5x [658.71297405], GRC = 1? loads +-0.8
 filename = 'cent_10ep_scenario_0.2' # learning for GRC=0.1, loads increased +-1.0
+
+# Scenario 0 | load to +-0.085, GRC at 0.1
+filename = "cent_no_learning_1ep_scenario_0.2"
+filename = "distr_no_learning_1ep_scenario_0.2" # 28-11: full run complete, return [811.76]
 
 # vis_large_eps(filename)
