@@ -231,7 +231,7 @@ def train(
             pklname = "distr"
         if learning_flag == False:
             pklname = pklname + "_no_learning"
-        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_0.2"
+        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_1"
         with open(
             f"{pklname}.pkl",
             "wb",  # w: write mode, creates new or truncates existing. b: binary mode

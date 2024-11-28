@@ -385,4 +385,8 @@ filename = 'cent_10ep_scenario_0.2' # learning for GRC=0.1, loads increased +-1.
 filename = "cent_no_learning_1ep_scenario_0.2"
 filename = "distr_no_learning_1ep_scenario_0.2" # 28-11: full run complete, return [811.76]
 
+# Scenario 1 | load noise 0.03*uniform
+filename= 'cent_5ep_scenario_1'# [3220.49319484  958.90272301  944.0168765   908.90453459  695.90968997]
+filename= 'cent_no_learning_1ep_scenario_1' # [960.91]
+
 # vis_large_eps(filename)
