@@ -34,7 +34,7 @@ class LtiSystem(
         self.ts_env = model.ts_env  # different sampling time for env
         self.ts = model.ts  # needed to decide how many times to run loop
         self.w = np.tile(
-            [[5e2, 1e1, 1e1, 1e1]], (1, self.n)
+            [[1e3, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
         self.w_grc = np.tile(
             [0, 1e4, 0, 0], (1, self.n)
@@ -235,7 +235,7 @@ class LtiSystem(
         # c1, c2 = 0.03, -0.02
         # t1, t2, t3 = 10, 20, 30
         # with ts = 0.01
-        c1, c2 = 0.085, -0.085
+        c1, c2 = 0.08, -0.08
         t1, t2, t3 = 1, 2, 3
         if sim_time <= t1:
             self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)
@@ -254,7 +254,7 @@ class LtiSystem(
         )  # (low, high, size) -> in [-1, 1)
 
         # self.load = np.zeros((3,1)) # to toggle load on/off
-        # self.load_noise = np.zeros((3, 1))
+        self.load_noise = np.zeros((3, 1))
 
         action = action.full()  # convert action from casadi DM to numpy array
 
