@@ -2,6 +2,7 @@ import logging
 import pickle
 from copy import deepcopy
 from datetime import *
+import os
 
 import casadi as cs
 import numpy as np
@@ -28,6 +29,7 @@ from lfc_learnable_mpc import (  # change learnable mpc, start with centralized
 from lfc_model import Model  # change model in model.py (own repo)
 from lfc_visualization import visualize
 from vis_large_eps import vis_large_eps
+from masterplot import large_plot
 
 
 def train(
@@ -51,7 +53,20 @@ def train(
     ),  # experience replay
     prediction_horizon=10,  # MPC prediction horizon N
     centralized_debug=False,  # debug flag for centralized mpc
+    save_name_info: str =None, # optional name to provide more info for saves (plots etc)
 ) -> None:
+    
+    # High-level stuff
+    model = Model()  # model class defines dynamic model
+    G = AdmmCoordinator.g_map(model.adj)  # network topology G
+    save_data = True
+    make_plots = True
+
+    if save_name_info == None:
+        raise NameError ('Please provide some info (e.g Test1) to differentiate simulations, \
+                         by providing save_name_info')
+    if type(save_name_info) != str:
+        raise TypeError('Please provide a descriptive string (str) for save_name_info')
 
     # centralised mpc and params
     centralized_mpc = CentralizedMpc(
@@ -232,8 +247,14 @@ def train(
         if learning_flag == False:
             pklname = pklname + "_no_learning"
         pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_1"
+
+        # make sure dir exists, save plot and close after
+        saveloc = r'data\pkls'
+        os.makedirs(saveloc, exist_ok=True)
+        savename = save_name_info + "_" + pklname
+
         with open(
-            f"{pklname}.pkl",
+            f'{saveloc}\{savename}.pkl',
             "wb",  # w: write mode, creates new or truncates existing. b: binary mode
         ) as file:
             pickle.dump(
@@ -251,21 +272,13 @@ def train(
                 },
                 file,
             )
-        print("Training succesful, file saved as", pklname)
+        print("Training succesful, file saved as", savename)
 
         if make_plots:
-            if (
-                numEpisodes > 0
-            ):  # for larger amounts of eps -> 0 as this became standard.
-                vis_large_eps(pklname)
-            else:
-                visualize(pklname)  # outdated atm
-
-
-model = Model()  # model class defines dynamic model
-G = AdmmCoordinator.g_map(model.adj)  # network topology G
-save_data = True
-make_plots = True
+            large_plot(
+                f'{saveloc}\{savename}', 
+                optional_name=save_name_info 
+                )
 
 ### SCENARIO 0: no stochasticities ###
 
@@ -316,15 +329,16 @@ make_plots = True
 ### SCENARIO 1: noise on load disturbance ###
 
 # cent, no learn
+model = Model()
 t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
 numSteps = int(t_end / model.ts)
-numSteps = 150
 # train(
 #     centralized_flag=True,
 #     learning_flag=False,
 #     numEpisodes=1,
 #     numSteps=numSteps,
 #     prediction_horizon=10,
+#     save_name_info='t1'
 # )
 
 
@@ -342,33 +356,34 @@ numSteps = 150
 #     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1))
 
 # dist, no learn
-# train(
-#     centralized_flag=False,
-#     learning_flag=False,
-#     numEpisodes=1,
-#     numSteps=numSteps,
-#     prediction_horizon=10,
-#     admm_iters=50,
-#     rho=0.5,
-#     consensus_iters=50,
-#     centralized_debug=True,
-# )
+train(
+    centralized_flag=False,
+    learning_flag=False,
+    numEpisodes=1,
+    numSteps=numSteps,
+    prediction_horizon=10,
+    admm_iters=50,
+    rho=0.5,
+    consensus_iters=50,
+    centralized_debug=True,
+    save_name_info='t2'
+)
 
 # distr learning
-train(
-    centralized_flag=False, 
-    learning_flag=True, 
-    numEpisodes=1, 
-    numSteps=numSteps, 
-    prediction_horizon=10,
-    update_strategy=10,
-    learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
-    epsilon=ExponentialScheduler(0.5, factor=0.99),
-    eps_strength=2000, # values depend on setup, might need large values!
-    experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-    admm_iters=50,
-    consensus_iters=50,
-    centralized_debug=True)
+# train(
+#     centralized_flag=False, 
+#     learning_flag=True, 
+#     numEpisodes=1, 
+#     numSteps=numSteps, 
+#     prediction_horizon=10,
+#     update_strategy=10,
+#     learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
+#     epsilon=ExponentialScheduler(0.5, factor=0.99),
+#     eps_strength=2000, # values depend on setup, might need large values!
+#     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+#     admm_iters=50,
+#     consensus_iters=50,
+#     centralized_debug=True)
 
 
 # Comparison:

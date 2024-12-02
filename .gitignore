@@ -12,6 +12,7 @@ data_large/
 *.pkl
 logs/
 running_pkls/
+data/
 
 # Distribution / packaging
 .Python
