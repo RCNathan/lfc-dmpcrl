@@ -8,10 +8,11 @@ import os
 def plotRunning(running_filename):
     """Makes plots to visualize states during running. Note: manually change the centralized counterpart."""
 
+    # used when centralized_debug is False
     filename = "cent_no_learning_1ep_scenario_0"  # centralized, return [460.55373678]
-    filename = (
-        "cent_no_learning_1ep_scenario_0.1"  # used when centralized_debug is False
-    )
+    filename = "cent_no_learning_1ep_scenario_0.1"  
+    filename = 'cent_no_learning_1ep_scenario_1' 
+    
     with open(
         filename + ".pkl",
         "rb",

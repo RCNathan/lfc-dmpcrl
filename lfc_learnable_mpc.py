@@ -237,7 +237,7 @@ class CentralizedMpc(LearnableMpc):
         )
 
         # solver
-        solver = "ipopt"  # qpoases or ipopt
+        solver = "qpoases"  # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
@@ -381,7 +381,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         )
 
         # solver
-        solver = "ipopt"
+        solver = "qpoases"
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 

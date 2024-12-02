@@ -318,23 +318,28 @@ make_plots = True
 # cent, no learn
 t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
 numSteps = int(t_end / model.ts)
-# numSteps = 10
-train(
-    centralized_flag=True,
-    learning_flag=False,
-    numEpisodes=1,
-    numSteps=numSteps,
-    prediction_horizon=10,
-)
+numSteps = 150
+# train(
+#     centralized_flag=True,
+#     learning_flag=False,
+#     numEpisodes=1,
+#     numSteps=numSteps,
+#     prediction_horizon=10,
+# )
 
 
 # cent, learn
-# train(centralized_flag=True, learning_flag=True, numEpisodes=5, numSteps=numSteps, prediction_horizon=10,
-#       update_strategy=10,
-#       learning_rate=ExponentialScheduler(1e-15, factor=0.9999),
-#       epsilon=ExponentialScheduler(0.9, factor=0.99),
-#       eps_strength=2000, # values depend on setup, might need large values!
-#       experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1))
+# train(
+#     centralized_flag=True, 
+#     learning_flag=True, 
+#     numEpisodes=5, 
+#     numSteps=numSteps, 
+#     prediction_horizon=10,
+#     update_strategy=10,
+#     learning_rate=ExponentialScheduler(1e-16, factor=0.9999),
+#     epsilon=ExponentialScheduler(0.9, factor=0.99),
+#     eps_strength=2000, # values depend on setup, might need large values!
+#     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1))
 
 # dist, no learn
 # train(
@@ -348,6 +353,23 @@ train(
 #     consensus_iters=50,
 #     centralized_debug=True,
 # )
+
+# distr learning
+train(
+    centralized_flag=False, 
+    learning_flag=True, 
+    numEpisodes=1, 
+    numSteps=numSteps, 
+    prediction_horizon=10,
+    update_strategy=10,
+    learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
+    epsilon=ExponentialScheduler(0.5, factor=0.99),
+    eps_strength=2000, # values depend on setup, might need large values!
+    experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+    admm_iters=50,
+    consensus_iters=50,
+    centralized_debug=True)
+
 
 # Comparison:
 # filename = cent_no_learning_1ep_scenario_1, return [531.66506515]
