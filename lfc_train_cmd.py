@@ -54,7 +54,7 @@ def train(
     experience=ExperienceReplay(
         maxlen=100, sample_size=20, include_latest=10, seed=1
     ),  # experience replay
-    prediction_horizon=10,  # MPC prediction horizon N
+    prediction_horizon: int = 10,  # MPC prediction horizon N
     centralized_debug=False,  # debug flag for centralized mpc
     save_name_info: str =None, # optional name to provide more info for saves (plots etc)
 ) -> None:
@@ -283,120 +283,42 @@ def train(
                 optional_name=save_name_info 
                 )
 
+# To run code from command-line using json-file, use the following command: python lfc_train_cmd.py --config_file training_config.json
+if __name__ == "__main__":
+    # create parser
+    parser = argparse.ArgumentParser(description="Train LFC agents")
 
-### SCENARIO 0: no stochasticities ###
+    # Add arguments
+    parser.add_argument("--config_file", type=str, required=True, help="Path to config file")
+    # note: output-dir not necessary, as it is hardcoded in the function
 
-# cent no learn, filename = cent_no_learning_5ep_scenario_0
-# train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10)
+    # parse arguments
+    args = parser.parse_args()
 
-# cent learning
-# train(centralized_flag=True, learning_flag=True, numEpisodes=5, numSteps=500, prediction_horizon=10,
-#       update_strategy=10,
-#       learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
-#       epsilon=ExponentialScheduler(0.9, factor=0.99),
-#       eps_strength=2000, # values depend on setup, might need large values!
-#       experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1))
+    # load config file
+    with open(args.config_file, "r") as file:
+        param_sets = json.load(file)
 
-# distr no learn
-# train(
-#     centralized_flag=False,
-#     learning_flag=False,
-#     numEpisodes=1,
-#     numSteps=500,
-#     prediction_horizon=10,
-#     admm_iters=1000,
-#     rho=1,
-#     consensus_iters=50,
-# )
-# default: admm_iters=500, rho=0.5, consensus_iters=100 | so far, rho=1 has smallest error in dist obj func vals
+        for param_set in param_sets:
+            # Convert the "learning_rate" JSON object into an ExponentialScheduler
+            if "learning_rate" in param_set:
+                lr = param_set["learning_rate"]
+                if lr["type"] == "ExponentialScheduler":
+                    param_set["learning_rate"] = ExponentialScheduler(**lr["args"])
 
-# distr learning
-# train(centralized_flag=False, learning_flag=True, numEpisodes=1, numSteps=500, prediction_horizon=10,
-#       update_strategy=10,
-#       learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
-#       epsilon=ExponentialScheduler(0.5, factor=0.99),
-#       eps_strength=2000, # values depend on setup, might need large values!
-#       experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-#       admm_iters=50,
-#       rho=0.5,
-#       consensus_iters=10)
+            # Convert the "epsilon" JSON object into an ExponentialScheduler
+            if "epsilon" in param_set:
+                eps = param_set["epsilon"]
+                if eps["type"] == "ExponentialScheduler":
+                    param_set["epsilon"] = ExponentialScheduler(**eps["args"])
 
-# comparison:
-# filename = cent_no_learning_1ep_scenario_0, return [460.55373678]
-# filename = distr_no_learning_1ep_scenario_0, returns [459.15050864], with admm=consensus=10: [455.08451423]
-# filename = cent_5ep_scenario_0, returns [494.89054804 459.91821451 464.86239366 476.93518783 485.615052], learning_rate=1e-12, eps=0.9,
-# [460.74981802 454.53376213 461.06524424 466.05204773 474.17630742] with eps=0.3
-# filename = distr_1ep_scenario_0, return [468.68259208]
+            # Convert the "experience" JSON object into an ExperienceReplay
+            if "experience" in param_set:
+                exp = param_set["experience"]
+                if exp["type"] == "ExperienceReplay":
+                    param_set["experience"] = ExperienceReplay(**exp["args"])
 
-
-### SCENARIO 1: noise on load disturbance ###
-
-# cent, no learn
-model = Model()
-t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
-numSteps = int(t_end / model.ts)
-# train(
-#     centralized_flag=True,
-#     learning_flag=False,
-#     numEpisodes=1,
-#     numSteps=numSteps,
-#     prediction_horizon=10,
-#     save_name_info='t1manual'
-# )
-
-
-# cent, learn
-train(
-    centralized_flag=True, 
-    learning_flag=True, 
-    numEpisodes=5, 
-    numSteps=numSteps, 
-    prediction_horizon=10,
-    update_strategy=10,
-    learning_rate=ExponentialScheduler(1e-20, factor=0.9999),
-    epsilon=ExponentialScheduler(0.9, factor=0.99),
-    eps_strength=2000, # values depend on setup, might need large values!
-    experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-    save_name_info='centlearnmanual'
-    )
-    
-
-# dist, no learn
-# train(
-#     centralized_flag=False,
-#     learning_flag=False,
-#     numEpisodes=1,
-#     numSteps=numSteps,
-#     prediction_horizon=10,
-#     admm_iters=50,
-#     rho=0.5,
-#     consensus_iters=50,
-#     centralized_debug=True,
-#     save_name_info='t2'
-# )
-
-# distr learning
-# train(
-#     centralized_flag=False, 
-#     learning_flag=True, 
-#     numEpisodes=1, 
-#     numSteps=numSteps, 
-#     prediction_horizon=10,
-#     update_strategy=10,
-#     learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
-#     epsilon=ExponentialScheduler(0.5, factor=0.99),
-#     eps_strength=2000, # values depend on setup, might need large values!
-#     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-#     admm_iters=50,
-#     consensus_iters=50,
-#     centralized_debug=True)
-
-
-# Comparison:
-# filename = cent_no_learning_1ep_scenario_1, return [531.66506515]
-
-### SCENARIO 1.5?: noise on load disturbance + varying time-constant (known) ###
-
-### SCENARIO 2: noise on load disturbance + varying time-constant (known) + inaccurate dynamics (unknown) ###
-
-### SCENARIO 3?: previous + windfarm-area ###
+            train(**param_set)
+            # print(param_set)
+            print("Training complete")
+        print("All training complete")

@@ -387,4 +387,6 @@ filename = "distr_no_learning_1ep_scenario_0.2" # 28-11: full run complete, retu
 filename= 'cent_5ep_scenario_1'# [3220.49319484  958.90272301  944.0168765   908.90453459  695.90968997]
 filename= 'cent_no_learning_1ep_scenario_1' # [960.91]
 
+# after command line shenanigans
+filename = r"data\pkls\centlearnmanual_cent_5ep_scenario_1"
 # vis_large_eps(filename)

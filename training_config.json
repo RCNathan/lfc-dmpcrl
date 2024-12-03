@@ -1,0 +1,101 @@
+[
+    {
+        "save_name_info": "tcn",
+        "centralized_flag": true,
+        "learning_flag": false,
+        "numEpisodes": 1,
+        "numSteps": 1000
+    },
+    {
+        "save_name_info": "tcl1",
+        "centralized_flag": true,
+        "learning_flag": true,
+        "numEpisodes": 20,
+        "numSteps": 1000,
+        "update_strategy": 10,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 0.9999
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.7,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 2000
+    },
+    {
+        "save_name_info": "tcl2",
+        "centralized_flag": true,
+        "learning_flag": true,
+        "numEpisodes": 50,
+        "numSteps": 1000,
+        "update_strategy": 10,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 0.9999
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.7,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 2000
+    },
+    {
+        "save_name_info": "tcl3",
+        "centralized_flag": true,
+        "learning_flag": true,
+        "numEpisodes": 20,
+        "numSteps": 1000,
+        "update_strategy": 10,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 1
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.7,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 2000
+    },
+    {
+        "save_name_info": "tcl4",
+        "centralized_flag": true,
+        "learning_flag": true,
+        "numEpisodes": 20,
+        "numSteps": 1000,
+        "update_strategy": 10,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-19,
+                "factor": 1
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.7,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 2000
+    }
+]

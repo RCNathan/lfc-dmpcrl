@@ -99,7 +99,7 @@ def large_plot(file: str, optional_name=None) -> None:
         7,
         4,
         constrained_layout=True,
-        sharex=True,
+        # sharex=True,
         figsize=(18, 9.5),
     )  # figsize: (width, height)
     for j in range(numAgents):
