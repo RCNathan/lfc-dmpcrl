@@ -346,34 +346,34 @@ numSteps = int(t_end / model.ts)
 
 
 # cent, learn
-train(
-    centralized_flag=True, 
-    learning_flag=True, 
-    numEpisodes=5, 
-    numSteps=numSteps, 
-    prediction_horizon=10,
-    update_strategy=10,
-    learning_rate=ExponentialScheduler(1e-20, factor=0.9999),
-    epsilon=ExponentialScheduler(0.9, factor=0.99),
-    eps_strength=2000, # values depend on setup, might need large values!
-    experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-    save_name_info='centlearnmanual'
-    )
+# train(
+#     centralized_flag=True, 
+#     learning_flag=True, 
+#     numEpisodes=5, 
+#     numSteps=numSteps, 
+#     prediction_horizon=10,
+#     update_strategy=10,
+#     learning_rate=ExponentialScheduler(1e-20, factor=0.9999),
+#     epsilon=ExponentialScheduler(0.9, factor=0.99),
+#     eps_strength=2000, # values depend on setup, might need large values!
+#     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+#     save_name_info='centlearnmanual'
+#     )
     
 
 # dist, no learn
-# train(
-#     centralized_flag=False,
-#     learning_flag=False,
-#     numEpisodes=1,
-#     numSteps=numSteps,
-#     prediction_horizon=10,
-#     admm_iters=50,
-#     rho=0.5,
-#     consensus_iters=50,
-#     centralized_debug=True,
-#     save_name_info='t2'
-# )
+train(
+    centralized_flag=False,
+    learning_flag=False,
+    numEpisodes=1,
+    numSteps=numSteps,
+    prediction_horizon=10,
+    admm_iters=100,
+    rho=0.5,
+    consensus_iters=50,
+    centralized_debug=True,
+    save_name_info='fixbug'
+)
 
 # distr learning
 # train(

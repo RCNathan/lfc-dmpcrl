@@ -201,39 +201,42 @@ class CentralizedMpc(LearnableMpc):
         )
 
         # other constraints
-        self.constraint("x_lb", self.x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])
-        self.constraint("x_ub", x[:, 1:], "<=", self.x_bnd[1].reshape(-1, 1) + x_ub + s)
-        self.constraint(
-            "GRC_lb",
-            -self.GRC - s_grc,
-            "<=",
-            1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
-            soft=False,
-        )  # generation-rate constraint
-        self.constraint(
-            "GRC_ub",
-            1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
-            "<=",
-            self.GRC + s_grc,
-            soft=False,
-        )  # generation-rate constraint
+        # self.constraint("x_lb", self.x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])
+        # self.constraint("x_ub", x[:, 1:], "<=", self.x_bnd[1].reshape(-1, 1) + x_ub + s)
+        # self.constraint(
+        #     "GRC_lb",
+        #     -self.GRC - s_grc,
+        #     "<=",
+        #     1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
+        #     soft=False,
+        # )  # generation-rate constraint
+        # self.constraint(
+        #     "GRC_ub",
+        #     1 / self.ts * (x[[1, 5, 9], 1:] - x[[1, 5, 9], :-1]),
+        #     "<=",
+        #     self.GRC + s_grc,
+        #     soft=False,
+        # )  # generation-rate constraint
 
         # objective | x.shape = (nx, N+1), u.shape = (nu, N)    |   sum1 is row-sum, sum2 is col-sum
         gammapowers = cs.DM(gamma ** np.arange(N)).T
         self.minimize(
-            cs.sum1(V0)
-            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))  # f'([x, u]')
-            + cs.sum2(
-                gammapowers
-                * (
-                    # Qu.T @ u**2 +
-                    cs.sum1(u.T @ Qu @ u + x[:, :-1].T @ Qx @ x[:, :-1])  # x' Q_x x
-                )
-            )
-            + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
-            # + cs.sum1(x[:, -1].T @ P @ x[:, -1]) # x(N)' P x(N)), where P is solution of the DARE
-            + cs.sum2(self.w @ s)  # punishes slack variables
-            + cs.sum2(self.w_grc @ s_grc)  # punishes slacks on grc
+            # cs.sum1(V0)
+            # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))  # f'([x, u]')
+            # + cs.sum2(
+            #     gammapowers
+            #     * (
+            #         cs.sum1(
+            #             u.T @ Qu @ u # u' Q_u u
+            #             + x[:, :-1].T @ Qx @ x[:, :-1] # x' Q_x x
+            #         )  
+            #     )
+            # )
+            # + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
+            # # + cs.sum1(x[:, -1].T @ P @ x[:, -1]) # x(N)' P x(N)), where P is solution of the DARE
+            # + cs.sum2(self.w @ s)  # punishes slack variables
+            # + cs.sum2(self.w_grc @ s_grc)  # punishes slacks on grc
+            cs.sum2(cs.sum1(x**2))
         )
 
         # solver
@@ -346,46 +349,43 @@ class LocalMpc(MpcAdmm, LearnableMpc):
             )
 
         # other constraints
-        self.constraint(f"x_lb", self.x_bnd_l[0] + x_lb - s, "<=", x[:, 1:])
-        self.constraint(f"x_ub", x[:, 1:], "<=", self.x_bnd_l[1] + x_ub + s)
-        self.constraint(
-            "GRC_lb",
-            -self.GRC_l - s_grc,
-            "<=",
-            1 / self.ts * (x[1, 1:] - x[1, :-1]),
-            soft=False,
-        )  # grc constraint
-        self.constraint(
-            "GRC_ub",
-            1 / self.ts * (x[1, 1:] - x[1, :-1]),
-            "<=",
-            self.GRC_l + s_grc,
-            soft=False,
-        )  # grc constraint
+        # self.constraint(f"x_lb", self.x_bnd_l[0] + x_lb - s, "<=", x[:, 1:])
+        # self.constraint(f"x_ub", x[:, 1:], "<=", self.x_bnd_l[1] + x_ub + s)
+        # self.constraint(
+        #     "GRC_lb",
+        #     -self.GRC_l - s_grc,
+        #     "<=",
+        #     1 / self.ts * (x[1, 1:] - x[1, :-1]),
+        #     soft=False,
+        # )  # grc constraint
+        # self.constraint(
+        #     "GRC_ub",
+        #     1 / self.ts * (x[1, 1:] - x[1, :-1]),
+        #     "<=",
+        #     self.GRC_l + s_grc,
+        #     soft=False,
+        # )  # grc constraint
 
         # objective
         gammapowers = cs.DM(gamma ** np.arange(N)).T
         self.set_local_cost(
-            V0
-            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
-            + cs.sum2(
-                gammapowers
-                * (
-                    # Qu.T @ u**2 + # u' Q_u u
-                    cs.sum1(u.T @ Qu @ u + x[:, :-1].T @ Qx @ x[:, :-1])  # x' Q_x x
-                )
-            )
-            + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
-            + cs.sum2(self.w_l @ s)  # punishes slack variables
-            + cs.sum2(self.w_grc_l @ s_grc)  # punishes slacks on grc
+            # V0
+            # + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
+            # + cs.sum2(
+            #     gammapowers
+            #     * (
+            #         cs.sum1(
+            #             u.T @ Qu @ u  # u' Q_u u
+            #             + x[:, :-1].T @ Qx @ x[:, :-1])  # x' Q_x x
+            #     )
+            # )
+            # + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
+            # + cs.sum2(self.w_l @ s)  # punishes slack variables
+            # + cs.sum2(self.w_grc_l @ s_grc)  # punishes slacks on grc
+            cs.sum2(cs.sum1(x**2))
         )
 
         # solver
         solver = "qpoases"
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
-
-
-# model = Model()
-# centralized_mpc = CentralizedMpc(model, prediction_horizon=10) # for comparison/debugging
-# print("Debug point.")
