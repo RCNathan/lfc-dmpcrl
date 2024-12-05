@@ -26,7 +26,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
 
     saveRunningData = True  # toggle whether during runtime, every x steps, data gets saved.
     plotRunningFlag = False  # toggle whether plotted immediately as well. 
-    plotDualVarsFlag = True  # toggle whether dual vars are being plotted at every timestep. 
+    plotDualVarsFlag = False  # toggle whether dual vars are being plotted at every timestep. 
 
     cent_debug_info_dict = {
         "state": [],
@@ -87,7 +87,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
                 plotRunning(f"ep{episode}timestep{timestep}")
 
         if self.plotDualVarsFlag:
-            plotDualVars(r"dual_vars\dist_sv.pkl", r"dual_vars\centdebug_sv.pkl")
+            plotDualVars(r"dual_vars\dist_av.pkl", r"dual_vars\centdebug_av.pkl")
         return super().on_timestep_end(env, episode, timestep)
 
     # For updating load values 
@@ -202,15 +202,17 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
             # Save a pkl (to make the plot func)
             info_dict["local_actions"] = action  # action is the centralized action
             info_dict["local_sols"] = np.array([local_sols[i].f for i in range(self.n)])
+            info_dict["local_dual_vals"] = [
+                {key: val.toarray() for key, val in local_sols[i].dual_vals.items()}
+                for i in range(self.n)
+            ]
             with open(
                 "dual_vars\dist_av.pkl",
                 "wb",
             ) as file:
                 pickle.dump(
                     {
-                        "local_sols": np.array(
-                            [local_sols[i].f for i in range(self.n)]
-                        ),
+                        "info_dict": info_dict,
                     },
                     file,
                 )
@@ -274,14 +276,20 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
         # Get the solution from the parent class
         sol = super().action_value(state, action, vals0, **kwargs)
 
+        # if self.plotRunningFlag: # TODO: check if this is correct
+        #     self.cent_debug_info_dict["state"].append(state)
+        #     self.cent_debug_info_dict["action_opt"].append(action.toarray())
+        #     self.cent_debug_info_dict["cent_sol"].append(sol.f)
+
         # Save it in a pkl
         if self.plotDualVarsFlag:
             # Save a pkl (to make the plot func)
             # make a dictionary called info_dict which saves the state, action, dual vars, and the centralized solution
             info_dict = {
                 "state": state,
-                "action": action.toarray(),
+                "action_opt": action.toarray(), # named action_opt to be the same as in state_value, though not technically correct.
                 "cent_sol": sol.f,
+                "dual_vals": {key: val.toarray() for key, val in sol.dual_vals.items()},
             }
             with open(
                 "dual_vars\centdebug_av.pkl",

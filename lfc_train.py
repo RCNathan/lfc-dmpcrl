@@ -370,7 +370,7 @@ train(
     prediction_horizon=10,
     admm_iters=100,
     rho=0.5,
-    consensus_iters=50,
+    consensus_iters=100,
     centralized_debug=True,
     save_name_info='fixbug'
 )

@@ -110,20 +110,30 @@ def plotDualVars(dist, debug):
     # dual vars lambda for dynamics
     dist_lambda_g = np.array(
         [
-            [info_dict["local_dual_vals"][0][f"lam_g_dynam_{k}"] for k in range(10)]
+            [info_dict["local_dual_vals"][i][f"lam_g_dynam_{k}"] for k in range(10)]
             for i in range(3)
-        ]
-    ).reshape(120, 1)
-    cent_lambda_g = debug_dict["dual_vals"]["lam_g_dyn"]
+        ] # shape (n, N, nx, 1)
+    ).transpose(0, 2, 1, 3) # shape (n, nx, N, 1)
+    dist_lambda_g = dist_lambda_g.reshape((-1, 10), order='C') # shape (n*nx, N)
+    dist_lambda_g = dist_lambda_g.reshape((-1,1), order='F') # shape (n*nx*N,1)
+    cent_lambda_g = debug_dict["dual_vals"]["lam_g_dyn"] 
     axs[1, 1].scatter(np.arange(120), np.abs(dist_lambda_g - cent_lambda_g))
+    axs[1, 1].hlines(1e-7, 0, 120, color='r') # y, xmin, xmax
     axs[1, 1].set_title(
         r"Dual vars $\lambda_{\text{g\_dyn, dist}}$ - $\lambda_{\text{g\_dyn, cent}}$"
     )
     axs[1, 1].set_xlabel("Scatterplot of final iteration")
+    axs[1, 1].set_yscale('log')
+
+    # for i in range(10):
+    #     small_lamb_dist = info_dict["local_dual_vals"][0][f"lam_g_dynam_{i}"]
+    #     small_lamb_cent = debug_dict["dual_vals"]["lam_g_dyn"][4*i:4*(i+1)]
+    #     print(np.hstack([small_lamb_cent, small_lamb_dist]))
+    print("dynam_dual_error", np.linalg.norm(cent_lambda_g - dist_lambda_g))
 
     plt.show()
 
 
-dist_dict = r"dual_vars\dist_sv.pkl"
-debug_dict = r"dual_vars\centdebug_sv.pkl"
+# dist_dict = r"dual_vars\dist_av.pkl"
+# debug_dict = r"dual_vars\centdebug_av.pkl"
 # plotDualVars(dist_dict, debug_dict)
