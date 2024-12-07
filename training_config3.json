@@ -1,0 +1,135 @@
+[
+    {
+        "save_name_info": "tdl6",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 20, "update_strategy": 10, "admm_iters": 50, "consensus_iters": 100,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.9,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.5
+    },
+    {
+        "save_name_info": "tdl7",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 20, "update_strategy": 10, "admm_iters": 50, "consensus_iters": 100,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.8,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.5
+    },
+    {
+        "save_name_info": "tdl8",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 20, "update_strategy": 10, "admm_iters": 50, "consensus_iters": 100,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.7,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.5
+    },
+    {
+        "save_name_info": "tdl9",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 20, "update_strategy": 10, "admm_iters": 50, "consensus_iters": 100,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.6,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.5
+    },
+    {
+        "save_name_info": "tdl10",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 20, "update_strategy": 10, "admm_iters": 50, "consensus_iters": 100,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.7,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 10
+    },
+    {
+        "save_name_info": "tdl11",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 20, "update_strategy": 10, "admm_iters": 50, "consensus_iters": 100,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.7,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 1
+    },
+    {
+        "save_name_info": "tdl12",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 20, "update_strategy": 10, "admm_iters": 50, "consensus_iters": 100,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-20,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.7,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.1
+    }
+]

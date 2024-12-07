@@ -72,7 +72,7 @@ class LearnableMpc(Mpc[cs.SX]):
 class CentralizedMpc(LearnableMpc):
     """A centralised learnable MPC controller."""
 
-    def __init__(self, model: Model, prediction_horizon: int) -> None:
+    def __init__(self, model: Model, prediction_horizon: int, solver: str = "qpoases",) -> None:
         """Initializes the centralized learnable MPC controller.
 
         Parameters
@@ -235,7 +235,8 @@ class CentralizedMpc(LearnableMpc):
         )
 
         # solver
-        solver = "qpoases"  # qpoases or ipopt
+        # solver = "qpoases"  # qpoases or ipopt
+        solver = solver # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)
 
@@ -252,6 +253,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         global_index: int,
         G: list[list],
         rho: float = 0.5,
+        solver: str = "qpoases",
     ) -> None:
         """Initializes the local learnable MPC controller.
 
@@ -378,6 +380,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         )
 
         # solver
-        solver = "qpoases"
+        # solver = "qpoases"
+        solver = solver # qpoases or ipopt
         opts = SolverOptions.get_solver_options(solver)
         self.init_solver(opts, solver=solver)

@@ -57,6 +57,7 @@ def train(
     prediction_horizon=10,  # MPC prediction horizon N
     centralized_debug=False,  # debug flag for centralized mpc
     save_name_info: str =None, # optional name to provide more info for saves (plots etc)
+    solver: str = "qpoases",  # solver (qpoases or ipopt)
 ) -> None:
     
     # High-level stuff
@@ -73,7 +74,7 @@ def train(
 
     # centralised mpc and params
     centralized_mpc = CentralizedMpc(
-        model, prediction_horizon
+        model, prediction_horizon, solver=solver
     )  # for comparison/debugging
     centralized_learnable_pars = LearnableParametersDict[cs.SX](
         (
@@ -94,6 +95,7 @@ def train(
             global_index=i,  # for the initial values of learnable params, taken from list in model
             G=G,  # also for getting correct initial values
             rho=rho,
+            solver=solver,
         )
         for i in range(Model.n)
     ]
@@ -343,24 +345,25 @@ numSteps = int(t_end / model.ts)
 #     numEpisodes=1,
 #     numSteps=numSteps,
 #     prediction_horizon=10,
-#     save_name_info='findnewnoisevals'
+#     save_name_info='findnewnoisevals',
+#     solver="ipopt"
 # )
 
 
 # cent, learn
-train(
-    centralized_flag=True, 
-    learning_flag=True, 
-    numEpisodes=5, 
-    numSteps=numSteps, 
-    prediction_horizon=10,
-    update_strategy=10,
-    learning_rate=ExponentialScheduler(1e-20, factor=0.9999),
-    epsilon=ExponentialScheduler(0.9, factor=0.99),
-    eps_strength=0.5, # values depend on setup, might need large values!
-    experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-    save_name_info='centlearnmanual'
-    )
+# train(
+#     centralized_flag=True, 
+#     learning_flag=True, 
+#     numEpisodes=5, 
+#     numSteps=numSteps, 
+#     prediction_horizon=10,
+#     update_strategy=10,
+#     learning_rate=ExponentialScheduler(1e-20, factor=0.9999),
+#     epsilon=ExponentialScheduler(0.9, factor=0.99),
+#     eps_strength=0.5, # values depend on setup, might need large values!
+#     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+#     save_name_info='centlearnmanual'
+#     )
     
 
 # dist, no learn

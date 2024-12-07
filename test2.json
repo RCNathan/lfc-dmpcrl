@@ -4,23 +4,20 @@
         "centralized_flag": true,
         "learning_flag": false,
         "numEpisodes": 1,
-        "numSteps": 100,
-        "solver": "qpoases"
+        "numSteps": 100
     },
     {
         "save_name_info": "ipopt",
         "centralized_flag": true,
         "learning_flag": false,
         "numEpisodes": 1,
-        "numSteps": 100,
-        "solver": "ipopt"
+        "numSteps": 100
     },
     {
         "save_name_info": "ipopt",
         "centralized_flag": true,
         "learning_flag": false,
         "numEpisodes": 1,
-        "numSteps": 100,
-        "solver": "ipopt"
+        "numSteps": 100
     }
 ]

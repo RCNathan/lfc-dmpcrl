@@ -39,7 +39,7 @@ def train(
     centralized_flag: bool,  # centralized (True) vs distributed (False)
     learning_flag: bool,  # learn vs no learn
     numEpisodes: int,  # number of episodes | x0, load etc reset on episode start
-    numSteps: int,  # number of steps per episode | steps*ts = time
+    numSteps: int = 1000,  # number of steps per episode | steps*ts = time
     admm_iters=50,  # number of ADMM iterations
     rho=0.5,  # for ADMM
     consensus_iters: int = 100,
@@ -57,6 +57,7 @@ def train(
     prediction_horizon: int = 10,  # MPC prediction horizon N
     centralized_debug=False,  # debug flag for centralized mpc
     save_name_info: str =None, # optional name to provide more info for saves (plots etc)
+    solver: str = "qpoases",  # solver (qpoases or ipopt)
 ) -> None:
     
     # High-level stuff
@@ -73,7 +74,7 @@ def train(
 
     # centralised mpc and params
     centralized_mpc = CentralizedMpc(
-        model, prediction_horizon
+        model, prediction_horizon, solver=solver,
     )  # for comparison/debugging
     centralized_learnable_pars = LearnableParametersDict[cs.SX](
         (
@@ -94,6 +95,7 @@ def train(
             global_index=i,  # for the initial values of learnable params, taken from list in model
             G=G,  # also for getting correct initial values
             rho=rho,
+            solver=solver,
         )
         for i in range(Model.n)
     ]
@@ -323,6 +325,5 @@ if __name__ == "__main__":
                     param_set["experience"] = ExperienceReplay(**exp["args"])
 
             train(**param_set)
-            # print(param_set)
             print("Training complete")
         print("All training complete")

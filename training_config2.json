@@ -1,27 +1,26 @@
 [
     {
-        "save_name_info": "tcnq",
-        "centralized_flag": true,
+        "save_name_info": "tdnq",
+        "centralized_flag": false,
         "learning_flag": false,
         "numEpisodes": 1,
-        "numSteps": 1000,
         "solver" : "qpoases"
     },
     {
-        "save_name_info": "tcno",
-        "centralized_flag": true,
+        "save_name_info": "tdno",
+        "centralized_flag": false,
         "learning_flag": false,
         "numEpisodes": 1,
-        "numSteps": 1000,
         "solver" : "ipopt"
     },
     {
-        "save_name_info": "tcl1q",
-        "centralized_flag": true,
+        "save_name_info": "tdl1q",
+        "centralized_flag": false,
         "learning_flag": true,
         "numEpisodes": 20,
-        "numSteps": 1000,
         "update_strategy": 10,
+        "admm_iters": 50,
+        "consensus_iters": 100,
         "learning_rate": {
             "type": "ExponentialScheduler",
             "args": {
@@ -36,16 +35,17 @@
                 "factor": 0.99
             }
         },
-        "eps_strength": 0.5,
+        "eps_strength": 0.5,   
         "solver" : "qpoases"
     },
     {
-        "save_name_info": "tcl1o",
-        "centralized_flag": true,
+        "save_name_info": "tdl1o",
+        "centralized_flag": false,
         "learning_flag": true,
         "numEpisodes": 20,
-        "numSteps": 1000,
         "update_strategy": 10,
+        "admm_iters": 50,
+        "consensus_iters": 100,
         "learning_rate": {
             "type": "ExponentialScheduler",
             "args": {
@@ -60,16 +60,17 @@
                 "factor": 0.99
             }
         },
-        "eps_strength": 0.5,
+        "eps_strength": 0.5,   
         "solver" : "ipopt"
     },
     {
-        "save_name_info": "tcl2",
-        "centralized_flag": true,
+        "save_name_info": "tdl2",
+        "centralized_flag": false,
         "learning_flag": true,
         "numEpisodes": 20,
-        "numSteps": 1000,
         "update_strategy": 10,
+        "admm_iters": 50,
+        "consensus_iters": 100,
         "learning_rate": {
             "type": "ExponentialScheduler",
             "args": {
@@ -84,15 +85,17 @@
                 "factor": 0.99
             }
         },
-        "eps_strength": 0.5
+        "eps_strength": 0.5,   
+        "solver" : "qpoases"
     },
     {
-        "save_name_info": "tcl3",
-        "centralized_flag": true,
+        "save_name_info": "tdl3",
+        "centralized_flag": false,
         "learning_flag": true,
         "numEpisodes": 20,
-        "numSteps": 1000,
         "update_strategy": 10,
+        "admm_iters": 50,
+        "consensus_iters": 100,
         "learning_rate": {
             "type": "ExponentialScheduler",
             "args": {
@@ -107,38 +110,17 @@
                 "factor": 0.99
             }
         },
-        "eps_strength": 0.5
+        "eps_strength": 0.5,   
+        "solver" : "qpoases"
     },
     {
-        "save_name_info": "tcl3",
-        "centralized_flag": true,
+        "save_name_info": "tdl4",
+        "centralized_flag": false,
         "learning_flag": true,
         "numEpisodes": 20,
-        "numSteps": 1000,
         "update_strategy": 10,
-        "learning_rate": {
-            "type": "ExponentialScheduler",
-            "args": {
-                "init_value": 1e-18,
-                "factor": 0.9999
-            }
-        },
-        "epsilon": {
-            "type": "ExponentialScheduler",
-            "args": {
-                "init_value": 0.7,
-                "factor": 0.99
-            }
-        },
-        "eps_strength": 0.5
-    },
-    {
-        "save_name_info": "tcl4",
-        "centralized_flag": true,
-        "learning_flag": true,
-        "numEpisodes": 20,
-        "numSteps": 1000,
-        "update_strategy": 10,
+        "admm_iters": 50,
+        "consensus_iters": 100,
         "learning_rate": {
             "type": "ExponentialScheduler",
             "args": {
@@ -153,6 +135,32 @@
                 "factor": 0.99
             }
         },
-        "eps_strength": 0.5
-    }
+        "eps_strength": 0.5,   
+        "solver" : "qpoases"
+    },
+    {
+        "save_name_info": "tdl5",
+        "centralized_flag": false,
+        "learning_flag": true,
+        "numEpisodes": 20,
+        "update_strategy": 10,
+        "admm_iters": 50,
+        "consensus_iters": 100,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-16,
+                "factor": 0.9999
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.7,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5,   
+        "solver" : "qpoases"
+    }    
 ]
