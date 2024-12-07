@@ -278,10 +278,11 @@ def train(
         print("Training succesful, file saved as", savename)
 
         if make_plots:
-            large_plot(
-                f'{saveloc}\{savename}', 
-                optional_name=save_name_info 
-                )
+            # large_plot(
+            #     f'{saveloc}\{savename}', 
+            #     optional_name=save_name_info 
+            #     )
+            vis_large_eps(f'{saveloc}\{savename}')
 
 
 ### SCENARIO 0: no stochasticities ###
@@ -335,45 +336,46 @@ def train(
 model = Model()
 t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
 numSteps = int(t_end / model.ts)
+# numSteps = 50
 # train(
 #     centralized_flag=True,
 #     learning_flag=False,
 #     numEpisodes=1,
 #     numSteps=numSteps,
 #     prediction_horizon=10,
-#     save_name_info='t1manual'
+#     save_name_info='findnewnoisevals'
 # )
 
 
 # cent, learn
-# train(
-#     centralized_flag=True, 
-#     learning_flag=True, 
-#     numEpisodes=5, 
-#     numSteps=numSteps, 
-#     prediction_horizon=10,
-#     update_strategy=10,
-#     learning_rate=ExponentialScheduler(1e-20, factor=0.9999),
-#     epsilon=ExponentialScheduler(0.9, factor=0.99),
-#     eps_strength=2000, # values depend on setup, might need large values!
-#     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-#     save_name_info='centlearnmanual'
-#     )
+train(
+    centralized_flag=True, 
+    learning_flag=True, 
+    numEpisodes=5, 
+    numSteps=numSteps, 
+    prediction_horizon=10,
+    update_strategy=10,
+    learning_rate=ExponentialScheduler(1e-20, factor=0.9999),
+    epsilon=ExponentialScheduler(0.9, factor=0.99),
+    eps_strength=0.5, # values depend on setup, might need large values!
+    experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+    save_name_info='centlearnmanual'
+    )
     
 
 # dist, no learn
-train(
-    centralized_flag=False,
-    learning_flag=False,
-    numEpisodes=1,
-    numSteps=numSteps,
-    prediction_horizon=10,
-    admm_iters=100,
-    rho=0.5,
-    consensus_iters=100,
-    centralized_debug=True,
-    save_name_info='fixbug'
-)
+# train(
+#     centralized_flag=False,
+#     learning_flag=False,
+#     numEpisodes=1,
+#     numSteps=numSteps,
+#     prediction_horizon=10,
+#     admm_iters=50,
+#     rho=0.5,
+#     consensus_iters=100,
+#     centralized_debug=True,
+#     save_name_info='checkifbugfixed'
+# )
 
 # distr learning
 # train(

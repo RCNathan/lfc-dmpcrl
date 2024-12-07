@@ -37,7 +37,7 @@ class LearnableMpc(Mpc[cs.SX]):
             [[1e3, 1e1, 1e1, 1e1]]  # TODO: change
         )  # penalty weight for slack variables!
         self.w = np.tile(self.w_l, (1, self.n))
-        self.w_grc_l = np.array([1e4])
+        self.w_grc_l = np.array([1e1])
         self.w_grc = np.tile(self.w_grc_l, (1, self.n))
         self.adj = model.adj
         self.GRC_l = model.GRC_l
@@ -225,22 +225,13 @@ class CentralizedMpc(LearnableMpc):
         self.minimize(
             cs.sum1(V0)
             + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))  # f'([x, u]')
-            + x_stacked.T @ block_diag(Qx, n=N+1) @ x_stacked
+            # + x_stacked.T @ block_diag(Qx, n=N+1) @ x_stacked
+            + x_stacked[:-self.nx].T @ block_diag(Qx, n=N) @ x_stacked[:-self.nx] # x' Q_x x, stage cost
+            + x_stacked[-self.nx:].T @ Qf @ x_stacked[-self.nx:] # x(N)' Q_f x(N), terminal cost
             + u_stacked.T @ block_diag(Qu, n=N) @ u_stacked 
-            # + cs.sum2(
-            #     gammapowers
-            #     * (
-            #         cs.sum1(
-            #             # u.T @ Qu @ u # u' Q_u u
-            #             # + x[:, :-1].T @ Qx @ x[:, :-1] # x' Q_x x
-            #         )
-            #     )  
-            # )
-            # + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
-            # # # + cs.sum1(x[:, -1].T @ P @ x[:, -1]) # x(N)' P x(N)), where P is solution of the DARE
             + cs.sum2(self.w @ s)  # punishes slack variables
-            # + cs.sum2(self.w_grc @ s_grc)  # punishes slacks on grc
-            # + cs.sum1(cs.sum2(x))
+            + cs.sum2(self.w_grc @ s_grc)  # punishes slacks on grc
+            # + cs.sum1(cs.sum2(x**2))
         )
 
         # solver
@@ -377,21 +368,13 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         self.set_local_cost(
             V0
             + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
-            + x_stacked.T @ block_diag(Qx, n=N+1) @ x_stacked
+            # + x_stacked.T @ block_diag(Qx, n=N+1) @ x_stacked
+            + x_stacked[:-self.nx_l].T @ block_diag(Qx, n=N) @ x_stacked[:-self.nx_l] # x' Q_x x, stage cost
+            + x_stacked[-self.nx_l:].T @ Qf @ x_stacked[-self.nx_l:] # x(N)' Q_f x(N), terminal cost
             + u_stacked.T @ block_diag(Qu, n=N) @ u_stacked 
-            # + cs.sum2(
-            #     gammapowers
-            #     * (
-            #         cs.sum1(
-            #             # u.T @ Qu @ u  # u' Q_u u
-            #             # + x[:, :-1].T @ Qx @ x[:, :-1])  # x' Q_x x
-            #         )
-            #     )
-            # )
-            # + cs.sum1(x[:, -1].T @ Qf @ x[:, -1])  # x(N)' Qx x(N))
             + cs.sum2(self.w_l @ s)  # punishes slack variables
-            # + cs.sum2(self.w_grc_l @ s_grc)  # punishes slacks on grc
-            # + cs.sum1(cs.sum2(x))
+            + cs.sum2(self.w_grc_l @ s_grc)  # punishes slacks on grc
+            # + cs.sum1(cs.sum2(x**2))
         )
 
         # solver

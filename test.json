@@ -1,0 +1,8 @@
+[{
+        "save_name_info": "compatibility_test",
+        "centralized_flag": true,
+        "learning_flag": false,
+        "numEpisodes": 1,
+        "numSteps": 1000
+    }
+]

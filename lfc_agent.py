@@ -25,7 +25,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
     """A coordinator for LSTD-Q learning agents - for the Lfc problem. This agent hence handles load changes."""
 
     saveRunningData = True  # toggle whether during runtime, every x steps, data gets saved.
-    plotRunningFlag = False  # toggle whether plotted immediately as well. 
+    plotRunningFlag = True  # toggle whether plotted immediately as well. 
     plotDualVarsFlag = False  # toggle whether dual vars are being plotted at every timestep. 
 
     cent_debug_info_dict = {

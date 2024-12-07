@@ -37,7 +37,7 @@ class LtiSystem(
             [[1e3, 1e1, 1e1, 1e1]], (1, self.n)
         )  # penalty weight for bound violations
         self.w_grc = np.tile(
-            [0, 1e4, 0, 0], (1, self.n)
+            [0, 1e1, 0, 0], (1, self.n)
         )  # weight on slacks for grc violation
         # note: with the way it's set up with dist_cost, I pass entire state (12) or local state (4),
         # making this the easiest way to implement
@@ -235,7 +235,7 @@ class LtiSystem(
         # c1, c2 = 0.03, -0.02
         # t1, t2, t3 = 10, 20, 30
         # with ts = 0.01
-        c1, c2 = 0.085, -0.085
+        c1, c2 = 0.1, -0.1 # 0.1 -0.1 interesting result fr, touching constraint at f1, f3, tie1, tie3
         t1, t2, t3 = 1, 2, 3
         if sim_time <= t1:
             self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)
@@ -249,9 +249,10 @@ class LtiSystem(
             self.load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
 
         # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
-        self.load_noise = 0.03 * (
-            np.random.uniform(0, 2, (3, 1)) - 1
-        )  # (low, high, size) -> in [-1, 1)
+        offset = 0.05
+        self.load_noise = 0.05 * (
+            np.random.uniform(0, 2, (3, 1)) - 1 + offset
+        )  # (low, high, size) -> in [-1, 1) -- what about [-1 + a, 1 + a)
 
         # self.load = np.zeros((3,1)) # to toggle load on/off
         # self.load_noise = np.zeros((3, 1))

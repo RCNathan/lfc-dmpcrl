@@ -230,21 +230,24 @@ def large_plot(file: str, optional_name=None) -> None:
     axs[5, 3].set_xlabel("Episodes")
 
     # make sure dir exists, save plot and close after
-    saveloc = r'data\plots'
+    saveloc = os.path.join('data', 'plots') # to ensure cross-platform compatibility
     os.makedirs(saveloc, exist_ok=True)
     savename = 'centralized_' if centralized_flag else 'distributed_'
     savename += 'learning' if learningFlag else 'no_learning'
-
     if optional_name != None:
         savename = optional_name + '_' + savename 
+    file_path = os.path.join(saveloc, savename) # again, to ensure cross-platform compatibility
 
     plt.savefig(
-        f'{saveloc}\{savename}.png',
+        # f'{saveloc}\{savename}.png',
+        file_path + '.png',
         bbox_inches='tight'
     )
-    print(f"Figure saved as {saveloc}\{savename}.png")
+    # print(f"Figure saved as {saveloc}\{savename}.png")
+    print(f"Figure saved as {file_path}.png")
     plt.close()
 
 
 # filename= 'cent_no_learning_1ep_scenario_1' # [960.91]
+# filename = os.path.join('data', 'pkls','compatibility_test_cent_no_learning_1ep_scenario_1')
 # large_plot(filename, 'test')

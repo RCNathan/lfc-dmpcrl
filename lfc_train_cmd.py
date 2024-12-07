@@ -252,12 +252,15 @@ def train(
         pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_1"
 
         # make sure dir exists, save plot and close after
-        saveloc = r'data\pkls'
+        # saveloc = r'data\pkls'
+        saveloc = os.path.join('data', 'pkls') # to ensure cross-platform compatibility
         os.makedirs(saveloc, exist_ok=True)
         savename = save_name_info + "_" + pklname
+        file_path = os.path.join(saveloc, savename) # again, to ensure cross-platform compatibility
 
         with open(
-            f'{saveloc}\{savename}.pkl',
+            # f'{saveloc}\{savename}.pkl',
+            file_path + '.pkl',
             "wb",  # w: write mode, creates new or truncates existing. b: binary mode
         ) as file:
             pickle.dump(
@@ -279,7 +282,8 @@ def train(
 
         if make_plots:
             large_plot(
-                f'{saveloc}\{savename}', 
+                # f'{saveloc}\{savename}',
+                file_path, 
                 optional_name=save_name_info 
                 )
 

@@ -118,12 +118,13 @@ def plotDualVars(dist, debug):
     dist_lambda_g = dist_lambda_g.reshape((-1,1), order='F') # shape (n*nx*N,1)
     cent_lambda_g = debug_dict["dual_vals"]["lam_g_dyn"] 
     axs[1, 1].scatter(np.arange(120), np.abs(dist_lambda_g - cent_lambda_g))
-    axs[1, 1].hlines(1e-7, 0, 120, color='r') # y, xmin, xmax
+    axs[1, 1].hlines(1e-7, 0, 120, color='r', label='1e-7') # y, xmin, xmax
     axs[1, 1].set_title(
-        r"Dual vars $\lambda_{\text{g\_dyn, dist}}$ - $\lambda_{\text{g\_dyn, cent}}$"
+        r"Dual vars-error: |$\lambda_{\text{g\_dyn, dist}}$ - $\lambda_{\text{g\_dyn, cent}}|$"
     )
     axs[1, 1].set_xlabel("Scatterplot of final iteration")
     axs[1, 1].set_yscale('log')
+    axs[1, 1].legend()
 
     # for i in range(10):
     #     small_lamb_dist = info_dict["local_dual_vals"][0][f"lam_g_dynam_{i}"]
@@ -131,6 +132,12 @@ def plotDualVars(dist, debug):
     #     print(np.hstack([small_lamb_cent, small_lamb_dist]))
     print("dynam_dual_error", np.linalg.norm(cent_lambda_g - dist_lambda_g))
 
+    # Maximize the figure window
+    manager = plt.get_current_fig_manager()
+    try:
+        manager.window.showMaximized()  # For most backends (Qt5, TkAgg)
+    except AttributeError:
+        manager.full_screen_toggle()   # Alternative for some environments
     plt.show()
 
 
