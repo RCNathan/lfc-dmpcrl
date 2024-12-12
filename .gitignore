@@ -9,10 +9,11 @@ __pycache__/
 # large data
 *.pkl
 data_large/
-*.pkl
 logs/
 running_pkls/
 data/
+data from server/
+dual_vars/
 
 # Distribution / packaging
 .Python

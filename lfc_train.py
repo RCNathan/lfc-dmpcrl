@@ -21,6 +21,7 @@ from mpcrl.optim import GradientDescent
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
 from mpcrl import UpdateStrategy
+from mpcrl.core.update import UpdateStrategy 
 
 from lfc_agent import LfcLstdQLearningAgentCoordinator
 from lfc_env import LtiSystem  # change environment in lfc_env.py (= ground truth)
@@ -169,7 +170,7 @@ def train(
     ]
 
     env = MonitorEpisodes(
-        TimeLimit(LtiSystem(model=model), max_episode_steps=int(numSteps))
+        TimeLimit(LtiSystem(model=model, predicton_horizon=prediction_horizon), max_episode_steps=int(numSteps))
     )  # Lti system:
     agent = Log(  # type: ignore[var-annotated]
         RecordUpdates(
@@ -345,8 +346,8 @@ numSteps = int(t_end / model.ts)
 #     numEpisodes=1,
 #     numSteps=numSteps,
 #     prediction_horizon=10,
-#     save_name_info='findnewnoisevals',
-#     solver="ipopt"
+#     save_name_info='addMoreLoadinfo',
+#     # solver="ipopt"
 # )
 
 
@@ -355,10 +356,10 @@ numSteps = int(t_end / model.ts)
 #     centralized_flag=True, 
 #     learning_flag=True, 
 #     numEpisodes=5, 
-#     numSteps=numSteps, 
+#     numSteps=numSteps,  
 #     prediction_horizon=10,
 #     update_strategy=10,
-#     learning_rate=ExponentialScheduler(1e-20, factor=0.9999),
+#     learning_rate=ExponentialScheduler(1e-8, factor=0.9999),
 #     epsilon=ExponentialScheduler(0.9, factor=0.99),
 #     eps_strength=0.5, # values depend on setup, might need large values!
 #     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
@@ -367,34 +368,35 @@ numSteps = int(t_end / model.ts)
     
 
 # dist, no learn
-# train(
-#     centralized_flag=False,
-#     learning_flag=False,
-#     numEpisodes=1,
-#     numSteps=numSteps,
-#     prediction_horizon=10,
-#     admm_iters=50,
-#     rho=0.5,
-#     consensus_iters=100,
-#     centralized_debug=True,
-#     save_name_info='checkifbugfixed'
-# )
+train(
+    centralized_flag=False,
+    learning_flag=False,
+    numEpisodes=1,
+    numSteps=numSteps,
+    prediction_horizon=10,
+    admm_iters=50,
+    rho=0.5,
+    consensus_iters=100,
+    # centralized_debug=True,
+    save_name_info='addMoreLoadinfo'
+)
 
 # distr learning
 # train(
 #     centralized_flag=False, 
 #     learning_flag=True, 
-#     numEpisodes=1, 
+#     numEpisodes=2, 
 #     numSteps=numSteps, 
 #     prediction_horizon=10,
-#     update_strategy=10,
-#     learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
+#     update_strategy= UpdateStrategy(10, skip_first=100), # skips entire first episode of learning to get base behavior
+#     learning_rate=ExponentialScheduler(1e-9, factor=0.9999),
 #     epsilon=ExponentialScheduler(0.5, factor=0.99),
-#     eps_strength=2000, # values depend on setup, might need large values!
+#     eps_strength=0.5, # values depend on setup, might need large values!
 #     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
 #     admm_iters=50,
 #     consensus_iters=50,
-#     centralized_debug=True)
+#     centralized_debug=False,
+#     save_name_info='retunelr')
 
 
 # Comparison:

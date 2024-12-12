@@ -18,13 +18,15 @@ class LtiSystem(
         [[-1e-1], [0]]
     )  # uniform noise bounds for process noise on local systems
 
-    def __init__(self, model: Model) -> None:
+    def __init__(self, model: Model, predicton_horizon: int) -> None:
         """Initializes the environment.
 
         Parameters
         ----------
         model : Model
-            The model of the system."""
+            The model of the system.
+        predicton_horizon : integer, horizon for prediction in MPC
+        Needs to be passed to allow loads over prediction_horizon."""
         super().__init__()
         self.A, self.B, self.F = model.A_env, model.B_env, model.F_env
         self.n = model.n
@@ -42,6 +44,7 @@ class LtiSystem(
         # note: with the way it's set up with dist_cost, I pass entire state (12) or local state (4),
         # making this the easiest way to implement
         self.grc = model.GRC_l
+        self.N = predicton_horizon # to have loads over horizon for MPC's
 
         # Initialize step_counter, load and load_noise
         self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)
@@ -52,6 +55,12 @@ class LtiSystem(
         # Saving data on load and noise for plotting
         self.loads: list = []
         self.load_noises: list = []
+        self.loads_over_horizon = np.zeros((self.n, self.N))
+
+        # information available in env, to be used in DDPG's augmented state/observation
+        self.last_action = np.zeros((self.n, 1))
+        self.last_x = np.zeros((self.nx, 1)) # store last state
+        self.last_xkm1 = np.zeros((self.nx, 1)) # store previous state x(k-1)
 
     def reset(
         self,
@@ -88,10 +97,16 @@ class LtiSystem(
         self.step_counter = 0
         self.load = np.array([0.0, 0.0, 0.0]).reshape(
             self.n, -1
-        )  # TODO: decide: does this continue past episodes? or reset each time? <- probably reset
+        )  
         self.load_noise = np.array([0.0, 0.0, 0.0]).reshape(
             self.n, -1
-        )  # TODO: decide: does this continue past episodes? or reset each time? <- probably continue
+        )  
+        self.loads_over_horizon = np.zeros((self.n, self.N))
+
+        # reset previous action and next state as well
+        self.last_action = np.zeros((self.n, 1))
+        self.last_x = np.zeros((self.nx, 1))
+        self.last_xkm1 = np.zeros((self.nx, 1))
 
         return self.x, {}
 
@@ -214,6 +229,29 @@ class LtiSystem(
             for i in range(self.n)
         ]
 
+    def return_load(self, step_counter: int) -> np.ndarray:
+        """Return loads for given timestep."""
+        
+        #  step function for load | time = step_counter*ts
+        sim_time = step_counter * self.ts
+        # with ts = 0.01
+        c1, c2 = 0.1, -0.1 # 0.1 -0.1 interesting result fr, touching constraint at f1, f3, tie1, tie3
+        t1, t2, t3 = 1, 2, 3
+
+        load = np.zeros((self.n, 1))
+        if sim_time < t1:
+            load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)
+        elif sim_time < t2:  # from t = 10 - 20
+            load = np.array([c1, 0.0, 0.0]).reshape(self.n, -1)
+        elif sim_time < t3:  # from t = 20 - 30
+            load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
+        elif sim_time < 40:
+            load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
+        else:
+            load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
+        return load
+        
+
     def step(
         self, action: cs.DM
     ) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
@@ -229,24 +267,10 @@ class LtiSystem(
         tuple[np.ndarray, float, bool, bool, dict[str, Any]]
             The new state, the reward, truncated flag, terminated flag, and an info dictionary.
         """
-        #  step function for load | time = step_counter*ts
-        sim_time = self.step_counter * self.ts
-        # with ts = 0.1
-        # c1, c2 = 0.03, -0.02
-        # t1, t2, t3 = 10, 20, 30
-        # with ts = 0.01
-        c1, c2 = 0.1, -0.1 # 0.1 -0.1 interesting result fr, touching constraint at f1, f3, tie1, tie3
-        t1, t2, t3 = 1, 2, 3
-        if sim_time <= t1:
-            self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)
-        elif sim_time <= t2:  # from t = 10 - 20
-            self.load = np.array([c1, 0.0, 0.0]).reshape(self.n, -1)
-        elif sim_time <= t3:  # from t = 20 - 30
-            self.load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
-        elif sim_time <= 40:
-            self.load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
-        else:
-            self.load = np.array([c1, 0.0, c2]).reshape(self.n, -1)
+        # Define load for current step and also over control horizon
+        self.load = self.return_load(self.step_counter)
+        for k in range(self.N):
+            self.loads_over_horizon[:, k] = self.return_load(self.step_counter + k).squeeze()
 
         # noise on load | += self.F @ noise_on_load | noise is uniform and bounded (rn 0.01)
         offset = 0.05
@@ -257,7 +281,10 @@ class LtiSystem(
         # self.load = np.zeros((3,1)) # to toggle load on/off
         # self.load_noise = np.zeros((3, 1))
 
-        action = action.full()  # convert action from casadi DM to numpy array
+        if type(action) == cs.DM:
+            action = action.full()  # convert action from casadi DM to numpy array
+        else:
+            action = action.reshape((-1, 1)) # reshape (3,) -> (3,1) for matrix multiplication
 
         # x_new = self.A @ self.x + self.B @ action
         x = self.x
@@ -296,7 +323,12 @@ class LtiSystem(
             Qa_l=Qa,
         )
 
-        # store for next step
+        # store to have available in env 
+        self.last_xkm1 = self.x # store state as previous state 
+        self.last_x = x_new # store next state 
+        self.last_action = action # store last action
+
+        # update and store for next step
         self.x = x_new
         self.step_counter += 1
 

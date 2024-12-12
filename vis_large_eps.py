@@ -325,6 +325,7 @@ def vis_large_eps(file: str) -> None:
         wm.window.move(0, 0)
 
     print("returns", Rcumsum[:, -1])
+    print("learning rate", data['learning_params']['optimizer'].lr_scheduler)
     plt.show()
 
 # changed Qs,Qx and other stuff -> to get TD error down for numerical stability
@@ -389,4 +390,6 @@ filename = "distr_no_learning_1ep_scenario_0.2" # 28-11: full run complete, retu
 
 # after command line shenanigans
 # filename = r"data\pkls\centlearnmanual_cent_5ep_scenario_1"
+filename = r"data from server\batch 2\pkls\tcl3_cent_20ep_scenario_1"
+filename = r"data\pkls\centlearnmanual_cent_5ep_scenario_1"
 # vis_large_eps(filename)

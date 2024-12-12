@@ -2,7 +2,6 @@ from typing import ClassVar
 
 import casadi as cs
 import numpy as np
-from dmpcrl.utils.discretisation import zero_order_hold, forward_euler
 from lfc_discretization import lfc_forward_euler, lfc_zero_order_hold
 from controllability import ctrb
 

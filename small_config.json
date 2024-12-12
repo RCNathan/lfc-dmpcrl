@@ -1,0 +1,10 @@
+[
+    {
+        "save_name_info": "test",
+        "centralized_flag": false,
+        "learning_flag": true,
+        "numEpisodes": 1,
+        "numSteps": 1000,
+        "solver" : "qpoases"
+    }
+]

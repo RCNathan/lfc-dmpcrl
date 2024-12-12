@@ -8,7 +8,6 @@ from dmpcrl.mpc.mpc_admm import MpcAdmm
 from dmpcrl.utils.solver_options import SolverOptions
 
 from lfc_model import Model
-from lfc_discretization import lfc_forward_euler_cs, lfc_zero_order_hold
 from block_diag import block_diag
 
 
@@ -183,22 +182,25 @@ class CentralizedMpc(LearnableMpc):
             lb=self.u_bnd[0].reshape(-1, 1),
             ub=self.u_bnd[1].reshape(-1, 1),
         )
+        # d = self.disturbance("d", size=self.nx) # TODO: implement load this way?
         s, _, _ = self.variable("s", (self.nx, N), lb=0)
         s_grc, _, _ = self.variable("s_grc", (3, N), lb=0)
 
         # Fixed parameters: load
-        Pl = self.parameter("Pl", (3, 1))  # creates parameter obj for load
+        Pl = self.parameter("Pl", (3, N))  # creates parameter obj for load
         self.fixed_pars_init = {
-            "Pl": np.zeros((3, 1))
+            "Pl": np.zeros((3, N))
         }  # !!! initial value of 0.0 will be changed by agent on episode start, and then every env step (see lfc_agent.py) !!!
 
-        # dynamics
-        self.set_dynamics(
-            # lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1
-            lambda x, u: A @ x + B @ u + F @ Pl + b,
-            n_in=2,
-            n_out=1,
-        )
+        # add dynamics manually due dynamic load over horizon
+        for k in range(N):
+            self.constraint(
+                f"dynam_{k}",
+                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl[:, [k]] + b, 
+                "==",
+                x[:, [k + 1]],
+            ) # setting Pl[:, [0]] is identical to previous implementation where load is not tracked over N
+
 
         # other constraints
         self.constraint("x_lb", self.x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])
@@ -313,9 +315,10 @@ class LocalMpc(MpcAdmm, LearnableMpc):
         )
 
         # Fixed parameters: load
-        # Pl = self.parameter(f"Pl_{global_index}", (1, 1))  # creates parameter obj for local load based on global index.
-        Pl = self.parameter("Pl", (1, 1))
-        self.fixed_pars_init.update({"Pl": 0.0})  # value changed in lfc_agent
+        Pl = self.parameter("Pl", (1, N))
+        self.fixed_pars_init.update({ 
+            "Pl": np.zeros((1, N))
+            })  # value changed in lfc_agent
 
         # variables (state+coupling, action, slack)
         x, x_c = self.augmented_state(num_neighbours, my_index, self.nx_l)
@@ -340,7 +343,7 @@ class LocalMpc(MpcAdmm, LearnableMpc):
                 coup += A_c_list[i] @ x_c_list[i][:, [k]]
             self.constraint(
                 f"dynam_{k}",
-                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl + coup + b,
+                A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl[:, [k]] + coup + b,
                 "==",
                 x[:, [k + 1]],
             )
