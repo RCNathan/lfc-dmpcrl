@@ -43,7 +43,7 @@ def train(
     admm_iters=50,  # number of ADMM iterations
     rho=0.5,  # for ADMM
     consensus_iters: int = 100,
-    update_strategy: int | UpdateStrategy = 2,  # int or UpdateStrategy obj
+    update_strategy: int | UpdateStrategy = UpdateStrategy(frequency=10, skip_first=100),  # int or UpdateStrategy obj
     learning_rate=ExponentialScheduler(
         1e-10, factor=0.99
     ),  # alpha: ExponentialScheduler(1e-10, factor=1)
@@ -169,7 +169,7 @@ def train(
     ]
 
     env = MonitorEpisodes(
-        TimeLimit(LtiSystem(model=model), max_episode_steps=int(numSteps))
+        TimeLimit(LtiSystem(model=model, predicton_horizon=prediction_horizon), max_episode_steps=int(numSteps))
     )  # Lti system:
     agent = Log(  # type: ignore[var-annotated]
         RecordUpdates(
@@ -323,6 +323,11 @@ if __name__ == "__main__":
                 exp = param_set["experience"]
                 if exp["type"] == "ExperienceReplay":
                     param_set["experience"] = ExperienceReplay(**exp["args"])
+
+            if "update_strategy" in param_set:
+                us = param_set["update_strategy"]
+                if us["type"] == "UpdateStrategy":
+                    param_set["update_strategy"] = UpdateStrategy(**us["args"])
 
             train(**param_set)
             print("Training complete")
