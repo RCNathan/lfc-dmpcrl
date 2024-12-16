@@ -1,0 +1,54 @@
+[
+    {
+        "save_name_info": "tdl19",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-10,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5,
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 2,
+                "skip_first": 100
+            }
+        }
+    },
+    {
+        "save_name_info": "tdl20",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-10,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5,
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 5,
+                "skip_first": 100
+            }
+        }
+    }
+]
