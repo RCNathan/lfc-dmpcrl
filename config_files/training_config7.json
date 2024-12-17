@@ -17,7 +17,7 @@
             }
         },
         "eps_strength": 0.5,
-        "control_horizon": 12
+        "prediction_horizon": 12
     },
     {
         "save_name_info": "tdl22",
@@ -37,6 +37,6 @@
             }
         },
         "eps_strength": 0.5,
-        "control_horizon": 15
+        "prediction_horizon": 15
     }
 ]
