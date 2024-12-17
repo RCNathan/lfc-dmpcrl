@@ -6,7 +6,10 @@ import os
 
 
 def plotRunning(running_filename):
-    """Makes plots to visualize states during running. Note: manually change the centralized counterpart."""
+    """Makes plots to visualize states during running. 
+    Note: manually change the centralized counterpart in case centralized_debug is False while plotRunning is True.
+    Note 2: TD and R come from the env and are not available for centralized_debug when called during training.
+    """
 
     # used when centralized_debug is False
     filename = "cent_no_learning_1ep_scenario_0"  # centralized, return [460.55373678]
@@ -55,7 +58,7 @@ def plotRunning(running_filename):
     # dist
     x2 = data_dist.get("X")
     u2 = data_dist.get("U")
-    R2 = data_dist.get("R")
+    R2 = data_dist.get("R") # NOTE: environment's cost is not the same as the cent_debug cost, which is taken from a solution-object, i.e MPC cost over horizon.
     TD2 = np.asarray(data_dist.get("TD")).reshape(1, -1)
     if str(x2[0]) == "deque([])":  # first ep uncompleted
         x2 = np.array(x2[1]).reshape((1, np.array(x2[1]).shape[0], -1))
@@ -89,10 +92,10 @@ def plotRunning(running_filename):
     axs[4, 0].set_ylabel(r"$u$")
     axs[0, 0].legend()
     # costs
-    axs[0, 3].plot(t[:-1], R[: x_len - 1], label="cent")
-    axs[0, 3].plot(t[:-1], R2[:], label="dist", linestyle="--")
-    axs[0, 3].set_title("Cost over time")
-    axs[0, 3].legend()
+    # axs[0, 3].plot(t[:-1], R[: x_len - 1], label="cent")
+    # axs[0, 3].plot(t[:-1], R2[:], label="dist", linestyle="--")
+    # axs[0, 3].set_title("Cost over time")
+    # axs[0, 3].legend()
     # TD
     # after changing to use agent.evaluate() for non-learning; TD is non-existent in that case
         # update: using .train() again. But: for no learning, not important. For learning: they differ significantly.
@@ -124,11 +127,11 @@ def plotRunning(running_filename):
         bbox_inches="tight",
     )  # save so that it can continue running
     print(f"File saved as {testname}" + ".png")
-    plt.close()  # figures are retained until explicitly closed and may consume too much memory TODO: check out
+    plt.close()  # figures are retained until explicitly closed and may consume too much memory
     # print(f"\nADMM iterations used: {admm}, Consensus iterations used:{gac}")
 
 
-filename = 'ep0timestep10'
+filename = 'ep0timestep20'
 # filename = 'ep0timestep60'
 # filename = 'ep0timestep500'
 # plotRunning(filename)

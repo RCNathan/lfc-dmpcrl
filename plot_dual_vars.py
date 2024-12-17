@@ -25,6 +25,13 @@ def plotDualVars(dist, debug):
         datac = pickle.load(file)
     debug_dict = datac["info_dict"]
 
+    # get from model
+    model = Model()
+    n = model.n
+    nx_l = model.nx_l
+    nx = nx_l * n
+    N = info_dict['u_iters'].shape[-1] # control horizon
+
     # shapes:
     # u_iters: (self.iters, self.n, self.nu_l, self.N)
     # y_iters: [(self.iters, self.nx_l * len(self.G[i]), self.N + 1) for i in range(self.n)]
@@ -37,8 +44,8 @@ def plotDualVars(dist, debug):
     ]  # list of (iters, 12, N+1) for n agents
     y_iters = info_dict["y_iters"]  # list of (iters, 12, N+1) for n agents
     iters = x_aug_iters[0].shape[0]
-    horizon = x_aug_iters[0].shape[2]
-    numAgents = len(x_aug_iters)
+    # horizon = x_aug_iters[0].shape[2]
+    # numAgents = len(x_aug_iters)
     u_iters = info_dict["u_iters"]  # (iters, 3, 1, N+1)
     u_iters = u_iters.reshape((iters, 3, -1))
     z_iters = info_dict["z_iters"]  # (iters, 3, 4, N+1)
@@ -59,13 +66,13 @@ def plotDualVars(dist, debug):
 
     it = np.arange(1, iters + 1)
     _, axs = plt.subplots(3, 3, constrained_layout=True)
-    for j in range(numAgents):
+    for j in range(n):
         dif = np.sum(
             np.abs(x_aug_iters[j] - z_iters), axis=1
         )  # takes abs value between x-z and sums over all states -> shape (iters, timesteps)
         vars = np.sum(y_iters[j], axis=(1, 2))
-        for timestep in range(horizon):
-            if timestep == 0 or timestep == 1 or timestep == horizon - 1:
+        for timestep in range(N + 1):
+            if timestep == 0 or timestep == 1 or timestep == N:
                 axs[j, 0].plot(it, dif[:, timestep], label=f"timestep k={timestep}")
             else:
                 axs[j, 0].plot(it, dif[:, timestep])
@@ -110,13 +117,20 @@ def plotDualVars(dist, debug):
     # dual vars lambda for dynamics
     dist_lambda_g = np.array(
         [
-            [info_dict["local_dual_vals"][i][f"lam_g_dynam_{k}"] for k in range(10)]
-            for i in range(3)
+            [info_dict["local_dual_vals"][i][f"lam_g_dynam_{k}"] for k in range(N)]
+            for i in range(n)
         ] # shape (n, N, nx, 1)
     ).transpose(0, 2, 1, 3) # shape (n, nx, N, 1)
     dist_lambda_g = dist_lambda_g.reshape((-1, 10), order='C') # shape (n*nx, N)
     dist_lambda_g = dist_lambda_g.reshape((-1,1), order='F') # shape (n*nx*N,1)
-    cent_lambda_g = debug_dict["dual_vals"]["lam_g_dyn"] 
+    # cent_lambda_g = debug_dict["dual_vals"]["lam_g_dyn"] # prior to change in learnable_mpc to have dynamics as constraints
+    cent_lambda_g = np.asarray(
+        [
+            debug_dict["dual_vals"][f"lam_g_dynam_{k}"] 
+            for k in range(N)
+        ]
+    ).reshape((-1,1)) # to match distributed after change to dynamics in learnable_mpc
+
     axs[1, 1].scatter(np.arange(120), np.abs(dist_lambda_g - cent_lambda_g))
     axs[1, 1].hlines(1e-7, 0, 120, color='r', label='1e-7') # y, xmin, xmax
     axs[1, 1].set_title(
