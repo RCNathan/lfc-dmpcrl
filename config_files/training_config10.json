@@ -1,0 +1,78 @@
+[
+    {
+        "save_name_info": "tcl26",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-12,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5
+    },
+    {
+        "save_name_info": "tcl27",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-13,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5
+    },
+    {
+        "save_name_info": "tcl28",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-14,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5
+    },
+    {
+        "save_name_info": "tcl29",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-15,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5
+    }
+]

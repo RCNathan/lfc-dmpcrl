@@ -17,7 +17,7 @@ def vis_large_eps(file: str) -> None:
 
     # Note that .squeeze() will get rid of the (1,) in the first index for case 1 episode, making it incompatible
     param_dict = data.get(
-        "param_dict"
+        "param_dict", None
     )  # params V0_0, ... all have len = steps   ---> shape is affected by update_strategy, i.e: if 10, only saves once every 10 steps
     x = data.get(
         "X"
@@ -32,7 +32,7 @@ def vis_large_eps(file: str) -> None:
 
     # TD now saved as agents[i].td_errors instead of agents[0], to compare to centralized. <- THIS IS WRONG!!
     # To account for that, we sum over all agents <- no. using the GAC td[0] = td[1] = td[2] = td_cent!!
-    TD = np.asarray(data.get("TD")) 
+    TD = np.asarray(data.get("TD", None)) # returns None if TD does not exist
     centralized_flag = data.get("cent_flag")
     if centralized_flag == False: # i.e: distributed, so TD has shape (n, eps*steps)
         # TD = np.sum(TD, axis=0) # sum over agents to shape (eps*steps) # no!
@@ -59,9 +59,10 @@ def vis_large_eps(file: str) -> None:
     else:
         print("The loaded data is not a dictionary.")
     learningFlag = True
-    if (param_dict["A_0"][0] == param_dict["A_0"][-1]).all():
-        print("\nNo learning of A_0")
-        learningFlag = False
+    if param_dict != None:
+        if (param_dict["A_0"][0] == param_dict["A_0"][-1]).all():
+            print("\nNo learning of A_0")
+            learningFlag = False
 
     m = Model()
     numAgents = m.n
@@ -152,7 +153,7 @@ def vis_large_eps(file: str) -> None:
     )  # using pyqt5 allows .setGeometry() and changes behavior of geometry()
     wm.window.move(-10, 0)
 
-    if numEpisodes != 1:
+    if numEpisodes != 1 and TD.all() != None:
         TD = TD.reshape((numEpisodes, -1))  # newShape = (numEps, steps)
 
     # get max and min of TD, R
@@ -168,7 +169,7 @@ def vis_large_eps(file: str) -> None:
     # plot TD error, reward and cumulative reward
     _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True, figsize=(3, 5))
     # using agent.evaluate() to speed up in lfc_train.py, yields no TD data if not learning, so we dont plot for no learning.
-    if TD.shape[1] != 0:
+    if TD.shape[1] != 0 and TD.all() != None:
         axs[0].plot(t[:-1], TDmax, linestyle="--", label="max")
         axs[0].plot(t[:-1], TDmin, linestyle="--", label="min")
         axs[0].plot(t[:-1], TD[0, :], color="green", label="first")
@@ -219,7 +220,7 @@ def vis_large_eps(file: str) -> None:
         Rcumsum[:, -1],
         label="cumulative cost",
     )
-    if TD.shape[1] != 0:
+    if TD.shape[1] != 0 and TD.all() != None:
         axs[2].plot(
             np.linspace(1, numEpisodes, numEpisodes), np.sum(np.abs(TD), axis=1), linestyle="--"
         )
@@ -242,8 +243,8 @@ def vis_large_eps(file: str) -> None:
     wm.window.move(1100, 0)
 
     if numEpisodes != 1:
-        Pl = Pl.reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
-        Pl_noise = Pl_noise.reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
+        Pl = Pl[:, :, :].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
+        Pl_noise = Pl_noise[:,:,:].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
 
     # Plot loads and loads + noise
     _, axs = plt.subplots(
@@ -298,7 +299,7 @@ def vis_large_eps(file: str) -> None:
     wm.window.move(800, 560)
 
     # Plot evolution of learnable parameters over time
-    if TD.shape[1] != 0 and learningFlag:
+    if TD.shape[1] != 0 and learningFlag and TD.all() != None:
         # plot for a lot (or all) of learnable params (debug-purposes)
         _, axs = plt.subplots(7, 6, constrained_layout=True, figsize=(7.5, 7))
 
@@ -325,7 +326,8 @@ def vis_large_eps(file: str) -> None:
         wm.window.move(0, 0)
 
     print("returns", Rcumsum[:, -1])
-    print("learning rate", data['learning_params']['optimizer'].lr_scheduler)
+    if data.get('learning_params', None) != None:
+        print("learning rate", data['learning_params']['optimizer'].lr_scheduler) 
     plt.show()
 
 # changed Qs,Qx and other stuff -> to get TD error down for numerical stability
@@ -393,4 +395,34 @@ filename = "distr_no_learning_1ep_scenario_0.2" # 28-11: full run complete, retu
 filename = r"data from server\batch 2\pkls\tcl3_cent_20ep_scenario_1"
 filename = r"data\pkls\centlearnmanual_cent_5ep_scenario_1"
 filename = r"data\pkls\addMoreLoadinfo_distr_no_learning_1ep_scenario_1"
+
+# batch 3 partly in; tcn2, tdn2, tcl13-15, tdl16,-19,-23
+filename = r"data from server\batch 3\pkls\tcl13_cent_20ep_scenario_1"
+filename = r"data from server\batch 3\pkls\tdl16_distr_20ep_scenario_1" 
+    # I've noted distributed follows centralized very closely, so learning params can be chosen to be the same.
+    # Also: learning has not converged after 20 eps, as seen by the learning-params plot that do not converge.
+        # so either learning rate lower (it's 1 now), or more episodes.
+filename = r"data from server\batch 3\pkls\tdl19_distr_20ep_scenario_1" # 19: upd-freq=2: agressive
+filename = r"data from server\batch 3\pkls\tdl23_distr_20ep_scenario_1" # 23: less smooth buffer: not a whole big diff
+
+# DDPG stuff
+filename = r"ddpg\ddpg_env_eval" # shapes: x: (20, 301, 12), u: (20, 300, 3), Pl: (1, 6011, 3), Pl_noise: (1, 6011, 3)
+# filename = r"ddpg\ddpg_env_train" # shapes: x: (20, 301, 12), u: (20, 300, 3), Pl: (1, 6011, 3), Pl_noise: (1, 6011, 3)
+
+# filename = r"ddpg\ddpg_lfc_changelr2"
+filename = r"ddpg\ddpg_env_evaltest" # (1000, 1001, 12) # 10 x 10 = 100 episodes
+# filename = r"ddpg\ddpg_env_traintest" # (1000, 1001, 12) # 1000 episodes
+
+# consulting GPT on hyper params: biggest change: batch-size to 256:
+filename = r"ddpg\ddpg_env_evaltest2" # (1000, 1001, 12) # 10 x 10 = 100 episodes
+# filename = r"ddpg\ddpg_env_traintest2" # (1000, 1001, 12) # 1000 episodes
+
+# filename = r"ddpg\ddpg_env_evaltest3" # (1000, 1001, 12) # 10 x 10 = 100 episodes
+filename = r"ddpg\ddpg_env_traintest3" # (1000, 1001, 12) # 1000 episodes
+
+# filename = r"ddpg\ddpg_env_evaltest6" # (1000, 1001, 12) # 10 x 10 = 100 episodes
+filename = r"ddpg\ddpg_env_traintest6" # (1000, 1001, 12) # 1000 episodes
+
+# while working on DDPG, continuing with noise on A, B and F:
+# filename = r"data\pkls\scenario2_cent_no_learning_3ep_scenario_1" # note: title is wrong, should be scenario 2 at the end
 # vis_large_eps(filename)

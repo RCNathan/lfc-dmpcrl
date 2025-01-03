@@ -252,7 +252,7 @@ def train(
             pklname = "distr"
         if learning_flag == False:
             pklname = pklname + "_no_learning"
-        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_1"
+        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_2"
 
         # make sure dir exists, save plot and close after
         saveloc = r'data\pkls'
@@ -368,18 +368,18 @@ numSteps = int(t_end / model.ts)
     
 
 # dist, no learn
-train(
-    centralized_flag=False,
-    learning_flag=False,
-    numEpisodes=1,
-    numSteps=numSteps,
-    prediction_horizon=10,
-    admm_iters=50,
-    rho=0.5,
-    consensus_iters=100,
-    # centralized_debug=True,
-    save_name_info='addMoreLoadinfo'
-)
+# train(
+#     centralized_flag=False,
+#     learning_flag=False,
+#     numEpisodes=1,
+#     numSteps=numSteps,
+#     prediction_horizon=10,
+#     admm_iters=50,
+#     rho=0.5,
+#     consensus_iters=100,
+#     # centralized_debug=True,
+#     save_name_info='addMoreLoadinfo'
+# )
 
 # distr learning
 # train(
@@ -398,6 +398,33 @@ train(
 #     centralized_debug=False,
 #     save_name_info='retunelr')
 
+
+### SCENARIO 2: noise on load disturbance + varying time-constant (known) + inaccurate dynamics (unknown) ###
+
+# cent, no learn
+# train(
+#     centralized_flag=True,
+#     learning_flag=False,
+#     numEpisodes=3,
+#     numSteps=numSteps,
+#     prediction_horizon=10,
+#     save_name_info='tuning_ABFnoises'
+# )
+
+# cent, learn
+train(
+    centralized_flag=True, 
+    learning_flag=True, 
+    numEpisodes=10, 
+    numSteps=numSteps,  
+    # prediction_horizon=10,
+    # update_strategy=10,
+    learning_rate=ExponentialScheduler(1e-11, factor=0.99),
+    epsilon=ExponentialScheduler(0.7, factor=0.99),
+    eps_strength=0.5, # values depend on setup, might need large values!
+    experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+    save_name_info='start_manual'
+    )
 
 # Comparison:
 # filename = cent_no_learning_1ep_scenario_1, return [531.66506515]
