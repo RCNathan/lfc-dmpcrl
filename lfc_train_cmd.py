@@ -251,7 +251,7 @@ def train(
             pklname = "distr"
         if learning_flag == False:
             pklname = pklname + "_no_learning"
-        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_1"
+        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_2"
 
         # make sure dir exists, save plot and close after
         # saveloc = r'data\pkls'

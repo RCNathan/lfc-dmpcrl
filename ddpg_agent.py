@@ -96,7 +96,7 @@ def make_env(
     env = AugmentedObservationWrapper(env) # to augment the observation
     if flipFlag: 
         env = TransformReward(env, neg) # to transform the cost into reward (env returns cost, but RL algorithms expects reward)
-    check_env(env, warn=True) # to check if the environment is compatible with SB3
+    # check_env(env, warn=True) # to check if the environment is compatible with SB3 ## TURN OFF after checking; it steps through env w/o resetting
 
     env = Monitor(env) # it is bugging me to do it.
     venv = DummyVecEnv([lambda: env]) # allows multithreading, necessary to vectorize env
@@ -224,7 +224,7 @@ def train_ddpg(
 # call the training function
 # Simulation parameters
 steps_per_episode = 1000 # total timesteps for simulation, should be identical to lfc-dmpcrl case
-num_episodes = 1000 # how many episodes to train for
+num_episodes = 50 # how many episodes to train for
 numEvals = 10 # how many evaluations to perform during training
 makePlots = True
 
@@ -232,14 +232,14 @@ train_ddpg(
     steps_per_episode=steps_per_episode, 
     num_episodes=num_episodes, 
     numEvals=numEvals, 
-    learning_rate=1e-4, 
+    learning_rate=0, 
     weight_decay=1e-6,
     buffer_size=int(1e6),
     batch_size=256,
     gamma=0.95,
-    net_arch = [256, 256, 256],
+    net_arch = [256, 256],
     flipFlag=True,
-    savename_info="test6",
+    savename_info="test7",
 )
 # vis_large_eps(r"ddpg\ddpg_env_trainchangelr",)
 

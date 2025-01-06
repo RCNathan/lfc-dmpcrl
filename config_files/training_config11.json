@@ -1,0 +1,59 @@
+[
+    {
+        "save_name_info": "tcl30",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-9,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5
+    },
+    {
+        "save_name_info": "tcl31",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-10,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5
+    },
+    {
+        "save_name_info": "tcl32",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-11,
+                "factor": 1.0 
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.99
+            }
+        },
+        "eps_strength": 0.5
+    }
+]

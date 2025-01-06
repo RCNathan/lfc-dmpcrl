@@ -105,8 +105,8 @@ class LtiSystem(
 
         # reset previous action and next state as well
         self.last_action = np.zeros((self.n, 1))
-        self.last_x = np.zeros((self.nx, 1))
-        self.last_xkm1 = np.zeros((self.nx, 1))
+        self.last_x = self.x
+        self.last_xkm1 = self.x
 
         return self.x, {}
 
