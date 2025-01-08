@@ -1,6 +1,6 @@
 [
     {
-        "save_name_info": "tcl39",
+        "save_name_info": "tcl40",
         "centralized_flag": true, "learning_flag": true, "numEpisodes": 20, 
         "learning_rate": {
             "type": "ExponentialScheduler",
@@ -13,7 +13,7 @@
             "type": "UpdateStrategy",
             "args": {
                 "frequency": 100,
-                "skip_first": 20
+                "skip_first": 50
             }
         },
         "epsilon": {
@@ -27,9 +27,9 @@
         "experience": {
             "type": "ExperienceReplay",
             "args": {
-                "maxlen": 2000,
-                "sample_size": 100,
-                "include_latest": 20,
+                "maxlen": 5000,
+                "sample_size": 200,
+                "include_latest": 50,
                 "seed": 1
             }
         }
