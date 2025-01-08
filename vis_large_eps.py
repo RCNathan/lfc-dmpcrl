@@ -343,7 +343,10 @@ def vis_large_eps(file: str) -> None:
     print("returns", Rcumsum[:, -1])
     infeasibles = data.get("infeasibles", None)
     if infeasibles != None:
-        print("Infeasibles:", infeasibles)
+        # print("MPC failures at following eps, timesteps:", infeasibles)
+        print("Total infeasible steps:")
+        for key in infeasibles:
+            print(key, np.asarray(infeasibles[key]).shape)
     if data.get('learning_params', None) != None:
         print("learning rate", data['learning_params']['optimizer'].lr_scheduler) 
     plt.show()
@@ -441,6 +444,8 @@ filename = r"ddpg\ddpg_env_traintest3" # (1000, 1001, 12) # 1000 episodes
 # filename = r"ddpg\ddpg_env_evaltest6" # (1000, 1001, 12) # 10 x 10 = 100 episodes
 filename = r"ddpg\ddpg_env_traintest6" # (1000, 1001, 12) # 1000 episodes
 
+filename = r"ddpg\ddpg_env_traintest8" # 
+
 # Scenario 2 | noise on A, B and F: 1e-1, 1e-2, 1e-2
 # while working on DDPG, continuing with noise on A, B and F:
 # filename = r"data\pkls\scenario2_cent_no_learning_3ep_scenario_1" # note: title is wrong, should be scenario 2 at the end
@@ -448,6 +453,12 @@ filename = r"ddpg\ddpg_env_traintest6" # (1000, 1001, 12) # 1000 episodes
 # lr's of 1e-13, 14, 15 are too small; TD fluctuates but is identical between the 13, 14, 15 runs: lr too small
 # filename = r"data\pkls\tcl29_cent_20ep_scenario_1"
 # filename = r"data\pkls\tcl32_cent_20ep_scenario_2" # 32-34 all have a lot of infeasibles
-filename = r"data\pkls\tcl33_cent_50ep_scenario_2" # 33: ep 31-50 are infeasible -> maybe factor from 1 to 0.99...?
+# filename = r"data\pkls\tcl34_cent_50ep_scenario_2" # 33 AND 34: ep 31-50 are infeasible -> maybe factor from 1 to 0.99...?
 
+
+# filename = r"data\pkls\start_manual_cent_30ep_scenario_2"
+# filename = r"data\pkls\start_manual_cent_5ep_scenario_2"
+
+filename = r"data\pkls\tcl35_cent_20ep_scenario_2"
+filename = r"data\pkls\tcl38_cent_20ep_scenario_2" 
 # vis_large_eps(filename)

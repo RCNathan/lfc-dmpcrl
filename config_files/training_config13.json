@@ -1,0 +1,37 @@
+[
+    {
+        "save_name_info": "tcl39",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 20, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-11,
+                "factor": 1.0 
+            }
+        },
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 100,
+                "skip_first": 20
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.5,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.5,
+        "experience": {
+            "type": "ExperienceReplay",
+            "args": {
+                "maxlen": 2000,
+                "sample_size": 100,
+                "include_latest": 20,
+                "seed": 1
+            }
+        }
+    }
+]

@@ -121,6 +121,7 @@ def train_ddpg(
         net_arch: list=[256, 256],
         gamma=0.99,
         flipFlag: bool=True,
+        makePlots: bool=False,
         ):
     # create the environment for training
     venv = make_env(steps_per_episode=steps_per_episode, prediction_horizon=prediction_horizon, flipFlag=flipFlag, isEval=False)
@@ -158,7 +159,7 @@ def train_ddpg(
         verbose=1,
         learning_rate=learning_rate,
         train_freq=train_freq,  # update the model every train_freq steps, alternatively pass tuple; (5, "step"), or (2, "episode")
-        buffer_size=buffer_size,
+        buffer_size=int(buffer_size),
         batch_size=batch_size,
         learning_starts=batch_size,
         # tau=1e-3, # the soft update coefficient ("Polyak update", between 0 and 1)
@@ -224,23 +225,25 @@ def train_ddpg(
 # call the training function
 # Simulation parameters
 steps_per_episode = 1000 # total timesteps for simulation, should be identical to lfc-dmpcrl case
-num_episodes = 50 # how many episodes to train for
-numEvals = 10 # how many evaluations to perform during training
-makePlots = True
+num_episodes = 50000 # how many episodes to train for
+numEvals = 50 # how many evaluations to perform during training (default 10)
 
-train_ddpg(
-    steps_per_episode=steps_per_episode, 
-    num_episodes=num_episodes, 
-    numEvals=numEvals, 
-    learning_rate=0, 
-    weight_decay=1e-6,
-    buffer_size=int(1e6),
-    batch_size=256,
-    gamma=0.95,
-    net_arch = [256, 256],
-    flipFlag=True,
-    savename_info="test7",
-)
+if __name__ == "__main__":
+    print("Executing from __main__")
+    train_ddpg(
+        steps_per_episode=steps_per_episode, 
+        num_episodes=num_episodes, 
+        numEvals=numEvals, 
+        learning_rate=1e-4, 
+        weight_decay=1e-6,
+        buffer_size=int(1e6),
+        batch_size=256,
+        gamma=0.99,
+        net_arch = [256, 256],
+        flipFlag=True,
+        makePlots=True,
+        savename_info="test9_50keps",
+    )
 # vis_large_eps(r"ddpg\ddpg_env_trainchangelr",)
 
 
@@ -263,4 +266,4 @@ train_ddpg(
 # env.envs[0].env.env.env.last_action, similarly x, last_x, last_xkm1, load, load_noise
 # -> self.last_x == self.x
 
-print("ddpg_lfc_agent is a model trained on 100k total steps, 17-12 17h40")
+# print("ddpg_lfc_agent is a model trained on 100k total steps, 17-12 17h40")
