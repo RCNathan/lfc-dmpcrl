@@ -460,5 +460,6 @@ filename = r"ddpg\ddpg_env_traintest8" #
 # filename = r"data\pkls\start_manual_cent_5ep_scenario_2"
 
 filename = r"data\pkls\tcl35_cent_20ep_scenario_2"
-filename = r"data\pkls\tcl38_cent_20ep_scenario_2" 
-# vis_large_eps(filename)
+filename = r"data\pkls\tcl39_cent_20ep_scenario_2" # infeasible from ep 14
+filename = r"data\pkls\tcl40_cent_20ep_scenario_2" # no infeasibles! 
+vis_large_eps(filename)

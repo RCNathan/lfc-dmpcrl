@@ -236,6 +236,7 @@ if __name__ == "__main__":
         numEvals=numEvals, 
         learning_rate=1e-4, 
         weight_decay=1e-6,
+        # train_freq=(5, "step"),
         buffer_size=int(1e6),
         batch_size=256,
         gamma=0.99,
