@@ -462,4 +462,27 @@ filename = r"ddpg\ddpg_env_traintest8" #
 filename = r"data\pkls\tcl35_cent_20ep_scenario_2"
 filename = r"data\pkls\tcl39_cent_20ep_scenario_2" # infeasible from ep 14
 filename = r"data\pkls\tcl40_cent_20ep_scenario_2" # no infeasibles! 
+filename = r"data from server\tcl44_cent_50ep_scenario_2" # exceptional! but infeasilbe from ep 8
+
+# 45 - 48
+filename = r"data\pkls\tcl48_cent_50ep_scenario_2" # YO WHAT THIS IS LEGIT! very nice however infeasible after ep 31; change lr?!
+filename = r"data\pkls\tcl52_cent_100ep_scenario_2" # 
+filename = r"data\pkls\tcl58_cent_50ep_scenario_2" 
+
+# fuck me. I might have implemented the experience replay (and possibly others) wrong? Looking at the code,
+# it doens't seem that the default values are overridden..?
+# yes, unfortunately, experience replay was not altered. Any tests where I changed those settings are worthless...
+filename = r"data\pkls\test1_cent_3ep_scenario_2"
+filename = r"data\pkls\tcl53_cent_50ep_scenario_2_expfix" 
+
+
+# By FAR the best results I've gotten are these two:
+filename = r"data from server\tcl44_cent_50ep_scenario_2" # exceptional! but infeasilbe from ep 8
+filename = r"data\pkls\tcl48_cent_50ep_scenario_2" # YO WHAT THIS IS LEGIT! very nice however infeasible after ep 31; change lr?!
+
+filename = r"data\pkls\tcl58_cent_50ep_scenario_2" # both 57 and 58 are w/o infs and as good as 58! [!!oh wait pre-bug-fix!!]
+filename = r"data\pkls\tcl57_cent_50ep_scenario_2_expfix" # updated 57/58 are not good
+# filename = r"data\pkls\tcl48rp_cent_50ep_scenario_2_expfix"  # repeatibilty; huh. its identical to 48 but no infeasibility issues now..
+# filename = r"data\pkls\tcl62_cent_50ep_scenario_2_expfix"
+
 vis_large_eps(filename)

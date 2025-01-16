@@ -1,0 +1,37 @@
+[
+    {
+        "save_name_info": "tcl52",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 100, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-12,
+                "factor": 0.9998 
+            }
+        },
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 10,
+                "skip_first": 100
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.9,
+                "factor": 0.9995
+            }
+        },
+        "eps_strength": 0.7,
+        "experience": {
+            "type": "ExperienceReplay",
+            "args": {
+                "maxlen": 1000,
+                "sample_size": 500,
+                "include_latest": 100,
+                "seed": 1
+            }
+        }
+    }
+]

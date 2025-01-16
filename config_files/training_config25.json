@@ -1,0 +1,107 @@
+[
+    {
+        "save_name_info": "tcl63",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 100, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-12,
+                "factor": 1.0 
+            }
+        },
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 10,
+                "skip_first": 100
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.9,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.7,
+        "experience": {
+            "type": "ExperienceReplay",
+            "args": {
+                "maxlen": 100,
+                "sample_size": 20,
+                "include_latest": 10,
+                "seed": 1
+            }
+        }
+    },
+    {
+        "save_name_info": "tcl64",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 100, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-12,
+                "factor": 0.99995
+            }
+        },
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 10,
+                "skip_first": 100
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.9,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.7,
+        "experience": {
+            "type": "ExperienceReplay",
+            "args": {
+                "maxlen": 100,
+                "sample_size": 20,
+                "include_latest": 10,
+                "seed": 1
+            }
+        }
+    },
+    {
+        "save_name_info": "tcl65",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 100, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-12,
+                "factor": 0.9999
+            }
+        },
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 10,
+                "skip_first": 100
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.9,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.7,
+        "experience": {
+            "type": "ExperienceReplay",
+            "args": {
+                "maxlen": 100,
+                "sample_size": 20,
+                "include_latest": 10,
+                "seed": 1
+            }
+        }
+    }
+]

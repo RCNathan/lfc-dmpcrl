@@ -55,6 +55,7 @@ def train(
         maxlen=100, sample_size=20, include_latest=10, seed=1
     ),  # experience replay
     prediction_horizon: int = 10,  # MPC prediction horizon N
+    seed: int=1,
     centralized_debug=False,  # debug flag for centralized mpc
     save_name_info: str =None, # optional name to provide more info for saves (plots etc)
     solver: str = "qpoases",  # solver (qpoases or ipopt)
@@ -127,11 +128,10 @@ def train(
             epsilon=epsilon,
             # strength= 0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
             strength=eps_strength * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
-            seed=1,
+            seed=seed,
         )
-        experience = ExperienceReplay(
-            maxlen=100, sample_size=20, include_latest=10, seed=1  # smooths learning
-        )
+        # experience = ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=seed) # smooths learning
+        experience=experience
     else:  # NO LEARNING
         optimizer = GradientDescent(
             learning_rate=0

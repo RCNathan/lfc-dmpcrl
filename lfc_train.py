@@ -130,9 +130,8 @@ def train(
             strength=eps_strength * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
             seed=1,
         )
-        experience = ExperienceReplay(
-            maxlen=100, sample_size=20, include_latest=10, seed=1  # smooths learning
-        )
+        # experience = ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1)  # smooths learning
+        experience=experience
     else:  # NO LEARNING
         optimizer = GradientDescent(
             learning_rate=0
@@ -415,15 +414,15 @@ numSteps = int(t_end / model.ts)
 train(
     centralized_flag=True, 
     learning_flag=True, 
-    numEpisodes=5, 
+    numEpisodes=50, 
     numSteps=numSteps,  
     # prediction_horizon=10,
     update_strategy=UpdateStrategy(frequency=50, skip_first=20),
-    learning_rate=ExponentialScheduler(1e-11, factor=1.0),
-    epsilon=ExponentialScheduler(0.5, factor=0.999),
+    learning_rate=ExponentialScheduler(1e-12, factor=1.0),
+    epsilon=ExponentialScheduler(0.9, factor=0.999),
     eps_strength=0.5, # values depend on setup, might need large values!
-    experience=ExperienceReplay(maxlen=500, sample_size=50, include_latest=10, seed=1),
-    save_name_info='start_manual'
+    # experience=ExperienceReplay(maxlen=500, sample_size=50, include_latest=10, seed=1),
+    save_name_info='tcl26_longer'
     )
 
 # Comparison:

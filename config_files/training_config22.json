@@ -1,0 +1,72 @@
+[
+    {
+        "save_name_info": "tcl57",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 50, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-12,
+                "factor": 1.0
+            }
+        },
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 10,
+                "skip_first": 100
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.9,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.7,
+        "experience": {
+            "type": "ExperienceReplay",
+            "args": {
+                "maxlen": 1000,
+                "sample_size": 500,
+                "include_latest": 100,
+                "seed": 2
+            }
+        }
+    },
+    {
+        "save_name_info": "tcl58",
+        "centralized_flag": true, "learning_flag": true, "numEpisodes": 50, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-12,
+                "factor": 1.0
+            }
+        },
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 10,
+                "skip_first": 100
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.9,
+                "factor": 0.999
+            }
+        },
+        "eps_strength": 0.7,
+        "experience": {
+            "type": "ExperienceReplay",
+            "args": {
+                "maxlen": 1000,
+                "sample_size": 500,
+                "include_latest": 100,
+                "seed": 3
+            }
+        }
+    }
+]
