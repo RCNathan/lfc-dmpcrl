@@ -119,7 +119,8 @@ def train_ddpg(
         buffer_size: int=1e5,
         batch_size:int=256,
         net_arch: list=[256, 256],
-        gamma=0.99,
+        gamma: float=0.99,
+        seed: int=1,
         flipFlag: bool=True,
         makePlots: bool=False,
         ):
@@ -167,13 +168,13 @@ def train_ddpg(
         # train_freq=(96, "step"),
         # gradient_steps=-1, # How many gradient steps to do after each rollout, -1 means to do as many gradient steps as steps done in the environment
         policy_kwargs={
-            "net_arch": net_arch, # [256, 256],
+            "net_arch": net_arch, # [256, 256], -- supplying only one list means actor/critic share archetecture, else: pass dict: e.g. net_arch = dict(pi=[64,64], qf=[400,300])
             "optimizer_kwargs": {
                 "weight_decay": weight_decay,
             },  # l2_regularization=1e-5,
         },
         # verbose=verbose,
-        # seed=seed,
+        seed=seed,
         # device=device,
     )
     # train
@@ -191,7 +192,7 @@ def train_ddpg(
         train_env, eval_env =  venv.envs[0].env.env.env, eval_env.envs[0].env.env.env # with flipreward
     else:
         train_env, eval_env =  venv.envs[0].env.env, eval_env.envs[0].env.env # without flipreward
-    for env_type, env in [( "train", train_env), ("eval", eval_env)]:
+    for env_type, env in reversed([( "train", train_env), ("eval", eval_env)]):
         X = np.asarray(env.observations)
         U = np.asarray(env.actions)
         R = np.asarray(env.rewards)
@@ -225,8 +226,8 @@ def train_ddpg(
 # call the training function
 # Simulation parameters
 steps_per_episode = 1000 # total timesteps for simulation, should be identical to lfc-dmpcrl case
-num_episodes = 50000 # how many episodes to train for
-numEvals = 50 # how many evaluations to perform during training (default 10)
+num_episodes = 2000 # how many episodes to train for
+numEvals = 100 # how many evaluations to perform during training (default 10)
 
 if __name__ == "__main__":
     print("Executing from __main__")
@@ -234,16 +235,17 @@ if __name__ == "__main__":
         steps_per_episode=steps_per_episode, 
         num_episodes=num_episodes, 
         numEvals=numEvals, 
-        learning_rate=1e-4, 
-        weight_decay=1e-6,
-        # train_freq=(5, "step"),
+        learning_rate=1e-6, # from baseline; 1e-6 seems best
+        weight_decay=1e-5,
+        train_freq=(5, "step"),
         buffer_size=int(1e6),
         batch_size=256,
-        gamma=0.99,
+        gamma=0.999,
+        seed=1,
         net_arch = [256, 256],
         flipFlag=True,
         makePlots=True,
-        savename_info="test9_50keps",
+        savename_info="2kEps",
     )
 # vis_large_eps(r"ddpg\ddpg_env_trainchangelr",)
 
