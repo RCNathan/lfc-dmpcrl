@@ -485,4 +485,5 @@ filename = r"data\pkls\tcl57_cent_50ep_scenario_2_expfix" # updated 57/58 are no
 # filename = r"data\pkls\tcl48rp_cent_50ep_scenario_2_expfix"  # repeatibilty; huh. its identical to 48 but no infeasibility issues now..
 # filename = r"data\pkls\tcl62_cent_50ep_scenario_2_expfix"
 
-vis_large_eps(filename)
+filename = r"ddpg\ddpg_env_evalddpg1"
+# vis_large_eps(filename)

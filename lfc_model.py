@@ -20,9 +20,9 @@ class Model:
     )  # sampling time for env, which will approx the real system better.
 
     # noise on matrices for inaccurate guess used by learnable MPC
-    noise_A = 1e-1  # default 1e0
-    noise_B = 1e-2  # default 1e-1
-    noise_F = 1e-2  # default 1e-1
+    noise_A = 5e-2  # default 1e-1 (scenario_2.0)
+    noise_B = 1e-3  # default 1e-2 (2.0)
+    noise_F = 1e-3  # default 1e-2 (2.0)
     # noise_A, noise_B, noise_F = 0, 0, 0  # Perfect knowledge of system matrices
     ubnd = 3e-1  # 2e-1 in Zhao et al., 3e-1 in Venkat et al., 0.25 in Mohamed et al., 3e-1 in Ma et al.
     # GRC_l = 0.00017 # p.u/s in Yan et al.

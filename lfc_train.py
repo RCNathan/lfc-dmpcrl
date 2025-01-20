@@ -251,7 +251,7 @@ def train(
             pklname = "distr"
         if learning_flag == False:
             pklname = pklname + "_no_learning"
-        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_2"
+        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_2.1"
 
         # make sure dir exists, save plot and close after
         saveloc = r'data\pkls'
@@ -414,15 +414,15 @@ numSteps = int(t_end / model.ts)
 train(
     centralized_flag=True, 
     learning_flag=True, 
-    numEpisodes=50, 
+    numEpisodes=100, 
     numSteps=numSteps,  
     # prediction_horizon=10,
-    update_strategy=UpdateStrategy(frequency=50, skip_first=20),
+    update_strategy=UpdateStrategy(frequency=10, skip_first=100),
     learning_rate=ExponentialScheduler(1e-12, factor=1.0),
     epsilon=ExponentialScheduler(0.9, factor=0.999),
-    eps_strength=0.5, # values depend on setup, might need large values!
-    # experience=ExperienceReplay(maxlen=500, sample_size=50, include_latest=10, seed=1),
-    save_name_info='tcl26_longer'
+    eps_strength=0.7, # values depend on setup, might need large values!
+    experience=ExperienceReplay(maxlen=200, sample_size=20, include_latest=10, seed=1),
+    save_name_info='lowered_noise'
     )
 
 # Comparison:
