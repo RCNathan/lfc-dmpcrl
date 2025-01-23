@@ -251,7 +251,7 @@ def train(
             pklname = "distr"
         if learning_flag == False:
             pklname = pklname + "_no_learning"
-        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_2.1"
+        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_2"
 
         # make sure dir exists, save plot and close after
         saveloc = r'data\pkls'
@@ -358,11 +358,11 @@ numSteps = int(t_end / model.ts)
 #     numSteps=numSteps,  
 #     prediction_horizon=10,
 #     update_strategy=10,
-#     learning_rate=ExponentialScheduler(1e-8, factor=0.9999),
+#     learning_rate=ExponentialScheduler(1e-10, factor=0.9999),
 #     epsilon=ExponentialScheduler(0.9, factor=0.99),
 #     eps_strength=0.5, # values depend on setup, might need large values!
 #     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-#     save_name_info='centlearnmanual'
+#     save_name_info='anotherTestForGrcbugfix'
 #     )
     
 
@@ -404,26 +404,41 @@ numSteps = int(t_end / model.ts)
 # train(
 #     centralized_flag=True,
 #     learning_flag=False,
-#     numEpisodes=3,
+#     numEpisodes=1,
 #     numSteps=numSteps,
 #     prediction_horizon=10,
-#     save_name_info='tuning_ABFnoises'
+#     save_name_info='env_penalize_grc_bug'
 # )
 
 # cent, learn
-train(
-    centralized_flag=True, 
-    learning_flag=True, 
-    numEpisodes=100, 
-    numSteps=numSteps,  
-    # prediction_horizon=10,
-    update_strategy=UpdateStrategy(frequency=10, skip_first=100),
-    learning_rate=ExponentialScheduler(1e-12, factor=1.0),
-    epsilon=ExponentialScheduler(0.9, factor=0.999),
-    eps_strength=0.7, # values depend on setup, might need large values!
-    experience=ExperienceReplay(maxlen=200, sample_size=20, include_latest=10, seed=1),
-    save_name_info='lowered_noise'
-    )
+# train(
+#     centralized_flag=True, 
+#     learning_flag=True, 
+#     numEpisodes=10, 
+#     numSteps=numSteps,  
+#     # prediction_horizon=10,
+#     update_strategy=UpdateStrategy(frequency=10, skip_first=100),
+#     learning_rate=ExponentialScheduler(1e-12, factor=1.0),
+#     epsilon=ExponentialScheduler(0.9, factor=0.999),
+#     eps_strength=0.7, # values depend on setup, might need large values!
+#     experience=ExperienceReplay(maxlen=200, sample_size=20, include_latest=10, seed=1),
+#     save_name_info='env_penalize_grc_bug'
+#     )
+
+# distr, learn
+# train(
+#     centralized_flag=False, 
+#     learning_flag=True, 
+#     numEpisodes=50, 
+#     numSteps=numSteps,  
+#     # prediction_horizon=10,
+#     update_strategy=UpdateStrategy(frequency=10, skip_first=100),
+#     learning_rate=ExponentialScheduler(1e-12, factor=1.0),
+#     epsilon=ExponentialScheduler(0.9, factor=0.999),
+#     eps_strength=0.7, # values depend on setup, might need large values!
+#     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+#     save_name_info='lowered_noise'
+#     )
 
 # Comparison:
 # filename = cent_no_learning_1ep_scenario_1, return [531.66506515]
@@ -433,3 +448,19 @@ train(
 ### SCENARIO 2: noise on load disturbance + varying time-constant (known) + inaccurate dynamics (unknown) ###
 
 ### SCENARIO 3?: previous + windfarm-area ###
+
+
+# testing grc bugfix -> it is reverted to original for now. Time issues n stuff.
+# train(
+#     centralized_flag=True, 
+#     learning_flag=True, 
+#     numEpisodes=20, 
+#     numSteps=numSteps,  
+#     # prediction_horizon=10,
+#     update_strategy=UpdateStrategy(frequency=10, skip_first=500),
+#     learning_rate=ExponentialScheduler(1e-11, factor=1.0),
+#     epsilon=ExponentialScheduler(0.5, factor=0.999),
+#     eps_strength=0.5, # values depend on setup, might need large values!
+#     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+#     save_name_info='env_penalize_grc_bug_43again'
+#     )
