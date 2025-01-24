@@ -1,4 +1,5 @@
 from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
+from mpcrl.agents.lstd_q_learning import LstdQLearningAgent
 from mpcrl.agents.common.agent import Agent
 from csnlp import Solution
 from gymnasium import Env
@@ -22,7 +23,7 @@ ObsType = TypeVar("ObsType")
 ActType = TypeVar("ActType")
 
 # the agent for the scenario-based MPC
-class LfcScMPCAgent(Agent):
+class LfcScMPCAgent(LstdQLearningAgent):
     """Agent for Scenario-based MPC - for the LFC problem. This agent hence handles load changes."""
 
     def update_load_info(self, env: Env[ObsType, ActType]) -> None:

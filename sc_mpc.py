@@ -246,8 +246,13 @@ agent = Log(  # type: ignore[var-annotated]
     RecordUpdates(
         LfcScMPCAgent(
             mpc=centralized_scmpc,
-            # centralized_learnable_parameters=None,
+            learnable_parameters=None,
             fixed_parameters=centralized_scmpc.fixed_pars_init,  # fixed: Pl
+            update_strategy=2,
+            discount_factor=1,
+            optimizer = GradientDescent(
+            learning_rate=0
+            )
             # centralized fixed params?
             # other args?
         ),
