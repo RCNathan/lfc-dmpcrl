@@ -139,12 +139,23 @@ def train_ddpg(
     totalSteps = steps_per_episode * num_episodes
     # numEvals = 10 # how many evaluations to perform during training
 
+    # create the path for saving the callbacks (best model), env (w/ normalizations), model (i.e params/weights) and the envs.env... (i.e MonitorEpisodes)
+    savename = "lfc_" + savename_info
+    saveloc = os.path.join("ddpg", savename) # makes ddpg/ddpg_lfc_ddpg4 for example
+    saveloc_best = os.path.join("ddpg", "best_model")
+    saveloc_best = os.path.join(saveloc_best, savename) # makes ddpg/best_model/ddpg_lfc_ddpg4.zip for example 
+
+    # make sure the dirs exist (ugly I know)
+    os.makedirs("ddpg", exist_ok=True)
+    os.makedirs(os.path.join("ddpg", "best_model"), exist_ok=True)
+
     # create the eval callback
     eval_env = make_env(steps_per_episode=steps_per_episode, prediction_horizon=prediction_horizon, flipFlag=flipFlag, isEval=True)
     cb = EvalCallback(
         eval_env=eval_env,
         n_eval_episodes=10,
         eval_freq=int(totalSteps / numEvals),
+        best_model_save_path=saveloc_best,  # saves after new best model is found by evaluating on eval_env.
     )
 
     # Define the model to train
@@ -180,10 +191,10 @@ def train_ddpg(
     # train
     model.learn(total_timesteps=totalSteps, log_interval=1, progress_bar=True, callback=cb)
     
-    # save the trained model
-    savename = "ddpg_lfc_" + savename_info
-    saveloc = os.path.join("ddpg", savename)
-    model.save(saveloc)
+    # save the trained model and the training env (with normalizations)
+    env = model.get_env()
+    model.save(saveloc + "_model") # save the model; all parameters (or weights)
+    env.save(saveloc + "_env.pkl") # save the env with normalizations (to use with get_env() later for evaluation)
     print("Model saved as", savename)
 
     # return as data the `MonitorEpisodes` from the training and evaluation envs - ugly,
@@ -198,15 +209,15 @@ def train_ddpg(
         R = np.asarray(env.rewards)
         Pl = np.asarray(env.unwrapped.loads)
         Pl_noise = np.asarray(env.unwrapped.load_noises)
-        # TODO TD errors
+        # TODO TD errors => no.
 
         print("Shape:",X.shape)
-        # save to disk the trained agent and the training env (it has the normalizations)
-        savename = f"ddpg_env_{env_type}" + savename_info
-        saveloc = os.path.join("ddpg", savename)
+        # save the MonitorEpisodes data
+        # savename = f"ddpg_env_{env_type}" + savename_info
+        # saveloc = os.path.join("ddpg", savename)
         
         with open(
-            f"{saveloc}.pkl", 
+            f"{saveloc}_{env_type}.pkl", # use the saveloc defined earlier for consistency; saveloc = ddpg/lfc_ddpg4 for example; then add _train, _eval
             "wb",
         ) as file:
             pickle.dump(
@@ -226,8 +237,8 @@ def train_ddpg(
 # call the training function
 # Simulation parameters
 steps_per_episode = 1000 # total timesteps for simulation, should be identical to lfc-dmpcrl case
-num_episodes = 2000 # how many episodes to train for
-numEvals = 100 # how many evaluations to perform during training (default 10)
+num_episodes = 20 # how many episodes to train for
+numEvals = 2 # how many evaluations to perform during training (default 10)
 
 if __name__ == "__main__":
     print("Executing from __main__")
@@ -245,7 +256,7 @@ if __name__ == "__main__":
         net_arch = [256, 256],
         flipFlag=True,
         makePlots=True,
-        savename_info="2kEps",
+        savename_info="test",
     )
 # vis_large_eps(r"ddpg\ddpg_env_trainchangelr",)
 
