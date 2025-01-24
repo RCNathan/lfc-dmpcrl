@@ -10,14 +10,13 @@ import json
 import casadi as cs
 import numpy as np
 
-# from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
 from gymnasium.wrappers import TimeLimit
 from mpcrl.optim import GradientDescent
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
 from dmpcrl.utils.solver_options import SolverOptions
 
-# from lfc_agent import LfcLstdQLearningAgentCoordinator #TODO: replace with new agent for scmpc
+from lfc_stochastic_agent import LfcScMPCAgent
 from lfc_env import LtiSystem  # change environment in lfc_env.py (= ground truth)
 from lfc_model import Model  # change model in model.py (own repo)
 from block_diag import block_diag
@@ -41,9 +40,10 @@ class sampleBasedMpc(ScenarioBasedMpc):
         self, 
         model,
         n_scenarios, 
-        prediction_horizon, 
         scenario: int = 1 | 2, # scenario 1 or 2; defines the level of stochasticities
-        control_horizon = None, 
+        solver: str = "qpoases", # qpoases or ipopt
+        prediction_horizon: int = 10, # Np
+        control_horizon: int = 10, # Nc
         input_spacing = 1, 
         shooting = "multi"
     ) -> None:
@@ -224,7 +224,17 @@ class sampleBasedMpc(ScenarioBasedMpc):
 model = Model()
 prediction_horizon = 10
 numSteps = 1000
-centralized_scmpc = sampleBasedMpc(model=model, scenario=1, n_scenarios=5, prediction_horizon=prediction_horizon, control_horizon=prediction_horizon, input_spacing=1, shooting="multi")
+numEpisodes = 1
+centralized_scmpc = sampleBasedMpc(
+    model=model, 
+    scenario=1, 
+    n_scenarios=5,
+    solver="qpoases", 
+    prediction_horizon=prediction_horizon, 
+    control_horizon=prediction_horizon, 
+    input_spacing=1, 
+    shooting="multi"
+)
 
 # make the env
 env = MonitorEpisodes(
@@ -234,13 +244,13 @@ env = MonitorEpisodes(
 # initialize the agent
 agent = Log(  # type: ignore[var-annotated]
     RecordUpdates(
-        # in lfc_train: 
-        # LfcLstdQLearningAgentCoordinator(
-        #     agents=agents, # distributed mpcs
-        #     ...,
-        #     consensus_iters=consensus_iters,
-        #     centralized_mpc=centralized_mpc,
-        # ) -> we need to define a new agent, no learning required.
+        LfcScMPCAgent(
+            mpc=centralized_scmpc,
+            # centralized_learnable_parameters=None,
+            fixed_parameters=centralized_scmpc.fixed_pars_init,  # fixed: Pl
+            # centralized fixed params?
+            # other args?
+        ),
     ),
     level=logging.DEBUG,
     log_frequencies={"on_timestep_end": 100},
@@ -248,4 +258,16 @@ agent = Log(  # type: ignore[var-annotated]
 
 # call evaluate(), since no learning is required
 seed = 1
-agent.evaluate(env, centralized_scmpc, numSteps, seed=seed)
+agent.evaluate(env=env, episodes=numEpisodes, seed=seed, raises=False)
+
+# save all data from env; X, U, R, ... - different scenarios?
+# env.observations
+
+
+# in lfc_train: 
+        # LfcLstdQLearningAgentCoordinator(
+        #     agents=agents, # distributed mpcs
+        #     ...,
+        #     consensus_iters=consensus_iters,
+        #     centralized_mpc=centralized_mpc,
+        # ) -> we need to define a new agent, no learning required.
