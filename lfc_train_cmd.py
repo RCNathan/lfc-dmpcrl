@@ -30,7 +30,6 @@ from lfc_learnable_mpc import (  # change learnable mpc, start with centralized
     LocalMpc,
 )
 from lfc_model import Model  # change model in model.py (own repo)
-from lfc_visualization import visualize
 from vis_large_eps import vis_large_eps
 from masterplot import large_plot
 
