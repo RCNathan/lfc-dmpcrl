@@ -50,8 +50,8 @@ from csnlp.wrappers.mpc.scenario_based_mpc import ScenarioBasedMpc, _n
 from mpcrl.util.seeding import RngType
 
 class sampleBasedMpc(ScenarioBasedMpc):
+    """Sample-based MPC for scenario-based optimization problems for the LFC case."""
     
-
     def __init__(
         self, 
         n_scenarios, 
