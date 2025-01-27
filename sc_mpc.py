@@ -215,10 +215,11 @@ def evaluate_scmpc(
         prediction_horizon = 10, # Np
         save_name_info: str = None, # additional info to be added to the save name
         seed: int = 1, # rng seeding
+        make_plots: bool = False, # whether to make plots of the data
 ) -> None:
     # flags for saving and plotting 
     save_data = True
-    make_plots = True
+    # make_plots = True
 
     # initialize the mpc
     model = Model()
@@ -246,7 +247,7 @@ def evaluate_scmpc(
             fixed_parameters=centralized_scmpc.fixed_pars_init,  # fixed: Pl
         ),
         level=logging.DEBUG,
-        log_frequencies={"on_timestep_end": 10}, # log more often due long compute-times
+        log_frequencies={"on_timestep_end": 1}, # log more often due long compute-times
     ) # LfcScMPCAgent: handles the loads over horizon, changing the fixed parameter Pl.
 
     # call evaluate(), since no learning is required
@@ -272,7 +273,8 @@ def evaluate_scmpc(
         savename = save_name_info + "_" + pklname
 
         with open(
-            f'{saveloc}\{savename}.pkl',
+            os.path.join(saveloc, f"{savename}.pkl"),
+            # f'{saveloc}\{savename}.pkl',
             "wb",  # w: write mode, creates new or truncates existing. b: binary mode
         ) as file:
             pickle.dump(
@@ -298,20 +300,21 @@ model = Model()
 t_end = 10  # end-time in seconds 
 numSteps = int(t_end / model.ts) # default 1000 steps
 
-# scenario 1 | no perturbations on A, B, F
-evaluate_scmpc(
-    numEpisodes=1, 
-    numSteps=numSteps, 
-    scenario=1, 
-    n_scenarios=20, 
-    save_name_info=""
-)
+if __name__ == "__main__":
+    # scenario 1 | no perturbations on A, B, F
+    evaluate_scmpc(
+        numEpisodes=1, 
+        numSteps=numSteps, 
+        scenario=1, 
+        n_scenarios=20, 
+        save_name_info=""
+    )
 
-# # scenario 2 | perturbations on A, B, F
-# evaluate_scmpc(
-#     numEpisodes=1, 
-#     numSteps=numSteps, 
-#     scenario=2, 
-#     n_scenarios=5, 
-#     save_name_info=""
-# )
+    # # scenario 2 | perturbations on A, B, F
+    # evaluate_scmpc(
+    #     numEpisodes=1, 
+    #     numSteps=numSteps, 
+    #     scenario=2, 
+    #     n_scenarios=5, 
+    #     save_name_info=""
+    # )
