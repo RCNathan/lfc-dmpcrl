@@ -70,7 +70,7 @@ class sampleBasedMpc(ScenarioBasedMpc):
         A, B, F = model.A, model.B, model.F
         noise_A, noise_B, noise_F = model.noise_A, model.noise_B, model.noise_F  # for perturbing in scenario 2
 
-        # define the Qx, Qu and Qf for the objective function
+        # define the Qx, Qu and Qf for the objective function   ==> same as in learnable MPC
         Qx = np.array([[1e2, 0, 0, 0], [0, 1e0, 0, 0], [0, 0, 1e1, 0], [0, 0, 0, 2e1]])  # quadratic cost on states (local)
         Qx = block_diag(Qx, n=self.n) # from local Q to centralized Q (4,4) -> (12,12)
         Qu = np.array([0.5]) # 'quadaratic' cost on acyions (local)
@@ -111,7 +111,7 @@ class sampleBasedMpc(ScenarioBasedMpc):
             0.05 * (
                 np.random.uniform(0, 2, (self.nu, N + 1)) - 1 + offset
             ) for _ in range(n_scenarios)
-        ] # shape of e; list [n_scenarios][nx, N+1]; consistent with xs and s
+        ] # shape of e; list [n_scenarios][nu, N+1]; consistent with xs and s
 
         # add dynamics manually due dynamic load over horizon - for Ns scenarios
         ## scenario 1 ##
@@ -123,9 +123,6 @@ class sampleBasedMpc(ScenarioBasedMpc):
                         A @ xs[n][:, [k]] + B @ u[:, [k]] + F @ (Pl[:, [k]] + e[n][:, [k]]),
                         "==",
                         xs[n][:, [k + 1]],
-                        # A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl[:, [k]] + b, 
-                        # "==",
-                        # x[:, [k + 1]],
                     ) # setting Pl[:, [0]] is identical to previous implementation where load is not tracked over N
         ## scenario 2 ##
         elif scenario == 2:
@@ -163,9 +160,6 @@ class sampleBasedMpc(ScenarioBasedMpc):
                         A_perturbed[n] @ xs[n][:, [k]] + B_perturbed[n] @ u[:, [k]] + F_perturbed[n] @ (Pl[:, [k]] + e[n][:, [k]]),
                         "==",
                         xs[n][:, [k + 1]],
-                        # A @ x[:, [k]] + B @ u[:, [k]] + F @ Pl[:, [k]] + b, 
-                        # "==",
-                        # x[:, [k + 1]],
                     ) # setting Pl[:, [0]] is identical to previous implementation where load is not tracked over N
         else:
             raise ValueError("Scenario must be 1 or 2.")
@@ -213,66 +207,111 @@ class sampleBasedMpc(ScenarioBasedMpc):
         self.init_solver(opts, solver=solver)
 
 
-### Inspiration from lfc_train.py: ###
-# centralised mpc and params
-# centralized_mpc = CentralizedMpc(
-#     model, prediction_horizon, solver=solver
-# )  # for comparison/debugging
-# -> learnable params not necessary
+def evaluate_scmpc(
+        numEpisodes: int = 1,
+        numSteps: int = 1000,
+        scenario: int = 1 | 2, # 1 or 2, level of stochasticities in the system
+        n_scenarios: int = 5, # how many sample-based scenarios to impose on the constraints/dynamics
+        prediction_horizon = 10, # Np
+        save_name_info: str = None, # additional info to be added to the save name
+        seed: int = 1, # rng seeding
+) -> None:
+    # flags for saving and plotting 
+    save_data = True
+    make_plots = True
 
-# initialize the mpc
-model = Model()
-prediction_horizon = 10
-numSteps = 1000
-numEpisodes = 1
-centralized_scmpc = sampleBasedMpc(
-    model=model, 
-    scenario=1, 
-    n_scenarios=5,
-    solver="qpoases", 
-    prediction_horizon=prediction_horizon, 
-    control_horizon=prediction_horizon, 
-    input_spacing=1, 
-    shooting="multi"
-)
+    # initialize the mpc
+    model = Model()
+    save_name_info = "" # additional info to be added to the save name
+    centralized_scmpc = sampleBasedMpc(
+        model=model, 
+        scenario=scenario, 
+        n_scenarios=n_scenarios,
+        solver="qpoases", 
+        prediction_horizon=prediction_horizon, 
+        control_horizon=prediction_horizon, 
+        input_spacing=1, 
+        shooting="multi"
+    )
 
-# make the env
-env = MonitorEpisodes(
-        TimeLimit(LtiSystem(model=model, predicton_horizon=prediction_horizon), max_episode_steps=int(numSteps))
-    )  # Lti system:
+    # make the env
+    env = MonitorEpisodes(
+            TimeLimit(LtiSystem(model=model, predicton_horizon=prediction_horizon), max_episode_steps=int(numSteps))
+        )  # Lti system: env providing the 'true' dynamics in lfc, with noise on loads
 
-# initialize the agent
-agent = Log(  # type: ignore[var-annotated]
-    RecordUpdates(
+    # initialize the agent
+    agent = Log(  # type: ignore[var-annotated]
         LfcScMPCAgent(
             mpc=centralized_scmpc,
-            learnable_parameters=None,
             fixed_parameters=centralized_scmpc.fixed_pars_init,  # fixed: Pl
-            update_strategy=2,
-            discount_factor=1,
-            optimizer = GradientDescent(
-            learning_rate=0
-            )
-            # centralized fixed params?
-            # other args?
         ),
-    ),
-    level=logging.DEBUG,
-    log_frequencies={"on_timestep_end": 100},
+        level=logging.DEBUG,
+        log_frequencies={"on_timestep_end": 10}, # log more often due long compute-times
+    ) # LfcScMPCAgent: handles the loads over horizon, changing the fixed parameter Pl.
+
+    # call evaluate(), since no learning is required
+    agent.evaluate(env=env, episodes=numEpisodes, seed=seed, raises=False)
+
+    # save all data from env; X, U, R, ... - different scenarios?
+    X = np.asarray(env.observations)
+    U = np.asarray(env.actions)
+    R = np.asarray(env.rewards)
+    Pl = np.asarray(env.unwrapped.loads)
+    Pl_noise = np.asarray(env.unwrapped.load_noises)
+    meta_data = {
+        'scenario': scenario,
+        'n_scenarios': n_scenarios,
+    }
+
+    if save_data:
+        pklname = f"scmpc_{str(numEpisodes)}ep_scenario_{scenario}_ns_{n_scenarios}"
+
+        # make sure dir exists, save plot and close after
+        saveloc = r'scmpc'
+        os.makedirs(saveloc, exist_ok=True)
+        savename = save_name_info + "_" + pklname
+
+        with open(
+            f'{saveloc}\{savename}.pkl',
+            "wb",  # w: write mode, creates new or truncates existing. b: binary mode
+        ) as file:
+            pickle.dump(
+                {
+                    "X": X,
+                    "U": U,
+                    "R": R,
+                    "Pl": Pl,
+                    "Pl_noise": Pl_noise,
+                    # "infeasibles": infeasibles, # potentially add in future
+                    "meta_data": meta_data,
+                },
+                file,
+            )
+        print("Training succesful, file saved as", savename)
+
+        if make_plots:
+            vis_large_eps(f'{saveloc}\{savename}')
+
+
+# some constants
+model = Model()
+t_end = 10  # end-time in seconds 
+numSteps = int(t_end / model.ts) # default 1000 steps
+
+# scenario 1 | no perturbations on A, B, F
+evaluate_scmpc(
+    numEpisodes=1, 
+    numSteps=numSteps, 
+    scenario=1, 
+    n_scenarios=20, 
+    save_name_info=""
 )
 
-# call evaluate(), since no learning is required
-seed = 1
-agent.evaluate(env=env, episodes=numEpisodes, seed=seed, raises=False)
-
-# save all data from env; X, U, R, ... - different scenarios?
-# env.observations
-
-
-# in lfc_train: 
-        # LfcLstdQLearningAgentCoordinator(
-        #     agents=agents, # distributed mpcs
-        #     ...,
-        #     consensus_iters=consensus_iters,
-        #     centralized_mpc=centralized_mpc,
-        # ) -> we need to define a new agent, no learning required.
+# # scenario 2 | perturbations on A, B, F
+# evaluate_scmpc(
+#     numEpisodes=1, 
+#     numSteps=numSteps, 
+#     scenario=2, 
+#     n_scenarios=5, 
+#     save_name_info=""
+# )
