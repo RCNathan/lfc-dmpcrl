@@ -31,3 +31,9 @@ endlocal
 
 cmd.exe /K "C:\anacondapowershelltest.bat \"%V\""
 
+
+P.S: you can also change the icon to the anaconda icon by adding a 'string' in the folder of command, and change it to:
+%SystemDrive%\Users\Natha\anaconda3\Menu\anaconda-navigator.ico
+
+
+

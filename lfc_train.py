@@ -6,6 +6,7 @@ from datetime import *
 import os
 import argparse
 import json
+import time
 
 import casadi as cs
 import numpy as np
@@ -199,11 +200,14 @@ def train(
         level=logging.DEBUG,
         log_frequencies={"on_timestep_end": 100},
     )
+    start_time = time.time()
     if learning_flag:
         agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
     else:
         agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
         # agent.evaluate(env=env, episodes=numEpisodes, seed=1, raises=False) # bugged atm
+    end_time = time.time()
+    print("Time elapsed:", end_time - start_time)
 
     # extract data
     # from agent
@@ -273,6 +277,7 @@ def train(
                     "learning_params": learning_params,
                     "infeasibles": infeasibles,
                     "cent_flag": centralized_flag,
+                    'elapsed_time': end_time - start_time,
                 },
                 file,
             )
@@ -338,15 +343,15 @@ model = Model()
 t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
 numSteps = int(t_end / model.ts)
 # numSteps = 50
-# train(
-#     centralized_flag=True,
-#     learning_flag=False,
-#     numEpisodes=1,
-#     numSteps=numSteps,
-#     prediction_horizon=10,
-#     save_name_info='addMoreLoadinfo',
-#     # solver="ipopt"
-# )
+train(
+    centralized_flag=True,
+    learning_flag=False,
+    numEpisodes=1,
+    numSteps=100,
+    prediction_horizon=10,
+    save_name_info='testTimer',
+    # solver="ipopt"
+)
 
 
 # cent, learn

@@ -1,6 +1,7 @@
 import os
 import numpy as np
-import pickle 
+import pickle
+import time 
 
 from gymnasium import ObservationWrapper, spaces
 from gymnasium.wrappers import TimeLimit, TransformReward
@@ -189,7 +190,10 @@ def train_ddpg(
         # device=device,
     )
     # train
+    start_time = time.time()
     model.learn(total_timesteps=totalSteps, log_interval=1, progress_bar=True, callback=cb)
+    end_time = time.time()
+    print("Time elapsed:", end_time - start_time)
     
     # save the trained model and the training env (with normalizations)
     env = model.get_env()
@@ -227,6 +231,7 @@ def train_ddpg(
                     "R": R,
                     "Pl": Pl,
                     "Pl_noise": Pl_noise,
+                    'elapsed_time': end_time - start_time,
                 },
                 file,
             )
