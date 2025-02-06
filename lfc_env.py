@@ -18,7 +18,7 @@ class LtiSystem(
         [[-1e-1], [0]]
     )  # uniform noise bounds for process noise on local systems
 
-    def __init__(self, model: Model, predicton_horizon: int) -> None:
+    def __init__(self, model: Model, predicton_horizon: int, save_periodically: int | bool) -> None:
         """Initializes the environment.
 
         Parameters
@@ -26,6 +26,7 @@ class LtiSystem(
         model : Model
             The model of the system.
         predicton_horizon : integer, horizon for prediction in MPC
+        save_periodically: to save after every n episodes (see lfc_agent.py)
         Needs to be passed to allow loads over prediction_horizon."""
         super().__init__()
         self.A, self.B, self.F = model.A_env, model.B_env, model.F_env
@@ -45,6 +46,7 @@ class LtiSystem(
         # making this the easiest way to implement
         self.grc = model.GRC_l
         self.N = predicton_horizon # to have loads over horizon for MPC's
+        self.save_periodically = save_periodically
 
         # Initialize step_counter, load and load_noise
         self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)

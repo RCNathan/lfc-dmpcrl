@@ -10,6 +10,8 @@ from collections.abc import Collection, Iterable, Iterator
 import pickle
 import casadi as cs
 from casadi import DM
+import os
+import time
 
 SymType = TypeVar("SymType", cs.SX, cs.MX)
 
@@ -27,6 +29,7 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
     saveRunningData = False  # toggle whether during runtime, every x steps, data gets saved.
     plotRunningFlag = False  # toggle whether plotted immediately as well. 
     plotDualVarsFlag = False  # toggle whether dual vars are being plotted at every timestep. 
+    small_start_time = time.time() # used for periodical saves
 
     cent_debug_info_dict = {
         "state": [],
@@ -106,6 +109,63 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
     #     # self.update_load_info(env)
     #     return super().on_env_step(env, episode, timestep)
     # ---> from testing: doesn't matter if here or on_timestep_end, same returns.
+
+    def on_episode_end(self, env, episode, rewards):
+        # save periodically, note episode starts at 0
+        if env.unwrapped.save_periodically != False:
+            # print("testing for periodically saving")
+            if (episode + 1) % env.unwrapped.save_periodically == 0:
+                print(f"Saving after episode {episode + 1}!")
+                # extract from env
+                X = np.asarray(env.observations)
+                U = np.asarray(env.actions)
+                R = np.asarray(env.rewards)
+                Pl = np.asarray(env.unwrapped.loads)
+                Pl_noise = np.asarray(env.unwrapped.load_noises)
+                # extract from 'self' (agent or coordinator)
+                TD = (
+                    # agent.td_errors if centralized_flag else agent.agents[0].td_errors
+                    self.td_errors if self.centralized_flag else [self.agents[i].td_errors for i in range(self.n)]
+                )  # all smaller agents have global TD error
+                param_dict = {}
+                if self.centralized_flag:
+                    for name, val in self.updates_history.items():
+                        param_dict[name] = np.asarray(val)
+                else:
+                    for i in range(self.n):
+                        for name, val in self.agents[i].updates_history.items():
+                            param_dict[f"{name}_{i}"] = np.asarray(val)
+                learning_params = {
+                    "update_strategy": self.update_strategy,
+                    "optimizer": self.optimizer,
+                    "exploration": self.exploration,
+                    "experience": self.experience
+                }
+                infeasibles = self.numInfeasibles
+                # save in pkl
+                saveloc = os.path.join( "data", "pkls", "periodic")
+                os.makedirs(saveloc, exist_ok=True)
+                with open(
+                    os.path.join(saveloc, f"periodic_ep{episode + 1}.pkl"),
+                    "wb",
+                ) as file:
+                    pickle.dump(
+                        {
+                            "TD": TD,
+                            "param_dict": param_dict,
+                            "X": X,
+                            "U": U,
+                            "R": R,
+                            "Pl": Pl,
+                            "Pl_noise": Pl_noise,
+                            "learning_params": learning_params,
+                            "infeasibles": infeasibles,
+                            "cent_flag": self.centralized_flag,
+                            'elapsed_time': time.time() - self.small_start_time 
+                        },
+                        file,
+                    )
+        return super().on_episode_end(env, episode, rewards)
 
     # To store infeasible timesteps when MPC fails
     numInfeasibles = {}  # make empty dict to store infeasible timesteps

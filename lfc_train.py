@@ -59,6 +59,7 @@ def train(
     centralized_debug=False,  # debug flag for centralized mpc
     save_name_info: str =None, # optional name to provide more info for saves (plots etc)
     solver: str = "qpoases",  # solver (qpoases or ipopt)
+    save_periodically: int | bool = False, # solve model periodically, every int episodes [use for distributed learning] 
 ) -> None:
     
     # High-level stuff
@@ -169,7 +170,7 @@ def train(
     ]
 
     env = MonitorEpisodes(
-        TimeLimit(LtiSystem(model=model, predicton_horizon=prediction_horizon), max_episode_steps=int(numSteps))
+        TimeLimit(LtiSystem(model=model, predicton_horizon=prediction_horizon, save_periodically=save_periodically), max_episode_steps=int(numSteps))
     )  # Lti system:
     agent = Log(  # type: ignore[var-annotated]
         RecordUpdates(
@@ -343,15 +344,15 @@ model = Model()
 t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
 numSteps = int(t_end / model.ts)
 # numSteps = 50
-train(
-    centralized_flag=True,
-    learning_flag=False,
-    numEpisodes=1,
-    numSteps=100,
-    prediction_horizon=10,
-    save_name_info='testTimer',
-    # solver="ipopt"
-)
+# train(
+#     centralized_flag=True,
+#     learning_flag=False,
+#     numEpisodes=1,
+#     numSteps=100,
+#     prediction_horizon=10,
+#     save_name_info='testTimer',
+#     # solver="ipopt"
+# )
 
 
 # cent, learn
@@ -388,9 +389,9 @@ train(
 # train(
 #     centralized_flag=False, 
 #     learning_flag=True, 
-#     numEpisodes=2, 
+#     numEpisodes=10, 
 #     numSteps=numSteps, 
-#     prediction_horizon=10,
+#     prediction_horizon=1,
 #     update_strategy= UpdateStrategy(10, skip_first=100), # skips entire first episode of learning to get base behavior
 #     learning_rate=ExponentialScheduler(1e-9, factor=0.9999),
 #     epsilon=ExponentialScheduler(0.5, factor=0.99),
@@ -399,7 +400,9 @@ train(
 #     admm_iters=50,
 #     consensus_iters=50,
 #     centralized_debug=False,
-#     save_name_info='retunelr')
+#     save_periodically=10, # save every n episodes
+#     save_name_info='checkPeriodicallySaving',
+#     )
 
 
 ### SCENARIO 2: noise on load disturbance + varying time-constant (known) + inaccurate dynamics (unknown) ###
