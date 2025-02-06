@@ -6,6 +6,7 @@ from datetime import *
 import os
 import argparse
 import json
+import time
 
 import casadi as cs
 import numpy as np
@@ -247,11 +248,14 @@ def evaluate_scmpc(
             fixed_parameters=centralized_scmpc.fixed_pars_init,  # fixed: Pl
         ),
         level=logging.DEBUG,
-        log_frequencies={"on_timestep_end": 1}, # log more often due long compute-times
+        log_frequencies={"on_timestep_end": 10}, # log more often due long compute-times
     ) # LfcScMPCAgent: handles the loads over horizon, changing the fixed parameter Pl.
 
     # call evaluate(), since no learning is required
+    start_time = time.time()
     agent.evaluate(env=env, episodes=numEpisodes, seed=seed, raises=False)
+    end_time = time.time()
+    print("Time elapsed:", end_time - start_time)
 
     # save all data from env; X, U, R, ... - different scenarios?
     X = np.asarray(env.observations)
@@ -262,6 +266,7 @@ def evaluate_scmpc(
     meta_data = {
         'scenario': scenario,
         'n_scenarios': n_scenarios,
+        'elapsed_time': end_time - start_time,
     }
 
     if save_data:
@@ -303,10 +308,10 @@ numSteps = int(t_end / model.ts) # default 1000 steps
 if __name__ == "__main__":
     # scenario 1 | no perturbations on A, B, F
     evaluate_scmpc(
-        numEpisodes=1, 
+        numEpisodes=20, 
         numSteps=numSteps, 
         scenario=1, 
-        n_scenarios=20, 
+        n_scenarios=5, 
         save_name_info=""
     )
 
