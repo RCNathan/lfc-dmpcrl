@@ -166,4 +166,12 @@ filename = r"ddpg\ddpg_env_trainddpg4" # the promised one - eval peaks halfway (
 # filename = r"data\pkls\anotherTestForGrcbugfix_cent_5ep_scenario_2.1" # seems very similar to the one prior to bugfix (slide 111 vs 223 in ppt)
 # # also testing for tcl43 - only the first X episodes
 
+# ddpg 4 is back again - now with intermediate best-models. Let's see..
+filename = r"ddpg\lfc_ddpg4_eval"
+
+# compare sc-mpc - influence of number of scenarios ns
+filename = r"scmpc\_scmpc_1ep_scenario_1_ns_10" # Scenario 1: [1,2,3,5,7,10]
+
+# test periodically saving for large distributed training config
+filename = r'data\pkls\periodic\periodic_ep7'
 vis_large_eps(filename)

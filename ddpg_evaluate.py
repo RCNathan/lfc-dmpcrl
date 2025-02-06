@@ -22,11 +22,25 @@ from lfc_env import LtiSystem  # environment providing the 'true' dynamics in lf
 from lfc_model import Model  # linear model used for learning in dmpcrl
 from vis_large_eps import vis_large_eps
 
+
+"""File for processing the data obtained by training DDPG models on the LFC problem.
+The data is saved in the form of .pkl files and .zip files. The .pkl files contain the data from the MonitorEpisodes
+class, which is used to monitor the episodes during training and evaluation. The .zip files contain the model parameters
+The model can be run on a test-dataset to evaluate and compare performance with dmpcrl and sc-mpc"""
+
 # A total of four files will be saved when running ddpg_agent.py or the ddpg_cmd.py: [tweak the names pls]
 # [...]env_eval[...].pkl        contains the MonitorEpisodes data from eval
 # [...]env_train[...].pkl       contains the MonitorEpisodes data from train
 # [...].zip                     contains the model params (weights)
 # [...]_env.pkl                 contains the vectorized env used for model.get_env() and model.predict etc.
+
+# update 23-1: save-names change for consistency to:
+# lfc_[...]_eval.pkl        contains the MonitorEpisodes data from eval
+# lfc_[...]_train.pkl       contains the MonitorEpisodes data from train
+# lfc_[...]_model.zip       contains the model params (weights)
+# lfc_[...]_env.pkl         contains the vectorized env used for model.get_env() and model.predict etc.
+# additionally; best models are being saved in a folder:
+# \best_model\lfc_[...]\best_model.zip
 
 # what is in the ddpg's zips or pkl-files?
 # ddpg_env_evalddpg4.pkl
