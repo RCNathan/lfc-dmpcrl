@@ -6,6 +6,7 @@ from datetime import *
 import os
 import argparse
 import json
+import time
 
 import casadi as cs
 import numpy as np
@@ -58,6 +59,7 @@ def train(
     centralized_debug=False,  # debug flag for centralized mpc
     save_name_info: str =None, # optional name to provide more info for saves (plots etc)
     solver: str = "qpoases",  # solver (qpoases or ipopt)
+    save_periodically: int | bool = False, # solve model periodically, every int episodes [use for distributed learning] 
 ) -> None:
     
     # High-level stuff
@@ -168,7 +170,7 @@ def train(
     ]
 
     env = MonitorEpisodes(
-        TimeLimit(LtiSystem(model=model, predicton_horizon=prediction_horizon), max_episode_steps=int(numSteps))
+        TimeLimit(LtiSystem(model=model, predicton_horizon=prediction_horizon ,save_periodically=save_periodically), max_episode_steps=int(numSteps))
     )  # Lti system:
     agent = Log(  # type: ignore[var-annotated]
         RecordUpdates(
@@ -199,11 +201,14 @@ def train(
         level=logging.DEBUG,
         log_frequencies={"on_timestep_end": 100},
     )
+    start_time = time.time()
     if learning_flag:
         agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
     else:
         agent.train(env=env, episodes=numEpisodes, seed=1, raises=False)
         # agent.evaluate(env=env, episodes=numEpisodes, seed=1, raises=False) # bugged atm
+    end_time = time.time()
+    print("Time elapsed:", end_time - start_time)
 
     # extract data
     # from agent
@@ -276,6 +281,7 @@ def train(
                     "learning_params": learning_params,
                     "infeasibles": infeasibles,
                     "cent_flag": centralized_flag,
+                    'elapsed_time': end_time - start_time,
                 },
                 file,
             )
