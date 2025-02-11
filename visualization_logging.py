@@ -171,7 +171,15 @@ filename = r"ddpg\lfc_ddpg4_eval"
 
 # compare sc-mpc - influence of number of scenarios ns
 filename = r"scmpc\_scmpc_1ep_scenario_1_ns_10" # Scenario 1: [1,2,3,5,7,10]
+filename = r"scmpc\_scmpc_20ep_scenario_1_ns_5" # 20 eps for scenario 1, ns = 2, 5, 10 -> all terrible, but weird how it is identical for first X episodes..
+filename = r"scmpc\_scmpc_20ep_scenario_2_ns_10" # 20 eps for scenario 2, ns = 10 
 
-# test periodically saving for large distributed training config
+# # test periodically saving for large distributed training config
 filename = r'data\pkls\periodic\periodic_ep7'
+
+# # config 26 on distributed learning
+filename = r'data\pkls\tdl67_distr_50ep_scenario_2' # 66; 20,50,  67
+
+# with the bug fixed in env:
+filename = r"scmpc\_scmpc_20ep_scenario_1_ns_2" # after bugfix; but barely any difference
 vis_large_eps(filename)

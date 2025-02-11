@@ -45,8 +45,8 @@ class sampleBasedMpc(ScenarioBasedMpc):
         solver: str = "qpoases", # qpoases or ipopt
         prediction_horizon: int = 10, # Np
         control_horizon: int = 10, # Nc
-        input_spacing = 1, 
-        shooting = "multi"
+        input_spacing: int = 1, 
+        shooting: str = "multi" # single or multi, by default, multi is used
     ) -> None:
         
         # get vars from model
@@ -224,7 +224,6 @@ def evaluate_scmpc(
 
     # initialize the mpc
     model = Model()
-    save_name_info = "" # additional info to be added to the save name
     centralized_scmpc = sampleBasedMpc(
         model=model, 
         scenario=scenario, 
@@ -233,7 +232,7 @@ def evaluate_scmpc(
         prediction_horizon=prediction_horizon, 
         control_horizon=prediction_horizon, 
         input_spacing=1, 
-        shooting="multi"
+        shooting="multi",
     )
 
     # make the env
@@ -308,11 +307,11 @@ numSteps = int(t_end / model.ts) # default 1000 steps
 if __name__ == "__main__":
     # scenario 1 | no perturbations on A, B, F
     evaluate_scmpc(
-        numEpisodes=20, 
+        numEpisodes=20,
         numSteps=numSteps, 
         scenario=1, 
-        n_scenarios=5, 
-        save_name_info=""
+        n_scenarios=2, 
+        save_name_info="bugFixEnv"
     )
 
     # # scenario 2 | perturbations on A, B, F

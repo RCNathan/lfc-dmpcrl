@@ -93,7 +93,6 @@ def vis_large_eps(file: str) -> None:
         axs[0, j].plot(t, xmax[:, 4 * j], linestyle="--", label="upper bound")
         axs[0, j].plot(t, xmin[:, 4 * j], linestyle="--", label="lower bound")
         axs[0, j].plot(t, x[0, :, 4 * j], color="green", label="first")
-        axs[0, j].plot(t, x[-1, :, 4 * j], color="black", label="last")
         axs[1, j].plot(t, xmax[:, 4 * j + 1], linestyle="--", label="upper bound")
         axs[1, j].plot(t, xmin[:, 4 * j + 1], linestyle="--", label="lower bound")
         axs[1, j].plot(t, x[0, :, 4 * j + 1], color="green", label="first")
@@ -111,6 +110,10 @@ def vis_large_eps(file: str) -> None:
         axs[4, j].plot(t[:-1], u[0, :, j], color="green", label="first")
         axs[4, j].plot(t[:-1], u[-1, :, j], color="black", label="last")
 
+        # shaded area between min and max
+        for i in range(m.nx_l):
+            axs[i, j].fill_between(t, xmax[:, 4 * j + i], xmin[:, 4 * j + i], color="gray", alpha=0.5, hatch="//")
+        axs[4, j].fill_between(t[:-1], umax[:, j], umin[:, j], color="gray", alpha=0.5)
         # Show legend for each plot
         # axs1[0, j].legend()
         # axs1[1, j].legend()
@@ -351,3 +354,6 @@ def vis_large_eps(file: str) -> None:
         print("learning rate", data['learning_params']['optimizer'].lr_scheduler) 
     plt.show()
     
+
+filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
+vis_large_eps(filename)
