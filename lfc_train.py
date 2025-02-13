@@ -64,6 +64,7 @@ def train(
     solver: str = "qpoases",  # solver (qpoases or ipopt)
     save_periodically: int | bool = False, # solve model periodically, every int episodes [use for distributed learning] 
     cmd_flag: bool = False, # flag for running from command line
+    log_freqs: int = 100,
 ) -> None:
     
     # High-level stuff
@@ -205,7 +206,7 @@ def train(
             )
         ),
         level=logging.DEBUG,
-        log_frequencies={"on_timestep_end": 100},
+        log_frequencies={"on_timestep_end": log_freqs},
     )
     start_time = time.time()
     if learning_flag:
@@ -226,12 +227,10 @@ def train(
     if centralized_flag:
         for name, val in agent.updates_history.items():
             param_dict[name] = np.asarray(val)
-        print(f"total mpc solve time {sum(centralized_mpc.solver_time)}")
     else:
         for i in range(Model.n):
             for name, val in agent.agents[i].updates_history.items():
                 param_dict[f"{name}_{i}"] = np.asarray(val)
-            print(f"total mpc_{i} solve time {distributed_mpcs[i].solver_time}")
     X = np.asarray(env.observations)
     U = np.asarray(env.actions)
     R = np.asarray(env.rewards)
@@ -255,6 +254,14 @@ def train(
     print("Total infeasible steps:")
     for key in infeasibles:
         print(key, np.asarray(infeasibles[key]).shape)
+    
+    if centralized_flag:
+        solver_times = np.asarray(centralized_mpc.solver_time)
+        print(f"Total mpc solve time {np.sum(solver_times)} s")
+    else:
+        solver_times = np.asarray([distributed_mpcs[i].solver_time for i in range(Model.n)])
+        print(f"Total mpc solve time {np.sum(np.max(solver_times, axis=0))} s")
+    # print(f"with shape:{solver_times.shape}")
 
     if save_data:
         if centralized_flag:
@@ -287,7 +294,8 @@ def train(
                     "learning_params": learning_params,
                     "infeasibles": infeasibles,
                     "cent_flag": centralized_flag,
-                    'elapsed_time': end_time - start_time,
+                    "elapsed_time": end_time - start_time,
+                    "solver_times": solver_times,
                 },
                 file,
             )
@@ -359,7 +367,7 @@ numSteps = int(t_end / model.ts)
 #     centralized_flag=True,
 #     learning_flag=False,
 #     numEpisodes=1,
-#     numSteps=100,
+#     numSteps=10,
 #     prediction_horizon=10,
 #     save_name_info='testNewCMDsetup',
 #     # solver="ipopt"
@@ -386,13 +394,14 @@ numSteps = int(t_end / model.ts)
 train(
     centralized_flag=False,
     learning_flag=False,
-    numEpisodes=1,
-    numSteps=50,
+    numEpisodes=2,
+    numSteps=6,
     prediction_horizon=10,
     admm_iters=50,
     rho=0.5,
     consensus_iters=100,
     # centralized_debug=True,
+    log_freqs=1,
     save_name_info='timerTest'
 )
 
