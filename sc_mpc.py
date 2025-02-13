@@ -4,16 +4,13 @@ import pickle
 from copy import deepcopy
 from datetime import *
 import os
-import argparse
-import json
 import time
 
 import casadi as cs
 import numpy as np
 
 from gymnasium.wrappers import TimeLimit
-from mpcrl.optim import GradientDescent
-from mpcrl.wrappers.agents import Log, RecordUpdates
+from mpcrl.wrappers.agents import Log
 from mpcrl.wrappers.envs import MonitorEpisodes
 from dmpcrl.utils.solver_options import SolverOptions
 
@@ -23,14 +20,10 @@ from lfc_model import Model  # change model in model.py (own repo)
 from block_diag import block_diag
 from vis_large_eps import vis_large_eps
 
-from collections.abc import Callable, Sequence
-from typing import Any, Literal
-
-import numpy.typing as npt
 from csnlp import Nlp
-from csnlp.wrappers import Mpc
 from csnlp.wrappers.mpc.scenario_based_mpc import ScenarioBasedMpc, _n
-from mpcrl.util.seeding import RngType
+
+from solve_time_wrapper import SolverTimeRecorder
 
 class sampleBasedMpc(ScenarioBasedMpc):
     """Sample-based MPC for scenario-based optimization problems for the LFC case.
@@ -224,7 +217,7 @@ def evaluate_scmpc(
 
     # initialize the mpc
     model = Model()
-    centralized_scmpc = sampleBasedMpc(
+    centralized_scmpc = SolverTimeRecorder(sampleBasedMpc(
         model=model, 
         scenario=scenario, 
         n_scenarios=n_scenarios,
@@ -233,7 +226,7 @@ def evaluate_scmpc(
         control_horizon=prediction_horizon, 
         input_spacing=1, 
         shooting="multi",
-    )
+    ))
 
     # make the env
     env = MonitorEpisodes(
@@ -256,6 +249,10 @@ def evaluate_scmpc(
     end_time = time.time()
     print("Time elapsed:", end_time - start_time)
 
+    solver_time = np.asarray(centralized_scmpc.solver_time)
+    print(f"Total solver time {np.sum(solver_time)} s")
+    print(f"with shape {solver_time.shape}")
+
     # save all data from env; X, U, R, ... - different scenarios?
     X = np.asarray(env.observations)
     U = np.asarray(env.actions)
@@ -266,7 +263,13 @@ def evaluate_scmpc(
         'scenario': scenario,
         'n_scenarios': n_scenarios,
         'elapsed_time': end_time - start_time,
+        "solver_time": solver_time,
     }
+    infeasibles = agent.unwrapped.numInfeasibles
+    print("MPC failures at following eps, timesteps:", infeasibles)
+    print("Total infeasible steps:")
+    for key in infeasibles:
+        print(key, np.asarray(infeasibles[key]).shape)
 
     if save_data:
         pklname = f"scmpc_{str(numEpisodes)}ep_scenario_{scenario}_ns_{n_scenarios}"
@@ -288,7 +291,7 @@ def evaluate_scmpc(
                     "R": R,
                     "Pl": Pl,
                     "Pl_noise": Pl_noise,
-                    # "infeasibles": infeasibles, # potentially add in future
+                    "infeasibles": infeasibles, 
                     "meta_data": meta_data,
                 },
                 file,
@@ -307,11 +310,11 @@ numSteps = int(t_end / model.ts) # default 1000 steps
 if __name__ == "__main__":
     # scenario 1 | no perturbations on A, B, F
     evaluate_scmpc(
-        numEpisodes=20,
-        numSteps=numSteps, 
+        numEpisodes=1,
+        numSteps=50, 
         scenario=1, 
         n_scenarios=2, 
-        save_name_info="bugFixEnv"
+        save_name_info="adding_solver_timer"
     )
 
     # # scenario 2 | perturbations on A, B, F

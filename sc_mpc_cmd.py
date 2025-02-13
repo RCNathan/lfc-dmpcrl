@@ -18,7 +18,7 @@ evaluate_scmpc(
     n_scenarios=10, 
     make_plots=False,
     solver="ipopt",
-    save_name_info=""
+    save_name_info="ipopt"
 )
 
 # scenario 2 | additionally, perturbations on A, B, F
@@ -29,7 +29,8 @@ evaluate_scmpc(
     scenario=2, 
     n_scenarios=10, 
     make_plots=False,
-    save_name_info=""
+    solver="ipopt",
+    save_name_info="ipopt"
 )
 
 print("All training complete.")

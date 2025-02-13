@@ -42,3 +42,14 @@ class LfcScMPCAgent(Agent):
         # update load information for MPCs
         self.update_load_info(env)
         return super().on_timestep_end(env, episode, timestep)
+    
+    # To store infeasible timesteps when MPC fails
+    numInfeasibles = {}  # make empty dict to store infeasible timesteps
+    def on_mpc_failure(
+        self, episode: int, timestep: int | None, status: str, raises: bool
+    ) -> None:
+        if episode in self.numInfeasibles:
+            self.numInfeasibles[episode].append(timestep)
+        else:
+            self.numInfeasibles[episode] = [timestep]
+        return super().on_mpc_failure(episode, timestep, status, raises)
