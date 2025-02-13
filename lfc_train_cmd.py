@@ -34,6 +34,8 @@ from lfc_model import Model  # change model in model.py (own repo)
 from vis_large_eps import vis_large_eps
 from masterplot import large_plot
 
+from lfc_learnable_mpc import SolverTimeRecorder
+
 
 def train(
     centralized_flag: bool,  # centralized (True) vs distributed (False)
@@ -75,9 +77,9 @@ def train(
         raise TypeError('Please provide a descriptive string (str) for save_name_info')
 
     # centralised mpc and params
-    centralized_mpc = CentralizedMpc(
+    centralized_mpc = SolverTimeRecorder(CentralizedMpc(
         model, prediction_horizon, solver=solver,
-    )  # for comparison/debugging
+    ))  # for comparison/debugging
     centralized_learnable_pars = LearnableParametersDict[cs.SX](
         (
             LearnableParameter(
@@ -209,6 +211,7 @@ def train(
         # agent.evaluate(env=env, episodes=numEpisodes, seed=1, raises=False) # bugged atm
     end_time = time.time()
     print("Time elapsed:", end_time - start_time)
+    print(f"total mpc solve time {sum(centralized_mpc.solver_time)}")
 
     # extract data
     # from agent
