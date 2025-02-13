@@ -75,6 +75,10 @@ def vis_large_eps(file: str) -> None:
     t = np.linspace(0, m.ts * (x_len - 1), x_len)  # time = sampling_time * num_samples
     numEpisodes = x.shape[0] if len(x.shape) == 3 else 1
 
+    if numEpisodes != 1:
+        Pl = Pl[:, :, :].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
+        Pl_noise = Pl_noise[:,:,:].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
+
     # get max and min of states
     xmax = np.max(x, axis=0)
     xmin = np.min(x, axis=0)
@@ -245,10 +249,6 @@ def vis_large_eps(file: str) -> None:
     wm = plt.get_current_fig_manager()
     # wm.window.move(1500,0)
     wm.window.move(1100, 0)
-
-    if numEpisodes != 1:
-        Pl = Pl[:, :, :].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
-        Pl_noise = Pl_noise[:,:,:].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
 
     # Plot loads and loads + noise
     _, axs = plt.subplots(
