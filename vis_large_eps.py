@@ -93,6 +93,7 @@ def vis_large_eps(file: str) -> None:
         axs[0, j].plot(t, xmax[:, 4 * j], linestyle="--", label="upper bound")
         axs[0, j].plot(t, xmin[:, 4 * j], linestyle="--", label="lower bound")
         axs[0, j].plot(t, x[0, :, 4 * j], color="green", label="first")
+        axs[0, j].plot(t, x[-1, :, 4 * j], color="black", label="last")
         axs[1, j].plot(t, xmax[:, 4 * j + 1], linestyle="--", label="upper bound")
         axs[1, j].plot(t, xmin[:, 4 * j + 1], linestyle="--", label="lower bound")
         axs[1, j].plot(t, x[0, :, 4 * j + 1], color="green", label="first")
@@ -355,5 +356,5 @@ def vis_large_eps(file: str) -> None:
     plt.show()
     
 
-filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
-vis_large_eps(filename)
+# filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
+# vis_large_eps(filename)

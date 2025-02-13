@@ -182,4 +182,11 @@ filename = r'data\pkls\tdl67_distr_50ep_scenario_2' # 66; 20,50,  67
 
 # with the bug fixed in env:
 filename = r"scmpc\_scmpc_20ep_scenario_1_ns_2" # after bugfix; but barely any difference
+
+
+
+##### evaluate time! #####
+filename = r"evaluate_data\ddpg_20eps_ddpg4_scenario1and2" # ah, of course, using the model from ddpg4 is terrible. Look for best_models!
+filename = r"evaluate_data\ddpg_20eps_ddpg4bestmodel_scenario1and2" # performs better, but still worse than expected, I think due to VecNorm async
+
 vis_large_eps(filename)

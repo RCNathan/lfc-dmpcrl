@@ -17,6 +17,7 @@ evaluate_scmpc(
     scenario=1, 
     n_scenarios=10, 
     make_plots=False,
+    solver="ipopt",
     save_name_info=""
 )
 
