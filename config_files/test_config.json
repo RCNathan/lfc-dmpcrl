@@ -1,0 +1,6 @@
+[
+    {
+        "save_name_info": "testCMDsetup",
+        "centralized_flag": true, "learning_flag": false, "numEpisodes": 1, "numSteps": 100
+    }
+]

@@ -35,12 +35,14 @@ from lfc_model import Model  # change model in model.py (own repo)
 from vis_large_eps import vis_large_eps
 from masterplot import large_plot
 
+from solve_time_wrapper import SolverTimeRecorder
+
 
 def train(
     centralized_flag: bool,  # centralized (True) vs distributed (False)
     learning_flag: bool,  # learn vs no learn
     numEpisodes: int,  # number of episodes | x0, load etc reset on episode start
-    numSteps: int,  # number of steps per episode | steps*ts = time
+    numSteps: int = 1000,  # number of steps per episode | steps*ts = time
     admm_iters=50,  # number of ADMM iterations
     rho=0.5,  # for ADMM
     consensus_iters: int = 100,
@@ -56,10 +58,12 @@ def train(
         maxlen=100, sample_size=20, include_latest=10, seed=1
     ),  # experience replay
     prediction_horizon=10,  # MPC prediction horizon N
+    seed: int = 1, # rng seeding
     centralized_debug=False,  # debug flag for centralized mpc
     save_name_info: str =None, # optional name to provide more info for saves (plots etc)
     solver: str = "qpoases",  # solver (qpoases or ipopt)
     save_periodically: int | bool = False, # solve model periodically, every int episodes [use for distributed learning] 
+    cmd_flag: bool = False, # flag for running from command line
 ) -> None:
     
     # High-level stuff
@@ -75,9 +79,9 @@ def train(
         raise TypeError('Please provide a descriptive string (str) for save_name_info')
 
     # centralised mpc and params
-    centralized_mpc = CentralizedMpc(
+    centralized_mpc = SolverTimeRecorder(CentralizedMpc(
         model, prediction_horizon, solver=solver
-    )  # for comparison/debugging
+    ))  # for comparison/debugging
     centralized_learnable_pars = LearnableParametersDict[cs.SX](
         (
             LearnableParameter(
@@ -89,6 +93,7 @@ def train(
 
     # distributed agents
     distributed_mpcs: list[LocalMpc] = [
+        SolverTimeRecorder(
         LocalMpc(
             model=model,
             prediction_horizon=prediction_horizon,
@@ -98,6 +103,7 @@ def train(
             G=G,  # also for getting correct initial values
             rho=rho,
             solver=solver,
+        )
         )
         for i in range(Model.n)
     ]
@@ -129,7 +135,7 @@ def train(
             epsilon=epsilon,
             # strength= 0.1 * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
             strength=eps_strength * (model.u_bnd_l[1, 0] - model.u_bnd_l[0, 0]),
-            seed=1,
+            seed=seed,
         )
         # experience = ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1)  # smooths learning
         experience=experience
@@ -220,10 +226,12 @@ def train(
     if centralized_flag:
         for name, val in agent.updates_history.items():
             param_dict[name] = np.asarray(val)
+        print(f"total mpc solve time {sum(centralized_mpc.solver_time)}")
     else:
         for i in range(Model.n):
             for name, val in agent.agents[i].updates_history.items():
                 param_dict[f"{name}_{i}"] = np.asarray(val)
+            print(f"total mpc_{i} solve time {distributed_mpcs[i].solver_time}")
     X = np.asarray(env.observations)
     U = np.asarray(env.actions)
     R = np.asarray(env.rewards)
@@ -258,12 +266,13 @@ def train(
         pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_2"
 
         # make sure dir exists, save plot and close after
-        saveloc = r'data\pkls'
+        saveloc = os.path.join('data', 'pkls') # to ensure cross-platform compatibility
         os.makedirs(saveloc, exist_ok=True)
         savename = save_name_info + "_" + pklname
+        file_path = os.path.join(saveloc, savename) # again, to ensure cross-platform compatibility
 
         with open(
-            f'{saveloc}\{savename}.pkl',
+            file_path + '.pkl',
             "wb",  # w: write mode, creates new or truncates existing. b: binary mode
         ) as file:
             pickle.dump(
@@ -285,11 +294,13 @@ def train(
         print("Training succesful, file saved as", savename)
 
         if make_plots:
-            # large_plot(
-            #     f'{saveloc}\{savename}', 
-            #     optional_name=save_name_info 
-            #     )
-            vis_large_eps(f'{saveloc}\{savename}')
+            if cmd_flag:
+                large_plot(
+                file_path, 
+                optional_name=save_name_info 
+                )
+            else:
+                vis_large_eps(file_path)
 
 
 ### SCENARIO 0: no stochasticities ###
@@ -350,7 +361,7 @@ numSteps = int(t_end / model.ts)
 #     numEpisodes=1,
 #     numSteps=100,
 #     prediction_horizon=10,
-#     save_name_info='testTimer',
+#     save_name_info='testNewCMDsetup',
 #     # solver="ipopt"
 # )
 
@@ -372,18 +383,18 @@ numSteps = int(t_end / model.ts)
     
 
 # dist, no learn
-# train(
-#     centralized_flag=False,
-#     learning_flag=False,
-#     numEpisodes=1,
-#     numSteps=numSteps,
-#     prediction_horizon=10,
-#     admm_iters=50,
-#     rho=0.5,
-#     consensus_iters=100,
-#     # centralized_debug=True,
-#     save_name_info='addMoreLoadinfo'
-# )
+train(
+    centralized_flag=False,
+    learning_flag=False,
+    numEpisodes=1,
+    numSteps=50,
+    prediction_horizon=10,
+    admm_iters=50,
+    rho=0.5,
+    consensus_iters=100,
+    # centralized_debug=True,
+    save_name_info='timerTest'
+)
 
 # distr learning
 # train(
