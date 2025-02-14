@@ -129,17 +129,23 @@ class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
                 )  # all smaller agents have global TD error
                 param_dict = {}
                 if self.centralized_flag:
+                    param_loc = self
                     for name, val in self.updates_history.items():
                         param_dict[name] = np.asarray(val)
                 else:
+                    param_loc = self.agents[0]
                     for i in range(self.n):
                         for name, val in self.agents[i].updates_history.items():
                             param_dict[f"{name}_{i}"] = np.asarray(val)
                 learning_params = {
-                    "update_strategy": self.update_strategy,
-                    "optimizer": self.optimizer,
-                    "exploration": self.exploration,
-                    "experience": self.experience
+                    "update_strategy": param_loc.update_strategy,
+                    "optimizer": param_loc.optimizer,
+                    "exploration": param_loc.exploration,
+                    "experience": {
+                        "max_len": param_loc.experience.maxlen,
+                        "sample_size": param_loc.experience.sample_size,
+                        "incl_latest": param_loc.experience.include_latest,
+                    },
                 }
                 infeasibles = self.numInfeasibles
                 # save in pkl
