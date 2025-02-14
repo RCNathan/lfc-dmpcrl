@@ -1,10 +1,11 @@
+from typing import Tuple
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 from lfc_model import Model
 
 
-def vis_large_eps(file: str) -> None:
+def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
     """Makes plots to visualize TD-error, rewards, states and inputs"""
 
     # Change filename below -> update: gets passed into visualize()
@@ -78,6 +79,18 @@ def vis_large_eps(file: str) -> None:
     if numEpisodes != 1:
         Pl = Pl[:, :, :].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
         Pl_noise = Pl_noise[:,:,:].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
+
+    # Optional: view only part of the data
+    if view_partly != None:
+        beginEp, endEp = view_partly[0], view_partly[1]
+        x = x[beginEp:endEp, :, :]
+        u = u[beginEp:endEp, :, :]
+        R = R[beginEp:endEp, :]
+        TD = TD[beginEp:endEp, :]
+        Pl = Pl[beginEp:endEp, :, :]
+        Pl_noise = Pl_noise[beginEp:endEp, :, :]
+        numEpisodes = endEp-beginEp
+
 
     # get max and min of states
     xmax = np.max(x, axis=0)
