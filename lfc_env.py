@@ -160,11 +160,11 @@ class LtiSystem(
             + w @ np.maximum(0, state - ub[:, np.newaxis])  # = 0 if x < x_upper
             + w_grc
             @ np.maximum(
-                0, (statekp1 - state)/self.ts - self.grc
+                0, (statekp1 - state)/1 - self.grc
             )  # = 0 if x_dot > -grc    or  -grc < x_dot
             + w_grc
             @ np.maximum(
-                0, -(statekp1 - state)/self.ts - self.grc
+                0, -(statekp1 - state)/1 - self.grc
             )  # = 0 if x_dot < grc, nonzero if x_dot > grc
         )
 
