@@ -210,6 +210,7 @@ def evaluate_scmpc(
         save_name_info: str = None, # additional info to be added to the save name
         seed: int = 1, # rng seeding
         make_plots: bool = False, # whether to make plots of the data
+        solver: str = "qpoases", # qpoases or ipopt
 ) -> None:
     # flags for saving and plotting 
     save_data = True
@@ -221,7 +222,7 @@ def evaluate_scmpc(
         model=model, 
         scenario=scenario, 
         n_scenarios=n_scenarios,
-        solver="qpoases", 
+        solver=solver, 
         prediction_horizon=prediction_horizon, 
         control_horizon=prediction_horizon, 
         input_spacing=1, 
