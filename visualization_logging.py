@@ -181,16 +181,28 @@ filename = r'data\pkls\periodic\periodic_ep7'
 # config 26 on distributed learning (old env)
 filename = r'data\pkls\tdl67_distr_50ep_scenario_2' # 66; 20,50,  67
 
-# config 26 on distributed learning for 1000 eps, saving periodically (old env)
-filename = r'data\pkls\periodic\tdl67\periodic_ep70' # 67: periodic every 10 eps: [10, ..., 70] -> downwards trend up until 60, 70 hits a bump.
+# config 27 on distributed learning for 1000 eps, saving periodically (old env)
+filename = r'data\pkls\periodic\tdl67\periodic_ep130' # 67: periodic every 10 eps: [10, ..., 70] -> downwards trend up until 60, 70 hits a bump.
 
-# with the bug fixed in env:
-filename = r"scmpc\_scmpc_20ep_scenario_1_ns_2" # after bugfix; but barely any difference
+# # with the bug fixed in env:
+# filename = r"scmpc\_scmpc_20ep_scenario_1_ns_2" # after bugfix; but barely any difference
+
+# # ddpg 5, terminating early with updated env; | NOTE: renamed to _newenv after rerunning with old env (i.e ddpg5 is old env).
+# filename = r"ddpg\lfc_ddpg5_eval_newenv" # unfortunately, we didn't kill 2 birds in 1 stone; updating the env and terminating early..
+# filename = r"ddpg\lfc_ddpg5_eval" # yes, nice. Ok, model quits learning now in the 'best region', and is identical to ddpg4 up till 400 eps in eval
 
 
+# ##### evaluate time! #####
+# # DDPG
+# # filename = r"evaluate_data\ddpg_20eps_ddpg4_scenario1and2" # ah, of course, using the model from ddpg4 is terrible. Look for best_models!
+# # filename = r"evaluate_data\ddpg_20eps_ddpg4bestmodel_scenario1and2" # performs better, but still worse than expected, I think due to VecNorm async
+# filename = r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_oldenv" # Amazing! definitely improved but still worse than mpcrl, now to test on the new env (as it was trained on old)
+# filename = r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv" # w/o the grc bug.
 
-##### evaluate time! #####
-filename = r"evaluate_data\ddpg_20eps_ddpg4_scenario1and2" # ah, of course, using the model from ddpg4 is terrible. Look for best_models!
-filename = r"evaluate_data\ddpg_20eps_ddpg4bestmodel_scenario1and2" # performs better, but still worse than expected, I think due to VecNorm async
+# # SCMPC - ipopt to avoid infeasibilities (scenario 1 and 2)
+# filename = r"scmpc\ipopt_scmpc_20ep_scenario_1_ns_10" # worse than mpcrl; but alright. Has better cost, worse violations than scenario 2
+# filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10" # better at avoiding violations, worse overall performance (cost)
+
+# # (D)MPCRL - to be implemented
 
 vis_large_eps(filename) # filename, view_partly=[0,8]

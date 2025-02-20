@@ -15,7 +15,7 @@ evaluate_scmpc(
     numEpisodes=20, 
     numSteps=numSteps, 
     scenario=1, 
-    n_scenarios=10, 
+    n_scenarios=5, 
     make_plots=False,
     solver="ipopt",
     save_name_info="ipopt"
@@ -27,7 +27,7 @@ evaluate_scmpc(
     numEpisodes=20, 
     numSteps=numSteps, 
     scenario=2, 
-    n_scenarios=10, 
+    n_scenarios=5, 
     make_plots=False,
     solver="ipopt",
     save_name_info="ipopt"

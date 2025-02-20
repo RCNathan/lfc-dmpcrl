@@ -143,12 +143,12 @@ with open('ddpg/lfc_ddpg4_eval.pkl', 'rb') as f:
 
 # evaluate the DDPG trained agent (i.e create new data) for scenario 1 & 2 (same)
 DDPG_evaluate(
-    model_path=r"ddpg\best_model\lfc_ddpg4\best_model",
-    vec_norm_path='ddpg\lfc_ddpg4_env.pkl',
+    model_path=r"ddpg\lfc_ddpg5_model", # r"ddpg\best_model\lfc_ddpg4\best_model"
+    vec_norm_path='ddpg\lfc_ddpg5_env.pkl', # 'ddpg\lfc_ddpg4_env.pkl'
     numEpisodes=20,
     numSteps=1000,
-    save_name_info="ddpg4bestmodel_scenario1and2", # stuff like scenario, ddpg4 etc 
-    bestModelFlag=True,
+    save_name_info="ddpg5_scenario1and2_newenv", # stuff like scenario, ddpg4 etc 
+    bestModelFlag=False,
 ) # scenario 1 & 2 both have noise; scenario 0 does not, so needs separate evaluation.
 
 
