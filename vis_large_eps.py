@@ -80,6 +80,9 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
         Pl = Pl[:, :, :].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
         Pl_noise = Pl_noise[:,:,:].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
 
+    if numEpisodes != 1 and TD.all() != None:
+        TD = TD.reshape((numEpisodes, -1))  # newShape = (numEps, steps)
+
     # Optional: view only part of the data
     if view_partly != None:
         beginEp, endEp = view_partly[0], view_partly[1]
@@ -173,9 +176,6 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
         plt.get_current_fig_manager()
     )  # using pyqt5 allows .setGeometry() and changes behavior of geometry()
     wm.window.move(-10, 0)
-
-    if numEpisodes != 1 and TD.all() != None:
-        TD = TD.reshape((numEpisodes, -1))  # newShape = (numEps, steps)
 
     # get max and min of TD, R
     TDmax = np.max(TD, axis=0)
