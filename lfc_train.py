@@ -95,16 +95,16 @@ def train(
     # distributed agents
     distributed_mpcs: list[LocalMpc] = [
         SolverTimeRecorder(
-        LocalMpc(
-            model=model,
-            prediction_horizon=prediction_horizon,
-            num_neighbours=len(G[i]) - 1,
-            my_index=G[i].index(i),  # index where agent i is located inside of G[i]
-            global_index=i,  # for the initial values of learnable params, taken from list in model
-            G=G,  # also for getting correct initial values
-            rho=rho,
-            solver=solver,
-        )
+            LocalMpc(
+                model=model,
+                prediction_horizon=prediction_horizon,
+                num_neighbours=len(G[i]) - 1,
+                my_index=G[i].index(i),  # index where agent i is located inside of G[i]
+                global_index=i,  # for the initial values of learnable params, taken from list in model
+                G=G,  # also for getting correct initial values
+                rho=rho,
+                solver=solver,
+            )
         )
         for i in range(Model.n)
     ]
@@ -406,23 +406,23 @@ numSteps = int(t_end / model.ts)
 # )
 
 # distr learning
-train(
-    centralized_flag=False, 
-    learning_flag=True, 
-    numEpisodes=10, 
-    numSteps=numSteps, 
-    prediction_horizon=1,
-    update_strategy= UpdateStrategy(10, skip_first=100), # skips entire first episode of learning to get base behavior
-    learning_rate=ExponentialScheduler(1e-9, factor=0.9999),
-    epsilon=ExponentialScheduler(0.5, factor=0.99),
-    eps_strength=0.5, # values depend on setup, might need large values!
-    experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-    admm_iters=50,
-    consensus_iters=50,
-    centralized_debug=False,
-    save_periodically=10, # save every n episodes
-    save_name_info='checkPeriodicallySaving',
-    )
+# train(
+#     centralized_flag=False, 
+#     learning_flag=True, 
+#     numEpisodes=10, 
+#     numSteps=numSteps, 
+#     prediction_horizon=1,
+#     update_strategy= UpdateStrategy(10, skip_first=100), # skips entire first episode of learning to get base behavior
+#     learning_rate=ExponentialScheduler(1e-9, factor=0.9999),
+#     epsilon=ExponentialScheduler(0.5, factor=0.99),
+#     eps_strength=0.5, # values depend on setup, might need large values!
+#     experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+#     admm_iters=50,
+#     consensus_iters=50,
+#     centralized_debug=False,
+#     save_periodically=10, # save every n episodes
+#     save_name_info='checkPeriodicallySaving',
+#     )
 
 
 ### SCENARIO 2: noise on load disturbance + varying time-constant (known) + inaccurate dynamics (unknown) ###
