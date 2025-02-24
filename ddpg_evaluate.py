@@ -1,28 +1,11 @@
 import os
 import numpy as np
 import pickle 
-import zipfile
-
-from gymnasium import ObservationWrapper, spaces
-from gymnasium.wrappers import TimeLimit, TransformReward
-from mpcrl.wrappers.envs import MonitorEpisodes
-from operator import neg
 
 # modules for DDPG training using stable baselines3
 from stable_baselines3 import DDPG
-from stable_baselines3.common.callbacks import EvalCallback
-from stable_baselines3.common.logger import configure
-from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
-from stable_baselines3.common.utils import set_random_seed
-from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
-from stable_baselines3.common.env_checker import check_env
-
-from lfc_env import LtiSystem  # environment providing the 'true' dynamics in lfc
-from lfc_model import Model  # linear model used for learning in dmpcrl
-from ddpg_agent import AugmentedObservationWrapper # wrapper for the DDPG agent
+from stable_baselines3.common.vec_env import VecNormalize
 from ddpg_agent import make_env # func to create env (has venv wrapper though!)
-from vis_large_eps import vis_large_eps
 
 
 """File for processing the data obtained by training DDPG models on the LFC problem.
@@ -45,11 +28,6 @@ The model can be run on a test-dataset to evaluate and compare performance with 
 # This is a dictionary mapping classes variable names to their values.
 # zip-archived JSON dump
 #############################################################################################
-
-# files of interest; ddpg4 from the server:
-# ddpg\lfc_ddpg4_[...].pkl, using [...] = eval, env or train -> open with pickle.load()
-# ddpg\lfc_ddpg4_model.zip -> open with DDPG.load()
-# ddpg\best_model\lfc_ddpg4\best_model.zip  -> open with DDPG.load()
 
 def DDPG_evaluate(
     model_path: str,
@@ -133,11 +111,11 @@ def DDPG_evaluate(
                 file,
             )
 
-    print("Training succesful, file saved as", file_path)
+    print("Evaluation succesful, file saved as", file_path)
 
 # data from eval env during training
-with open('ddpg/lfc_ddpg4_eval.pkl', 'rb') as f:
-    data = pickle.load(f)
+# with open('ddpg/lfc_ddpg4_eval.pkl', 'rb') as f:
+#     data = pickle.load(f)
     # data: .keys() = X, U, R, Pl, Pl_noise
     # X.shape = (1000, 1001, 12, 1)
 
