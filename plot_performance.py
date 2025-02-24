@@ -50,6 +50,7 @@ def plot_performance(
     plt.title(f"Performance comparison: average cost per episode | {title_info}")
     plt.show()
 
+    # TODO: amount of outliers; I have to manually zoom now.
     # TODO: plot violations; amount and magnitude (and separate for GRC) - based on model bounds. (see also vis_large_eps for how-to)
 
 # test: compare whether last or ep20 is better for tcl63 (evaluate on 10 eps)
@@ -67,14 +68,14 @@ def plot_performance(
 
 plot_performance(
     file_paths=[
-        r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
+        r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",        
+        r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
         r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
-        r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10"
     ],
     names=[
         "mpcrl", # centralized !!
+        "scmpc",
         "ddpg",
-        "scmpc"
     ],
     title_info = "Scenario 2"
 )
