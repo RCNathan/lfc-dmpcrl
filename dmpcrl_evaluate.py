@@ -283,9 +283,9 @@ def dmpcrl_evaluate(
 
 dmpcrl_evaluate(
     filename=r"data\pkls\tcl63_cent_100ep_scenario_2",
-    numEpisodes=10,
+    numEpisodes=20,
     numSteps=1000,
-    save_name_info = "tcl63_scenario2_oldenv",
+    save_name_info = "tcl63_scenario2",
     # best_ep=20,
     )
 
