@@ -1,0 +1,38 @@
+[
+    {
+        "save_name_info": "tdl68",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 1000,
+        "save_periodically": 10,
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-11,
+                "factor": 0.99995
+            }
+        },
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 10,
+                "skip_first": 100
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.9,
+                "factor": 0.9998
+            }
+        },
+        "eps_strength": 0.7,
+        "experience": {
+            "type": "ExperienceReplay",
+            "args": {
+                "maxlen": 100,
+                "sample_size": 20,
+                "include_latest": 10,
+                "seed": 1
+            }
+        }
+    }
+]
