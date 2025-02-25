@@ -38,6 +38,7 @@ def dmpcrl_evaluate(
         numSteps: int = 1000,
         save_name_info: str = None,  # scenario, which model is used etc
         best_ep: int = None, # if a specific episode is to be evaluated instead of the last one
+        log_freqs: int = 100, # frequency of logging evaluation progress 
 ):
     """
     Evaluate a trained (d)mpcrl-agent on the LFC environment. 
@@ -64,7 +65,6 @@ def dmpcrl_evaluate(
     model = Model() # load the model
     n = model.n
     G = AdmmCoordinator.g_map(model.adj)  # network topology G
-    log_freqs = 100
 
     # get other constants from the data
     centralized_flag = data['cent_flag']
@@ -281,12 +281,21 @@ def dmpcrl_evaluate(
 # filename = r"data\pkls\periodic\tdl67\periodic_ep120" # distributed periodic
 # filename = r"data\pkls\tdl67_distr_50ep_scenario_2" # distributed
 
+# dmpcrl_evaluate(
+#     filename=r"data\pkls\tcl63_cent_100ep_scenario_2",
+#     numEpisodes=20,
+#     numSteps=1000,
+#     save_name_info = "tcl63_scenario2",
+#     # best_ep=20,
+#     )
+
 dmpcrl_evaluate(
-    filename=r"data\pkls\tcl63_cent_100ep_scenario_2",
+    filename=r"data\pkls\periodic\tdl67\periodic_ep120",
     numEpisodes=20,
     numSteps=1000,
     save_name_info = "tcl63_scenario2",
     # best_ep=20,
+    log_freqs=1,
     )
 
 print("debug")
