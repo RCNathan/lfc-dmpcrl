@@ -108,7 +108,7 @@ def plot_performance(
     x_down = np.maximum(x_bnd[:, 0] - x, 0)
     violations_magnitude = np.sum(x_up + x_down, axis=(2,3))
 
-    # plot amount of violations:
+    # plot magnitude of violations:
     if colors == None:
         plt.figure(figsize=(5, 4))
         plt.boxplot(violations_magnitude.T, labels=names, showfliers=showfliers)
@@ -126,11 +126,39 @@ def plot_performance(
     plt.title(f"Performance comparison: constraint violations magnitude | {title_info}")
     wm = plt.get_current_fig_manager() # move figure over
     wm.window.move(1000, 0)
+    
+    
+    # magnitude of GRC violations (no amount, just magnitude)
+    grc = model.GRC_l
+    ts = model.ts
+    x = np.asarray(x)
+    # grc: |Pm(k+1) - Pm(k)|/ts <= grc  --> Pm is 2nd entry for all agents: so [1,5,9]
+    x_grc = 1/ts * x[:, :, 1:, [1,5,9]] - x[:, :, :-1, [1,5,9]]
+    grc_up = np.maximum(x_grc - grc, 0)
+    grc_down = np.maximum(grc - x_grc, 0)
+    grc_violations_magnitude = np.sum(grc_up + grc_down, axis=(2,3))
+    
+    # plot magnitude of GRC violations:
+    if colors == None:
+        # plt.figure(figsize=(4, 3), constrained_layout=True,)
+        plt.figure(figsize=(5, 4))
+        plt.boxplot(grc_violations_magnitude.T, labels=names, showfliers=showfliers)
+    else:
+        _, ax = plt.subplots(figsize=(5, 4))
+        bplot = ax.boxplot(grc_violations_magnitude.T, patch_artist=True, tick_labels=names, showfliers=showfliers,
+                            medianprops={'color': 'white', "linewidth": 1.5},
+                            boxprops={'facecolor': 'C0', "edgecolor": "white", "linewidth": 0.5},
+                            whiskerprops={'color': 'grey', "linewidth": 1},
+                            capprops={'color': 'black', "linewidth": 1},)
+        for patch, color in zip(bplot['boxes'], colors):
+            patch.set_facecolor(color)
+    
+    plt.ylabel("Magnitude of GRC violations per episode")
+    plt.title(f"Performance comparison: GRC violations magnitude | {title_info}")
+    wm = plt.get_current_fig_manager() # move figure over
+    wm.window.move(500, 300)
+    
     plt.show()
-
-
-
-    print("debug")
 
 # colors: https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def (scroll down to the bottom) - default is X11/CSS4, other colors use pre-fix xkcd:
 plot_performance(
@@ -152,7 +180,8 @@ plot_performance(
     showfliers=False,
     title_info = "Scenario 2"
 )
-# TODO: plot violations; amount and magnitude (and separate for GRC) - based on model bounds. (see also vis_large_eps for how-to)
+# Done: plot violations; amount and magnitude (and separate for GRC) - based on model bounds. (see also vis_large_eps for how-to)
+# TODO: figsize, consider constrained_layout=True, etc.
 
 
 
