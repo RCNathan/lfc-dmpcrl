@@ -293,8 +293,7 @@ dmpcrl_evaluate(
     filename=r"data\pkls\periodic\tdl67\periodic_ep120",
     numEpisodes=20,
     numSteps=1000,
-    save_name_info = "tcl63_scenario2",
-    # best_ep=20,
+    save_name_info = "tdl67_scenario2",
     log_freqs=1,
     )
 

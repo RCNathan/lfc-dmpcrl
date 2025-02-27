@@ -5,8 +5,11 @@ import pickle
 from lfc_model import Model
 
 
-def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
-    """Makes plots to visualize TD-error, rewards, states and inputs"""
+def visualize(file: str, color:str ="xkcd:darkblue", view_partly: Tuple = None) -> None:
+    """Makes plots to visualize TD-error, rewards, states and inputs.
+    The idea is to use this one for the evaluate data, which then shows the performance of the model.
+    `vis_large_eps` will be used to showcase the behavior over time as it learns."""
+    # colors: https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def (scroll down to the bottom) - default is X11/CSS4, other colors use pre-fix xkcd:
 
     # Change filename below -> update: gets passed into visualize()
     filename = file + ".pkl"
@@ -34,7 +37,7 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
 
     # bit trickier, TD, Pl and Pl_noise are reshaped later if numEps > 1
     TD = TD.reshape(1, -1)  # e.g (1,800) for 4 eps at 200 steps  | (1, eps*steps)
-    Pl = (np.asarray(data.get("Pl")).squeeze().reshape(1, -1, 3)) # | (1, eps*steps, 3)
+    Pl = (np.asarray(data.get("Pl")).squeeze().reshape(1, -1, 3))  #  | (1, eps*steps, 3)
     Pl_noise = (np.asarray(data.get("Pl_noise")).squeeze().reshape(1, -1, 3))  # | (1, eps*steps, 3)
 
     if isinstance(data, dict):
@@ -55,9 +58,7 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
     numAgents = m.n
     u_bnd = m.u_bnd_l
     x_bnd = m.x_bnd_l.T
-    x_len = (
-        x.shape[1] if len(x.shape) == 3 else x.shape[0]
-    )  # takes length of x   | if/else: shape of x depends on numEpisodes
+    x_len = (x.shape[1] if len(x.shape) == 3 else x.shape[0])  # takes length of x   | if/else: shape of x depends on numEpisodes
     t = np.linspace(0, m.ts * (x_len - 1), x_len)  # time = sampling_time * num_samples
     numEpisodes = x.shape[0] if len(x.shape) == 3 else 1
 
@@ -79,6 +80,8 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
         Pl_noise = Pl_noise[beginEp:endEp, :, :]
         numEpisodes = endEp-beginEp
 
+    # get index of best episode
+    best_index = np.argmin(np.cumsum(R, axis=1)[:, -1])
 
     # get max and min of states
     xmax = np.max(x, axis=0)
@@ -95,34 +98,25 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
         figsize=(8, 7.5),
     )  # figsize: (width, height)
     for j in range(numAgents):
+        # plot states
         for i in range(m.nx_l):
-            # plot states
-            axs[i, j].plot(t, xmax[:, 4 * j + i], linestyle="--", label="upper bound")
-            axs[i, j].plot(t, xmin[:, 4 * j + i], linestyle="--", label="lower bound")
-            axs[i, j].plot(t, x[0, :, 4 * j + i], color="green", label="first")
-            axs[i, j].plot(t, x[-1, :, 4 * j + i], color="black", label="last")
-            axs[i, j].hlines(x_bnd[i, :], 0, t[-1], linestyles="--", color="r")  # hlines(y_values, xmin, xmax)
+            axs[i, j].plot(t, xmax[:, 4 * j + i], color="gray", linestyle="--") # upper bound
+            axs[i, j].plot(t, xmin[:, 4 * j + i], color="gray", linestyle="--") # lower bound
+            axs[i, j].plot(t, x[best_index, :, 4 * j + i], color=color, label="best episode") # best
+            axs[i, j].hlines(x_bnd[i, :], 0, t[-1], linestyles="--", color="black", label="constraints")  # hlines(y_values, xmin, xmax)
+            # axs[i, j].set_ylim([-0.25, 0.25])
             # shaded area between min and max
-            axs[i, j].fill_between(t, xmax[:, 4 * j + i], xmin[:, 4 * j + i], color="gray", alpha=0.5, hatch="//")
+            axs[i, j].fill_between(t, xmax[:, 4 * j + i], xmin[:, 4 * j + i], color="gray", alpha=0.5, hatch="//", label="all episodes")
         # plot inputs
-        axs[4, j].plot(t[:-1], umax[:, j], linestyle="--", label="upper bound")
-        axs[4, j].plot(t[:-1], umin[:, j], linestyle="--", label="lower bound")
-        axs[4, j].plot(t[:-1], u[0, :, j], color="green", label="first")
-        axs[4, j].plot(t[:-1], u[-1, :, j], color="black", label="last")
-        axs[4, j].hlines(u_bnd, 0, t[-2], linestyles="--", color="r")  # hlines(y_values, xmin, xmax)
+        axs[4, j].plot(t[:-1], umax[:, j], color="gray", linestyle="--")
+        axs[4, j].plot(t[:-1], umin[:, j], color="gray", linestyle="--")
+        axs[4, j].plot(t[:-1], u[best_index, :, j], color="xkcd:crimson", label="best episode") # best
+        axs[4, j].hlines(u_bnd, 0, t[-2], linestyles="--", color="black")  # hlines(y_values, xmin, xmax)
         axs[4, j].fill_between(t[:-1], umax[:, j], umin[:, j], color="gray", alpha=0.5, hatch="//")
         
-        # Show legend for each plot
-        # axs1[0, j].legend()
-        # axs1[1, j].legend()
-        # axs1[2, j].legend()
-        # axs1[3, j].legend()
-        # axs1[4, j].legend()
-
         # only needs to be set once for each agent
         axs[0, j].set_title("Agent {}".format(j + 1))  # sets agent-title on every top plot only
         axs[4, j].set_xlabel(r"time $t$")  # x-labels (only bottom row)
-        axs[0, j].set_ylim([-0.25, 0.25])
 
     # only set once | y-axis labels (states, input)
     axs[0, 0].set_ylabel(r"$\Delta f_i$")
@@ -132,9 +126,7 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
     axs[4, 0].set_ylabel(r"$u$")
     axs[3, 2].legend(loc="lower right")
 
-    wm = (
-        plt.get_current_fig_manager()
-    )  # using pyqt5 allows .setGeometry() and changes behavior of geometry()
+    wm = (plt.get_current_fig_manager()) # move fig
     wm.window.move(-10, 0)
 
     # get max and min of TD, R
@@ -175,12 +167,7 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
     axs[2].set_xlabel(r"time $t$")
     axs[2].legend()
 
-    wm = (
-        plt.get_current_fig_manager()
-    )  # using pyqt5 allows .setGeometry() and changes behavior of geometry()
-    # print(wm.window.geometry()) # (x,y,dx,dy)
-    # figx, figy, figdx, figdy = wm.window.geometry().getRect()
-    # wm.window.setGeometry(1000, 0, figdx, figdy)
+    wm = plt.get_current_fig_manager()
     wm.window.move(800, 0)
 
     # Plot TD error continously, (avg) rewards & TD per episode and evolution of learnable params over time
@@ -330,4 +317,5 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
     
 
 # filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
-# vis_large_eps(filename)
+# filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
+# visualize(filename)

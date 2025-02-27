@@ -16,6 +16,7 @@ def plot_performance(
         title_info: str = "",
         colors: list[str] = None, # optional: set colors of boxplots
         showfliers: bool = True, # toggle visibility of outliers
+        logscale: bool = False, # toggle logscale on y-axis
 ) -> None: 
     """
     File for plotting box/whisker plots of performance for arbitrary amount of files. \\
@@ -65,7 +66,7 @@ def plot_performance(
                            capprops={'color': 'black', "linewidth": 1},)
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
-
+    plt.yscale("log") if logscale else None
     plt.ylabel("Cost per episode")
     plt.title(f"Performance comparison: average cost per episode | {title_info}")
     wm = plt.get_current_fig_manager() # move figure over
@@ -96,7 +97,7 @@ def plot_performance(
                             capprops={'color': 'black', "linewidth": 1},)
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
-    
+    plt.yscale("log") if logscale else None
     plt.ylabel("Number of constraint violations per episode")
     plt.title(f"Performance comparison: constraint violations | {title_info}")
     wm = plt.get_current_fig_manager() # move figure over
@@ -121,7 +122,7 @@ def plot_performance(
                             capprops={'color': 'black', "linewidth": 1},)
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
-    
+    plt.yscale("log") if logscale else None
     plt.ylabel("Magnitude of constraint violations per episode")
     plt.title(f"Performance comparison: constraint violations magnitude | {title_info}")
     wm = plt.get_current_fig_manager() # move figure over
@@ -152,7 +153,7 @@ def plot_performance(
                             capprops={'color': 'black', "linewidth": 1},)
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
-    
+    plt.yscale("log") if logscale else None
     plt.ylabel("Magnitude of GRC violations per episode")
     plt.title(f"Performance comparison: GRC violations magnitude | {title_info}")
     wm = plt.get_current_fig_manager() # move figure over
@@ -163,21 +164,26 @@ def plot_performance(
 # colors: https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def (scroll down to the bottom) - default is X11/CSS4, other colors use pre-fix xkcd:
 plot_performance(
     file_paths=[
-        r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",        
+        r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
+        r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
         r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
         r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
     ],
     names=[
-        "mpcrl", # centralized !!
-        "scmpc",
-        "ddpg",
+        "MPC-RL", # centralized !!
+        "DMPC-RL", 
+        "Sc-MPC",
+        "DDPG",
     ],
     colors=[
         "xkcd:aquamarine",
         "xkcd:azure",
+        "xkcd:blue",
         "xkcd:darkblue",
+        # "xkcd:purple",
     ],
-    showfliers=False,
+    # showfliers=False,
+    logscale=True,
     title_info = "Scenario 2"
 )
 # Done: plot violations; amount and magnitude (and separate for GRC) - based on model bounds. (see also vis_large_eps for how-to)

@@ -1,4 +1,5 @@
 from vis_large_eps import vis_large_eps
+from visualize_report import visualize
 
 """
 File intended to be used for logging visualization info.
@@ -209,4 +210,11 @@ filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2_bestep20" # similar performance; have to see avg results over eps
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2_oldenv" # only cost values change, behavior is identical 
 
-vis_large_eps(filename) # filename, view_partly=[0,8]
+filename = r'data\pkls\periodic\tdl68\periodic_ep20'
+vis_large_eps(filename) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
+
+# TEMP: testing the visualize for report.
+# mpcrl, dmpcl, scmpc, ddpg:  ["xkcd:aquamarine", "xkcd:azure", "xkcd:blue", "xkcd:darkblue"] or ["xkcd:azure", "xkcd:blue", "xkcd:darkblue", "xkcd:purple"]
+filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
+filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
+visualize(filename, color="xkcd:azure") 
