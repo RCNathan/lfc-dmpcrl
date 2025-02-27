@@ -311,18 +311,25 @@ def train(
                 vis_large_eps(file_path)
 
 
+model = Model()
+t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
+numSteps = int(t_end / model.ts)
+
 ### SCENARIO 0: no stochasticities ###
 
 # cent no learn, filename = cent_no_learning_5ep_scenario_0
 # train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10)
 
 # cent learning
-# train(centralized_flag=True, learning_flag=True, numEpisodes=5, numSteps=500, prediction_horizon=10,
-#       update_strategy=10,
-#       learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
-#       epsilon=ExponentialScheduler(0.9, factor=0.99),
-#       eps_strength=2000, # values depend on setup, might need large values!
-#       experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1))
+train(centralized_flag=True, 
+      learning_flag=True, 
+      numEpisodes=20, 
+      numSteps=numSteps,
+      learning_rate=ExponentialScheduler(1e-12, factor=1), # old file had 1e-15, factor 0.9999 (pkls\cent_10ep_scenario_0.2)
+      epsilon=ExponentialScheduler(0.9, factor=0.999),
+      eps_strength=0.9,
+      save_name_info="sc0"
+)
 
 # distr no learn
 # train(
@@ -359,9 +366,6 @@ def train(
 ### SCENARIO 1: noise on load disturbance ###
 
 # cent, no learn
-model = Model()
-t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
-numSteps = int(t_end / model.ts)
 # numSteps = 50
 # train(
 #     centralized_flag=True,
