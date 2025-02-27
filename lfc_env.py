@@ -281,7 +281,7 @@ class LtiSystem(
         )  # (low, high, size) -> in [-1, 1) -- what about [-1 + a, 1 + a)
 
         # self.load = np.zeros((3,1)) # to toggle load on/off
-        # self.load_noise = np.zeros((3, 1))
+        self.load_noise = np.zeros((3, 1))
 
         if type(action) == cs.DM:
             action = action.full()  # convert action from casadi DM to numpy array
