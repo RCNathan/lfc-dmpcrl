@@ -211,10 +211,19 @@ filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2_oldenv" # only cost values change, behavior is identical 
 
 filename = r'data\pkls\periodic\tdl68\periodic_ep20'
-vis_large_eps(filename) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
+# vis_large_eps(filename) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
 
-# TEMP: testing the visualize for report.
-# mpcrl, dmpcl, scmpc, ddpg:  ["xkcd:aquamarine", "xkcd:azure", "xkcd:blue", "xkcd:darkblue"] or ["xkcd:azure", "xkcd:blue", "xkcd:darkblue", "xkcd:purple"]
-filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
-filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
-visualize(filename, color="xkcd:azure") 
+# # TEMP: testing the visualize for report.
+# # mpcrl, dmpcl, scmpc, ddpg:  ["xkcd:aquamarine", "xkcd:azure", "xkcd:blue", "xkcd:darkblue"] or ["xkcd:azure", "xkcd:blue", "xkcd:darkblue", "xkcd:purple"]
+# filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
+# filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
+# visualize(filename, color="xkcd:azure") 
+
+# retroactively finding the trained agents for mpcrl and dmpcrl, and considering to train ddpg for scenario 0
+filename = r"ddpg\lfc_ddpg6_scenario0_eval" # ddpg for scenario 0 -> not quite it, training a longer one (suspended - do later....)
+filename = "cent_10ep_scenario_0.2" # too old; retraining now....
+# checking the ones from scenario 1: they are good to go!
+filename= r"data from server\batch 3\pkls\tcl13_cent_20ep_scenario_1" # tcl13 for mpcrl [13, 14, 15]
+filename= r"data from server\batch 3\pkls\tdl23_distr_20ep_scenario_1" # tdl16 for dmpcrl [16, 19, 23?] - 16 is fine, 19 with view_partly=[0, 13] goated, 23 most realistic probs.
+filname= r"data\pkls\sc0_cent_20ep_scenario_2" # scenario 0, mpcrl
+vis_large_eps(filename)

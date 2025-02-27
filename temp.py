@@ -27,6 +27,7 @@ n = 3
 t = 0.01* np.arange(0, 1000)
 loads = np.hstack([return_load(i) for i in range(1000)])
 
+print("This file is used to plot the load disturbance, for the final report.")
 plt.figure(figsize=(5,3),constrained_layout=True)
 for i in range(n):    
     plt.plot(t, loads[i, :], label=f"Area {i+1}", linestyle='--',)
@@ -37,5 +38,7 @@ plt.title("Nominal load disturbances for each area")
 # have tick marks that stand out at t = 1, 2, while leaving the tick marks 0 through 10 as is
 plt.xticks(np.arange(0, 11, 1), labels=[f"{i}" for i in range(0, 11)])
 plt.show()
+
+
 
 
