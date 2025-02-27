@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pickle 
+import time
 
 # modules for DDPG training using stable baselines3
 from stable_baselines3 import DDPG
@@ -72,9 +73,12 @@ def DDPG_evaluate(
     #   X = np.asarray(env.ep_observations) (before end of episode) or env.observations (after episode)
     # Then you'll see that X[0] actually yields the [0.1, ...] (12, 1) !
 
+    start_time = time.time()
     for _ in range(numEpisodes * numSteps):
         action, _ = model.predict(obs)
         obs, _, _, _ = venv.step(action)
+    end_time = time.time()
+    print("(DDPG eval) Time elapsed:", end_time - start_time)
 
     # retrieve from the venv by pealing away wrappers;
     env = venv.envs[0].env.env.env
@@ -107,6 +111,7 @@ def DDPG_evaluate(
                     "R": R,
                     "Pl": Pl,
                     "Pl_noise": Pl_noise,
+                    'elapsed_time': end_time - start_time,
                 },
                 file,
             )
