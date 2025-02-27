@@ -23,7 +23,7 @@ class Model:
     noise_A = 1e-1  # default 1e-1 (scenario_2.0)       scenario 2.1: 5e-2
     noise_B = 1e-2  # default 1e-2 (2.0)                scenario 2.1: 1e-3
     noise_F = 1e-2  # default 1e-2 (2.0)                scenario 2.1: 1e-3
-    # noise_A, noise_B, noise_F = 0, 0, 0  # Perfect knowledge of system matrices
+    noise_A, noise_B, noise_F = 0, 0, 0  # Perfect knowledge of system matrices
     ubnd = 3e-1  # 2e-1 in Zhao et al., 3e-1 in Venkat et al., 0.25 in Mohamed et al., 3e-1 in Ma et al.
     # GRC_l = 0.00017 # p.u/s in Yan et al.
     # GRC_l = 0.0017  # p.u/s in Ma et al., Zhao et al., Liao et al. <- most stable..
