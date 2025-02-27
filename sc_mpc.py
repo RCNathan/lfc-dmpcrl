@@ -108,8 +108,20 @@ class sampleBasedMpc(ScenarioBasedMpc):
         ] # shape of e; list [n_scenarios][nu, N+1]; consistent with xs and s
 
         # add dynamics manually due dynamic load over horizon - for Ns scenarios
+        ## scenario 0 ##
+        if scenario == 0:
+            print("For scenario 0, number of samples is forced to be 1, as there is no change in dynamics or noise")
+            n_scenarios = 1
+            for n in range(n_scenarios):
+                for k in range(N):
+                    self.constraint(
+                        f"dynam_{n}_{k}",
+                        A @ xs[n][:, [k]] + B @ u[:, [k]] + F @ (Pl[:, [k]]),
+                        "==",
+                        xs[n][:, [k + 1]],
+                    ) # setting Pl[:, [0]] is identical to previous implementation where load is not tracked over N
         ## scenario 1 ##
-        if scenario == 1:
+        elif scenario == 1:
             for n in range(n_scenarios):
                 for k in range(N):
                     self.constraint(
@@ -156,7 +168,7 @@ class sampleBasedMpc(ScenarioBasedMpc):
                         xs[n][:, [k + 1]],
                     ) # setting Pl[:, [0]] is identical to previous implementation where load is not tracked over N
         else:
-            raise ValueError("Scenario must be 1 or 2.")
+            raise ValueError("Scenario must be 0, 1, or 2.")
         
         # other constraints | states and GRC | for Ns scenarios
         for n in range(n_scenarios):
@@ -310,13 +322,13 @@ numSteps = int(t_end / model.ts) # default 1000 steps
 
 if __name__ == "__main__":
     # scenario 1 | no perturbations on A, B, F
-    evaluate_scmpc(
-        numEpisodes=1,
-        numSteps=50, 
-        scenario=1, 
-        n_scenarios=2, 
-        save_name_info="adding_solver_timer"
-    )
+    # evaluate_scmpc(
+    #     numEpisodes=1,
+    #     numSteps=50, 
+    #     scenario=1, 
+    #     n_scenarios=2, 
+    #     save_name_info="adding_solver_timer"
+    # )
 
     # # scenario 2 | perturbations on A, B, F
     # evaluate_scmpc(
@@ -326,3 +338,14 @@ if __name__ == "__main__":
     #     n_scenarios=5, 
     #     save_name_info=""
     # )
+
+    # scenario 0 | no perturbations on A, B, F (env no noise on loads)
+    evaluate_scmpc(
+        numEpisodes=1,
+        numSteps=numSteps, 
+        scenario=0, # scenario 0 forces n_scenarios = 1!
+        n_scenarios=10, # artificial; will be 1.
+        make_plots=False,
+        solver="ipopt",
+        save_name_info="ipopt"
+    )
