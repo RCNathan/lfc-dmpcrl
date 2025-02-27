@@ -325,16 +325,15 @@ numSteps = int(t_end / Model.ts)
 # train(centralized_flag=True, learning_flag=False, numEpisodes=1, numSteps=500, prediction_horizon=10)
 
 # cent learning
-train(centralized_flag=True, 
-      learning_flag=True, 
-      numEpisodes=1, 
-      numSteps=20,
-      scenario=1,
-      learning_rate=ExponentialScheduler(1e-12, factor=1), # old file had 1e-15, factor 0.9999 (pkls\cent_10ep_scenario_0.2)
-      epsilon=ExponentialScheduler(0.9, factor=0.999),
-      eps_strength=0.9,
-      save_name_info="testNewScenario"
-)
+# train(centralized_flag=True, 
+#       learning_flag=True, 
+#       numEpisodes=20, 
+#       numSteps=numSteps,
+#       learning_rate=ExponentialScheduler(1e-10, factor=1), # old file had 1e-15, factor 0.9999 (pkls\cent_10ep_scenario_0.2)
+#       epsilon=ExponentialScheduler(0.9, factor=0.999),
+#       eps_strength=0.9,
+#       save_name_info="sc0"
+# )
 
 # distr no learn
 # train(
@@ -350,15 +349,15 @@ train(centralized_flag=True,
 # default: admm_iters=500, rho=0.5, consensus_iters=100 | so far, rho=1 has smallest error in dist obj func vals
 
 # distr learning
-# train(centralized_flag=False, learning_flag=True, numEpisodes=1, numSteps=500, prediction_horizon=10,
-#       update_strategy=10,
-#       learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
-#       epsilon=ExponentialScheduler(0.5, factor=0.99),
-#       eps_strength=2000, # values depend on setup, might need large values!
-#       experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-#       admm_iters=50,
-#       rho=0.5,
-#       consensus_iters=10)
+train(centralized_flag=False, learning_flag=True, numEpisodes=1, numSteps=500, prediction_horizon=10,
+      update_strategy=10,
+      learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
+      epsilon=ExponentialScheduler(0.5, factor=0.99),
+      eps_strength=2000, # values depend on setup, might need large values!
+      experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
+      admm_iters=50,
+      rho=0.5,
+      consensus_iters=10)
 
 # comparison:
 # filename = cent_no_learning_1ep_scenario_0, return [460.55373678]

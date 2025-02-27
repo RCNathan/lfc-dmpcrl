@@ -293,12 +293,16 @@ def dmpcrl_evaluate(
 #     # best_ep=20,
 #     )
 
-dmpcrl_evaluate(
-    filename=r"data\pkls\periodic\tdl67\periodic_ep120",
-    numEpisodes=20,
-    numSteps=1000,
-    save_name_info = "tdl67",
-    log_freqs=1,
-    )
+# dmpcrl_evaluate(
+#     filename=r"data\pkls\periodic\tdl67\periodic_ep120",
+#     numEpisodes=20,
+#     numSteps=1000,
+#     save_name_info = "tdl67_scenario2",
+#     log_freqs=1,
+#     )
 
-print("debug")
+dmpcrl_evaluate(
+    filename=r"data\pkls\sc0_cent_20ep_scenario_2", # I am aware scenario_2 as extension is wrong. Oop 
+    numEpisodes=1,
+    save_name_info="cent_scenario0"
+)
