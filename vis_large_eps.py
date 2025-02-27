@@ -5,7 +5,11 @@ import pickle
 from lfc_model import Model
 
 
-def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
+def vis_large_eps(
+    file: str, 
+    view_partly: Tuple = None, 
+    scenario: int =  None
+) -> None:
     """Makes plots to visualize TD-error, rewards, states and inputs"""
 
     # Change filename below -> update: gets passed into visualize()
@@ -51,7 +55,10 @@ def vis_large_eps(file: str, view_partly: Tuple = None) -> None:
             print("\nNo learning of A_0")
             learningFlag = False
 
-    m = Model()
+    scenario = data.get("scenario", None)
+    if scenario == None:
+        print("Scenario not specified, please provide manually")
+    m = Model(scenario=scenario)
     numAgents = m.n
     u_bnd = m.u_bnd_l
     x_bnd = m.x_bnd_l.T

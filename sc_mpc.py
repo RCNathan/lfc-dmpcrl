@@ -34,7 +34,7 @@ class sampleBasedMpc(ScenarioBasedMpc):
         self, 
         model,
         n_scenarios, 
-        scenario: int = 1 | 2, # scenario 1 or 2; defines the level of stochasticities
+        scenario: int = 0 | 1 | 2, # scenario 0, 1, or 2; defines the level of stochasticities
         solver: str = "qpoases", # qpoases or ipopt
         prediction_horizon: int = 10, # Np
         control_horizon: int = 10, # Nc
@@ -216,7 +216,7 @@ class sampleBasedMpc(ScenarioBasedMpc):
 def evaluate_scmpc(
         numEpisodes: int = 1,
         numSteps: int = 1000,
-        scenario: int = 1 | 2, # 1 or 2, level of stochasticities in the system
+        scenario: int = 0 | 1 | 2, # 0, 1, or 2, level of stochasticities in the system
         n_scenarios: int = 5, # how many sample-based scenarios to impose on the constraints/dynamics
         prediction_horizon = 10, # Np
         save_name_info: str = None, # additional info to be added to the save name
@@ -229,7 +229,7 @@ def evaluate_scmpc(
     # make_plots = True
 
     # initialize the mpc
-    model = Model()
+    model = Model(scenario=scenario)
     centralized_scmpc = SolverTimeRecorder(sampleBasedMpc(
         model=model, 
         scenario=scenario, 
@@ -306,6 +306,7 @@ def evaluate_scmpc(
                     "Pl_noise": Pl_noise,
                     "infeasibles": infeasibles, 
                     "meta_data": meta_data,
+                    "scenario": scenario,
                 },
                 file,
             )
@@ -316,9 +317,9 @@ def evaluate_scmpc(
 
 
 # some constants
-model = Model()
+# model = Model()
 t_end = 10  # end-time in seconds 
-numSteps = int(t_end / model.ts) # default 1000 steps
+numSteps = int(t_end / Model.ts) # default 1000 steps
 
 if __name__ == "__main__":
     # scenario 1 | no perturbations on A, B, F
@@ -347,5 +348,5 @@ if __name__ == "__main__":
         n_scenarios=10, # artificial; will be 1.
         make_plots=False,
         solver="ipopt",
-        save_name_info="ipopt"
+        save_name_info="test"
     )

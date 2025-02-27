@@ -33,7 +33,7 @@ class AugmentedObservationWrapper(ObservationWrapper):
     def __init__(self, env):
         super().__init__(env)
 
-        lfc_model = Model()
+        lfc_model = self.unwrapped
         ubnd = lfc_model.ubnd
         n = lfc_model.n
         nxl = lfc_model.nx_l
@@ -80,10 +80,11 @@ def make_env(
     prediction_horizon: int=10,
     flipFlag: bool=True,
     isEval: bool=False,
+    scenario: int = None, # changes noise in env. really only difference between {0, {1,2}}
 ) -> VecNormalize:
     
     # Create the environment
-    lfc_model = Model() # state space model
+    lfc_model = Model(scenario=scenario) # state space model
     env = MonitorEpisodes(
         TimeLimit(
             LtiSystem(
@@ -124,9 +125,13 @@ def train_ddpg(
         seed: int=1,
         flipFlag: bool=True,
         makePlots: bool=False,
+        scenario: int = None, # scenario number - required for env. Note: scenario 1 == 2 for ddpg
         ):
+    if scenario not in {0, 1, 2}:
+            raise ValueError("Please provide a scenario from {0, 1, 2}")
+
     # create the environment for training
-    venv = make_env(steps_per_episode=steps_per_episode, prediction_horizon=prediction_horizon, flipFlag=flipFlag, isEval=False)
+    venv = make_env(steps_per_episode=steps_per_episode, prediction_horizon=prediction_horizon, flipFlag=flipFlag, isEval=False, scenario=scenario)
 
     # Create callbacks
     # Create your own by inherting from BaseCallback, or use the built-in ones:
@@ -151,7 +156,7 @@ def train_ddpg(
     os.makedirs(os.path.join("ddpg", "best_model"), exist_ok=True)
 
     # create the eval callback
-    eval_env = make_env(steps_per_episode=steps_per_episode, prediction_horizon=prediction_horizon, flipFlag=flipFlag, isEval=True)
+    eval_env = make_env(steps_per_episode=steps_per_episode, prediction_horizon=prediction_horizon, flipFlag=flipFlag, isEval=True, scenario=scenario)
     cb = EvalCallback(
         eval_env=eval_env,
         n_eval_episodes=10,
@@ -160,7 +165,7 @@ def train_ddpg(
     )
 
     # Define the model to train
-    lfc_model = Model()
+    lfc_model = Model(scenario=scenario)
     na = venv.action_space.shape[-1]
     action_noise = OrnsteinUhlenbeckActionNoise(
         np.zeros(na), np.full(na, lfc_model.ubnd), dt=lfc_model.ts_env
@@ -232,18 +237,19 @@ def train_ddpg(
                     "Pl": Pl,
                     "Pl_noise": Pl_noise,
                     'elapsed_time': end_time - start_time,
+                    "scenario": scenario,
                 },
                 file,
             )
     if makePlots:
         print("Plotting for", saveloc)
-        vis_large_eps(saveloc)
+        vis_large_eps(f"{saveloc}_{env_type}")
 
 # call the training function
 # Simulation parameters
 steps_per_episode = 1000 # total timesteps for simulation, should be identical to lfc-dmpcrl case
-num_episodes = 20 # how many episodes to train for
-numEvals = 2 # how many evaluations to perform during training (default 10)
+num_episodes = 10 # how many episodes to train for
+numEvals = 1 # how many evaluations to perform during training (default 10)
 
 if __name__ == "__main__":
     print("Executing from __main__")
@@ -262,6 +268,7 @@ if __name__ == "__main__":
         flipFlag=True,
         makePlots=True,
         savename_info="test",
+        scenario=0,
     )
 # vis_large_eps(r"ddpg\ddpg_env_trainchangelr",)
 

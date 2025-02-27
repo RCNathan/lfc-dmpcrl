@@ -17,6 +17,7 @@ def plot_performance(
         colors: list[str] = None, # optional: set colors of boxplots
         showfliers: bool = True, # toggle visibility of outliers
         logscale: bool = False, # toggle logscale on y-axis
+        scenario: int = None,
 ) -> None: 
     """
     File for plotting box/whisker plots of performance for arbitrary amount of files. \\
@@ -74,7 +75,10 @@ def plot_performance(
 
 
     # constraint_violations
-    model = Model()
+    scenario = data.get("scenario", None)
+    if scenario == None:
+        print("Scenario not specified, please provide manually")
+    model= Model(scenario=scenario)
     x_bnd_l = model.x_bnd_l
     n = model.n
     x_bnd = np.tile(x_bnd_l, model.n).T

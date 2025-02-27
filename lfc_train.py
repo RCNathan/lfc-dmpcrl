@@ -65,10 +65,13 @@ def train(
     save_periodically: int | bool = False, # solve model periodically, every int episodes [use for distributed learning] 
     cmd_flag: bool = False, # flag for running from command line
     log_freqs: int = 100,
+    scenario: int = None,  # scenario number - required! Else: throws error (in Model)
 ) -> None:
     
     # High-level stuff
-    model = Model()  # model class defines dynamic model
+    if scenario not in {0, 1, 2}:
+            raise ValueError("Please provide a scenario from {0, 1, 2}")
+    model = Model(scenario=scenario)  # model class defines dynamic model
     G = AdmmCoordinator.g_map(model.adj)  # network topology G
     save_data = True
     make_plots = True
@@ -106,7 +109,7 @@ def train(
                 solver=solver,
             )
         )
-        for i in range(Model.n)
+        for i in range(model.n)
     ]
     distributed_learnable_parameters: list[LearnableParametersDict] = [
         LearnableParametersDict[cs.SX](
@@ -117,10 +120,10 @@ def train(
                 for name, val in distributed_mpcs[i].learnable_pars_init.items()
             )
         )
-        for i in range(Model.n)
+        for i in range(model.n)
     ]
     distributed_fixed_parameters: list = [
-        distributed_mpcs[i].fixed_pars_init for i in range(Model.n)
+        distributed_mpcs[i].fixed_pars_init for i in range(model.n)
     ]
 
     # learning arguments
@@ -221,14 +224,14 @@ def train(
     # from agent
     TD = (
         # agent.td_errors if centralized_flag else agent.agents[0].td_errors
-        agent.td_errors if centralized_flag else [agent.agents[i].td_errors for i in range(Model.n)]
+        agent.td_errors if centralized_flag else [agent.agents[i].td_errors for i in range(model.n)]
     )  # all smaller agents have global TD error
     param_dict = {}
     if centralized_flag:
         for name, val in agent.updates_history.items():
             param_dict[name] = np.asarray(val)
     else:
-        for i in range(Model.n):
+        for i in range(model.n):
             for name, val in agent.agents[i].updates_history.items():
                 param_dict[f"{name}_{i}"] = np.asarray(val)
     X = np.asarray(env.observations)
@@ -259,7 +262,7 @@ def train(
         solver_times = np.asarray(centralized_mpc.solver_time)
         print(f"Total mpc solve time {np.sum(solver_times)} s")
     else:
-        solver_times = np.asarray([distributed_mpcs[i].solver_time for i in range(Model.n)])
+        solver_times = np.asarray([distributed_mpcs[i].solver_time for i in range(model.n)])
         print(f"Total mpc solve time {np.sum(np.max(solver_times, axis=0))} s")
     # print(f"with shape:{solver_times.shape}")
 
@@ -270,7 +273,7 @@ def train(
             pklname = "distr"
         if learning_flag == False:
             pklname = pklname + "_no_learning"
-        pklname = pklname + "_" + str(numEpisodes) + "ep" + "_scenario_2"
+        pklname = pklname + "_" + str(numEpisodes) + "ep" + f"_scenario_{scenario}"
 
         # make sure dir exists, save plot and close after
         saveloc = os.path.join('data', 'pkls') # to ensure cross-platform compatibility
@@ -296,6 +299,7 @@ def train(
                     "cent_flag": centralized_flag,
                     "elapsed_time": end_time - start_time,
                     "solver_times": solver_times,
+                    "scenario": scenario,
                 },
                 file,
             )
@@ -311,9 +315,9 @@ def train(
                 vis_large_eps(file_path)
 
 
-model = Model()
+# model = Model()
 t_end = 10  # end-time in seconds | was 500 steps for ts = 0.1 s -> 50 seconds
-numSteps = int(t_end / model.ts)
+numSteps = int(t_end / Model.ts)
 
 ### SCENARIO 0: no stochasticities ###
 
@@ -323,12 +327,13 @@ numSteps = int(t_end / model.ts)
 # cent learning
 train(centralized_flag=True, 
       learning_flag=True, 
-      numEpisodes=20, 
-      numSteps=numSteps,
+      numEpisodes=1, 
+      numSteps=20,
+      scenario=1,
       learning_rate=ExponentialScheduler(1e-12, factor=1), # old file had 1e-15, factor 0.9999 (pkls\cent_10ep_scenario_0.2)
       epsilon=ExponentialScheduler(0.9, factor=0.999),
       eps_strength=0.9,
-      save_name_info="sc0"
+      save_name_info="testNewScenario"
 )
 
 # distr no learn

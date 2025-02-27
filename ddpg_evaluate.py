@@ -37,6 +37,7 @@ def DDPG_evaluate(
     numSteps: int = 1000,
     save_name_info: str = None, # scenario, which model is used etc
     bestModelFlag: bool = False, # if model comes from \ddpg\best_model\
+    scenario: int = None, # which scenario is being evaluated
 ):
     """
     Evaluate a trained DDPG-agent on the LFC environment. 
@@ -52,9 +53,12 @@ def DDPG_evaluate(
     data stored in a .pkl-file containing X, U, R, Pl, Pl_noises
     """
 
+    if scenario not in {0, 1, 2}:
+        raise ValueError("Please provide a scenario from {0, 1, 2}")
+    
     # create the environment using the same AugmentedObservationWrapper as used during training
     # normalization statistics need to be applied to rewrap the env
-    env = make_env(isEval=True).unwrapped # remove last wrapper (the VecNormalize)
+    env = make_env(isEval=True, scenario=scenario).unwrapped # remove last wrapper (the VecNormalize)
     if bestModelFlag:
          venv = VecNormalize(env, training=False)
     else:
@@ -97,7 +101,7 @@ def DDPG_evaluate(
     # make sure dir exists, save plot and close after
     saveloc = r'evaluate_data'
     os.makedirs(saveloc, exist_ok=True)
-    savename = f"ddpg_{numEpisodes}eps_{save_name_info}"
+    savename = f"ddpg_{numEpisodes}eps_{save_name_info}_scenario{scenario}"
     file_path = os.path.join(saveloc, savename)
     
     with open(
@@ -112,6 +116,7 @@ def DDPG_evaluate(
                     "Pl": Pl,
                     "Pl_noise": Pl_noise,
                     'elapsed_time': end_time - start_time,
+                    "scenario": scenario,
                 },
                 file,
             )
@@ -130,8 +135,9 @@ DDPG_evaluate(
     vec_norm_path='ddpg\lfc_ddpg5_env.pkl', # 'ddpg\lfc_ddpg4_env.pkl'
     numEpisodes=20,
     numSteps=1000,
-    save_name_info="ddpg5_scenario1and2_newenv", # stuff like scenario, ddpg4 etc 
+    save_name_info="ddpg5_scenario1and2_newenv", # stuff like ddpg4 etc 
     bestModelFlag=False,
+    scenario=0,
 ) # scenario 1 & 2 both have noise; scenario 0 does not, so needs separate evaluation.
 
 

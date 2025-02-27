@@ -34,6 +34,7 @@ class LtiSystem(
         self.nx = model.n * model.nx_l
         self.nx_l = model.nx_l
         self.x_bnd = np.tile(model.x_bnd_l, self.n)
+        self.ubnd = model.ubnd
         self.ts_env = model.ts_env  # different sampling time for env
         self.ts = model.ts  # needed to decide how many times to run loop
         self.w = np.tile(
@@ -47,6 +48,7 @@ class LtiSystem(
         self.grc = model.GRC_l
         self.N = predicton_horizon # to have loads over horizon for MPC's
         self.save_periodically = save_periodically
+        self.scenario = model.scenario
 
         # Initialize step_counter, load and load_noise
         self.load = np.array([0.0, 0.0, 0.0]).reshape(self.n, -1)
@@ -281,7 +283,8 @@ class LtiSystem(
         )  # (low, high, size) -> in [-1, 1) -- what about [-1 + a, 1 + a)
 
         # self.load = np.zeros((3,1)) # to toggle load on/off
-        self.load_noise = np.zeros((3, 1))
+        if self.scenario is 0:
+            self.load_noise = np.zeros((3, 1)) # toggle noise on load off only in scenario 0.
 
         if type(action) == cs.DM:
             action = action.full()  # convert action from casadi DM to numpy array

@@ -23,7 +23,6 @@ class Model:
     noise_A = 1e-1  # default 1e-1 (scenario_2.0)       scenario 2.1: 5e-2
     noise_B = 1e-2  # default 1e-2 (2.0)                scenario 2.1: 1e-3
     noise_F = 1e-2  # default 1e-2 (2.0)                scenario 2.1: 1e-3
-    noise_A, noise_B, noise_F = 0, 0, 0  # Perfect knowledge of system matrices
     ubnd = 3e-1  # 2e-1 in Zhao et al., 3e-1 in Venkat et al., 0.25 in Mohamed et al., 3e-1 in Ma et al.
     # GRC_l = 0.00017 # p.u/s in Yan et al.
     # GRC_l = 0.0017  # p.u/s in Ma et al., Zhao et al., Liao et al. <- most stable..
@@ -163,33 +162,38 @@ class Model:
         ]
     )  # zeros are placeholders/not used
 
-    # adding NOISE | starting point (inaccurate guess) for learning (excluding learnable params)
-    np.random.seed(
-        420
-    )  # set seed for consistency/repeatability | 2*rand-1 returns uniform distribution in [-1, 1)
-    A_l_inac: ClassVar[np.ndarray[np.ndarray]] = noise_A * (
-        2 * np.random.random((3, 4, 4)) - 1
-    ) + np.array(
-        [A_l_1d, A_l_2d, A_l_3d]
-    )  # inaccurate local state-space matrix A
-    B_l_inac: ClassVar[np.ndarray[np.ndarray]] = noise_B * (
-        2 * np.random.random((3, 4, 1)) - 1
-    ) + np.array(
-        [B_l_1d, B_l_2d, B_l_3d]
-    )  # inaccurate local state-space matrix B
-    F_l_inac: ClassVar[np.ndarray[np.ndarray]] = noise_F * (
-        2 * np.random.random((3, 4, 1)) - 1
-    ) + np.array(
-        [F_l_1d, F_l_2d, F_l_3d]
-    )  # inaccurate local state-space matrix F
-    A_c_l_inac: ClassVar[np.ndarray[np.ndarray[np.ndarray]]] = 0 * np.random.random(
-        (3, 3, 4, 4)
-    ) + (
-        A_c_ld
-    )  # inaccurate local coupling matrix A_c
-
-    def __init__(self):
+    def __init__(self, scenario: int = None):
         """Initializes the model."""
+        self.scenario = scenario
+        if self.scenario not in {0, 1, 2}:
+            raise ValueError("Please provide a scenario from {0, 1, 2}")
+        
+        # Toggle noise on A, B, and F based on scenario.
+        if self.scenario in {0, 1}: # toggle off noise
+            self.noise_A, self.noise_B, self.noise_F = 0, 0, 0  # Perfect knowledge of system matrices
+        # adding NOISE | starting point (inaccurate guess) for learning (excluding learnable params)
+        np.random.seed(420)  # set seed for consistency/repeatability | 2*rand-1 returns uniform distribution in [-1, 1)
+
+        # Inaccurate local state-space matrices
+        self.A_l_inac = self.noise_A * (
+            2 * np.random.random((3, 4, 4)) - 1
+        ) + np.array(
+            [self.A_l_1d, self.A_l_2d, self.A_l_3d]
+        )  # inaccurate local state-space matrix A
+        self.B_l_inac = self.noise_B * (
+            2 * np.random.random((3, 4, 1)) - 1
+        ) + np.array(
+            [self.B_l_1d, self.B_l_2d, self.B_l_3d]
+        )  # inaccurate local state-space matrix B
+        self.F_l_inac = self.noise_F * (
+            2 * np.random.random((3, 4, 1)) - 1
+        ) + np.array(
+            [self.F_l_1d, self.F_l_2d, self.F_l_3d]
+        )  # inaccurate local state-space matrix F
+        self.A_c_l_inac = 0 * np.random.random(
+            (3, 3, 4, 4)
+        ) + self.A_c_ld  # inaccurate local coupling matrix A_c
+
         self.A, self.B, self.F = self.centralized_dynamics_from_local(
             [self.A_l_1d, self.A_l_2d, self.A_l_3d],
             [self.B_l_1d, self.B_l_2d, self.B_l_3d],

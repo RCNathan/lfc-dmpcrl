@@ -39,13 +39,14 @@ def dmpcrl_evaluate(
         save_name_info: str = None,  # scenario, which model is used etc
         best_ep: int = None, # if a specific episode is to be evaluated instead of the last one
         log_freqs: int = 100, # frequency of logging evaluation progress 
+        scenario: int = None, # which scenario is being evaluated
 ):
     """
     Evaluate a trained (d)mpcrl-agent on the LFC environment. 
 
     ----------------
     Inputs:
-    model_path: str
+    filename: str
         Path to the saved file which has the trained parameters.
     etc: str
         stuff
@@ -53,7 +54,9 @@ def dmpcrl_evaluate(
     Outputs:
     data stored in a .pkl-file containing X, U, R, Pl, Pl_noises
     """
-
+    
+    if scenario not in {0, 1, 2}:
+        raise ValueError("Please provide a scenario from {0, 1, 2}")
 
     with open(
         filename + '.pkl',
@@ -62,7 +65,7 @@ def dmpcrl_evaluate(
         data = pickle.load(file)
 
     # some constants
-    model = Model() # load the model
+    model = Model(scenario=scenario) # load the model
     n = model.n
     G = AdmmCoordinator.g_map(model.adj)  # network topology G
 
@@ -251,7 +254,7 @@ def dmpcrl_evaluate(
     # make sure dir exists, save plot and close after
     saveloc = r'evaluate_data'
     os.makedirs(saveloc, exist_ok=True)
-    savename = f"dmpcrl_{numEpisodes}eps_{save_name_info}"
+    savename = f"dmpcrl_{numEpisodes}eps_{save_name_info}_scenario{scenario}"
     file_path = os.path.join(saveloc, savename)
 
     with open(
@@ -269,6 +272,7 @@ def dmpcrl_evaluate(
                 "cent_flag": centralized_flag,
                 "elapsed_time": end_time - start_time,
                 "solver_times": solver_times,
+                "scenario": scenario,
             },
             file,
         )
@@ -293,7 +297,7 @@ dmpcrl_evaluate(
     filename=r"data\pkls\periodic\tdl67\periodic_ep120",
     numEpisodes=20,
     numSteps=1000,
-    save_name_info = "tdl67_scenario2",
+    save_name_info = "tdl67",
     log_freqs=1,
     )
 
