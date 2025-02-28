@@ -315,5 +315,5 @@ def visualize(file: str, color:str ="xkcd:crimson", view_partly: Tuple = None, s
     
 
 # filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
-filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2"
-visualize(filename, color="xkcd:red") # my favorites: xkcd red and xkcd blue
+# filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2"
+# visualize(filename, color="xkcd:red") # my favorites: xkcd red and xkcd blue

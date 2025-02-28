@@ -224,8 +224,9 @@ filename = r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10" # which has ns=1 forced. On
 filename = r"scmpc\ipopt_scmpc_20ep_scenario_1_ns_10" # worse than mpcrl; but alright. Has better cost, worse violations than scenario 2
 filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10" # better at avoiding violations, worse overall performance (cost)
 
-# MPCRL - to run: scenario 1 only.
-filename= r"data\pkls\sc0_cent_20ep_scenario_0" # mpcrl for scenario 0.  Only need 1 ep - not to be included in box/whiskers
+# MPCRL 
+filename = r"data\pkls\sc0_cent_20ep_scenario_0" # mpcrl for scenario 0.  Only need 1 ep - not to be included in box/whiskers
+filename = r"evaluate_data\dmpcrl_20eps_tcl13_scenario1"
 # filename = r"data\pkls\tcl63_cent_100ep_scenario_2"  # test w this one for cent scenario 2
 filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2" # mpcrl for scenario 2
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2_bestep20" # similar performance; have to see avg results over eps
