@@ -161,30 +161,30 @@ def plot_performance(
     plt.show()
 
 # colors: https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def (scroll down to the bottom) - default is X11/CSS4, other colors use pre-fix xkcd:
-plot_performance(
-    file_paths=[
-        r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
-        r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
-        r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
-        r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
-    ],
-    names=[
-        "MPC-RL", # centralized !!
-        "DMPC-RL", 
-        "Sc-MPC",
-        "DDPG",
-    ],
-    colors=[
-        "xkcd:aquamarine",
-        "xkcd:azure",
-        "xkcd:blue",
-        "xkcd:darkblue",
-        # "xkcd:purple",
-    ],
-    # showfliers=False,
-    logscale=True,
-    title_info = "Scenario 2"
-)
+# plot_performance(
+#     file_paths=[
+#         r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
+#         r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
+#         r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
+#         r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
+#     ],
+#     names=[
+#         "MPC-RL", # centralized !!
+#         "DMPC-RL", 
+#         "Sc-MPC",
+#         "DDPG",
+#     ],
+#     colors=[
+#         "xkcd:aquamarine",
+#         "xkcd:azure",
+#         "xkcd:blue",
+#         "xkcd:darkblue",
+#         # "xkcd:purple",
+#     ],
+#     # showfliers=False,
+#     logscale=True,
+#     title_info = "Scenario 2"
+# )
 # Done: plot violations; amount and magnitude (and separate for GRC) - based on Model bounds. (see also vis_large_eps for how-to)
 # TODO: figsize, consider constrained_layout=True, etc.
 
@@ -206,3 +206,34 @@ plot_performance(
 #     ],
 #     title_info = "Scenario 2"
 # )
+
+# test: compare whether last or ep20 is better for ddpg6
+# plot_performance(
+#    file_paths=[
+#         r"evaluate_data\ddpg_20eps_ddpg6_scenario0_last_scenario0",
+#         r"evaluate_data\ddpg_20eps_ddpg6_scenario0_best_scenario0",
+#         r"evaluate_data\ddpg_20eps_ddpg6_scenario0_bestv2_scenario0", # bestModelFlag = False -> best eval result
+#     ],
+#     names=[
+#         "ddpg6_last",
+#         "ddpg6_best",
+#         "ddpg6_bestv2",
+#     ],
+#     title_info = "Scenario 0"
+# )
+
+# sc-mpc: scenario 0 so these are identical of course..
+plot_performance(
+   file_paths=[
+        r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10",
+        r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_5",
+        r"data\pkls\scmpc_test_cent_no_learning_2ep_scenario_0"
+    ],
+    names=[
+        "scmpc10",
+        "scmpc5",
+        "mpcrl"
+    ],
+    title_info = "Scenario 0"
+)
+

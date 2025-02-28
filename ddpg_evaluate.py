@@ -130,15 +130,15 @@ def DDPG_evaluate(
     # X.shape = (1000, 1001, 12, 1)
 
 # evaluate the DDPG trained agent (i.e create new data) for scenario 1 & 2 (same)
-DDPG_evaluate(
-    model_path=r"ddpg\lfc_ddpg5_model", # r"ddpg\best_model\lfc_ddpg4\best_model"
-    vec_norm_path='ddpg\lfc_ddpg5_env.pkl', # 'ddpg\lfc_ddpg4_env.pkl'
-    numEpisodes=20,
-    numSteps=1000,
-    save_name_info="ddpg5_scenario1and2_newenv", # stuff like ddpg4 etc 
-    bestModelFlag=False,
-    scenario=0,
-) # scenario 1 & 2 both have noise; scenario 0 does not, so needs separate evaluation.
+# DDPG_evaluate(
+#     model_path=r"ddpg\lfc_ddpg5_model", # r"ddpg\best_model\lfc_ddpg4\best_model"
+#     vec_norm_path='ddpg\lfc_ddpg5_env.pkl', # 'ddpg\lfc_ddpg4_env.pkl'
+#     numEpisodes=20,
+#     numSteps=1000,
+#     save_name_info="ddpg5_scenario1and2_newenv", # stuff like ddpg4 etc 
+#     bestModelFlag=False,
+#     scenario=0,
+# ) # scenario 1 & 2 both have noise; scenario 0 does not, so needs separate evaluation.
 
 
 # TODO: # by changing the env!!
@@ -150,3 +150,15 @@ DDPG_evaluate(
 #     numSteps=1000,
 #     save_name_info="ddpg4_scenario0", # stuff like scenario, ddpg4 etc 
 # ) # scenario 1 & 2 both have noise; scenario 0 does not, so needs separate evaluation.
+
+
+# compare scenario 0 (ddpg6) - best model vs last
+DDPG_evaluate(
+    model_path=r"ddpg\best_model\lfc_ddpg6_scenario0\best_model", # r"ddpg\lfc_ddpg6_scenario0_model" vs r"ddpg\best_model\lfc_ddpg6_scenario0\best_model"
+    vec_norm_path='ddpg\lfc_ddpg6_scenario0_env.pkl', # 'ddpg\lfc_ddpg4_env.pkl'
+    numEpisodes=20,
+    numSteps=1000,
+    save_name_info="ddpg6_scenario0_bestv2", # stuff like ddpg4 etc 
+    bestModelFlag=False,
+    scenario=0,
+) # scenario 1 & 2 both have noise; scenario 0 does not, so needs separate evaluation.
