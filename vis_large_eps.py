@@ -8,7 +8,6 @@ from lfc_model import Model
 def vis_large_eps(
     file: str, 
     view_partly: Tuple = None, 
-    scenario: int =  None
 ) -> None:
     """Makes plots to visualize TD-error, rewards, states and inputs"""
 
@@ -55,17 +54,13 @@ def vis_large_eps(
             print("\nNo learning of A_0")
             learningFlag = False
 
-    scenario = data.get("scenario", None)
-    if scenario == None:
-        print("Scenario not specified, please provide manually")
-    m = Model(scenario=scenario)
-    numAgents = m.n
-    u_bnd = m.u_bnd_l
-    x_bnd = m.x_bnd_l.T
+    numAgents = Model.n
+    u_bnd = Model.u_bnd_l
+    x_bnd = Model.x_bnd_l.T
     x_len = (
         x.shape[1] if len(x.shape) == 3 else x.shape[0]
     )  # takes length of x   | if/else: shape of x depends on numEpisodes
-    t = np.linspace(0, m.ts * (x_len - 1), x_len)  # time = sampling_time * num_samples
+    t = np.linspace(0, Model.ts * (x_len - 1), x_len)  # time = sampling_time * num_samples
     numEpisodes = x.shape[0] if len(x.shape) == 3 else 1
 
     if numEpisodes != 1:
@@ -102,7 +97,7 @@ def vis_large_eps(
         figsize=(8, 7.5),
     )  # figsize: (width, height)
     for j in range(numAgents):
-        for i in range(m.nx_l):
+        for i in range(Model.nx_l):
             # plot states
             axs[i, j].plot(t, xmax[:, 4 * j + i], linestyle="--", label="upper bound")
             axs[i, j].plot(t, xmin[:, 4 * j + i], linestyle="--", label="lower bound")
@@ -194,7 +189,7 @@ def vis_large_eps(
     TDlong = TD.reshape(
         -1,
     )  # reverting back to (1, eps*steps)
-    tlong = m.ts * np.linspace(0, len(TDlong) - 1, len(TDlong))
+    tlong = Model.ts * np.linspace(0, len(TDlong) - 1, len(TDlong))
     _, axs = plt.subplots(3, 1, constrained_layout=True, sharex=False, figsize=(3, 5))
     if TD.shape[1] != 0:
         axs[0].plot(tlong, TDlong)
@@ -256,19 +251,19 @@ def vis_large_eps(
     wm.window.move(1100, 560)
 
     # GRC plot | x: (eps, steps, states)
-    grc = m.GRC_l
+    grc = Model.GRC_l
     fig, axs = plt.subplots(
         1, 3, constrained_layout=True, figsize=(3, 1.9), sharey=True
     )
-    for n in range(m.n):
+    for n in range(Model.n):
         axs[n].plot(
             t[:-1],
-            1 / m.ts * (x[0, 1:, 4 * n + 1] - x[0, :-1, 4 * n + 1]),
+            1 / Model.ts * (x[0, 1:, 4 * n + 1] - x[0, :-1, 4 * n + 1]),
             color="green",
         )
         axs[n].plot(
             t[:-1],
-            1 / m.ts * (x[-1, 1:, 4 * n + 1] - x[-1, :-1, 4 * n + 1]),
+            1 / Model.ts * (x[-1, 1:, 4 * n + 1] - x[-1, :-1, 4 * n + 1]),
             color="black",
         )
         axs[n].hlines(

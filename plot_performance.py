@@ -17,7 +17,6 @@ def plot_performance(
         colors: list[str] = None, # optional: set colors of boxplots
         showfliers: bool = True, # toggle visibility of outliers
         logscale: bool = False, # toggle logscale on y-axis
-        scenario: int = None,
 ) -> None: 
     """
     File for plotting box/whisker plots of performance for arbitrary amount of files. \\
@@ -75,14 +74,10 @@ def plot_performance(
 
 
     # constraint_violations
-    scenario = data.get("scenario", None)
-    if scenario == None:
-        print("Scenario not specified, please provide manually")
-    model= Model(scenario=scenario)
-    x_bnd_l = model.x_bnd_l
-    n = model.n
-    x_bnd = np.tile(x_bnd_l, model.n).T
-    # sum of steps in an episode that the constraints are violated for x by comparing to model bounds
+    x_bnd_l = Model.x_bnd_l
+    n = Model.n
+    x_bnd = np.tile(x_bnd_l, Model.n).T
+    # sum of steps in an episode that the constraints are violated for x by comparing to Model bounds
     violations_upper = x >= x_bnd[:, 1] # True if violated
     violations_lower = x <= x_bnd[:, 0] # True if violated
     violations = violations_upper | violations_lower # if either is true
@@ -134,8 +129,8 @@ def plot_performance(
     
     
     # magnitude of GRC violations (no amount, just magnitude)
-    grc = model.GRC_l
-    ts = model.ts
+    grc = Model.GRC_l
+    ts = Model.ts
     x = np.asarray(x)
     # grc: |Pm(k+1) - Pm(k)|/ts <= grc  --> Pm is 2nd entry for all agents: so [1,5,9]
     x_grc = 1/ts * x[:, :, 1:, [1,5,9]] - x[:, :, :-1, [1,5,9]]
@@ -190,7 +185,7 @@ plot_performance(
     logscale=True,
     title_info = "Scenario 2"
 )
-# Done: plot violations; amount and magnitude (and separate for GRC) - based on model bounds. (see also vis_large_eps for how-to)
+# Done: plot violations; amount and magnitude (and separate for GRC) - based on Model bounds. (see also vis_large_eps for how-to)
 # TODO: figsize, consider constrained_layout=True, etc.
 
 
