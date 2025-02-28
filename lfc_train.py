@@ -349,15 +349,20 @@ numSteps = int(t_end / Model.ts)
 # default: admm_iters=500, rho=0.5, consensus_iters=100 | so far, rho=1 has smallest error in dist obj func vals
 
 # distr learning
-train(centralized_flag=False, learning_flag=True, numEpisodes=1, numSteps=500, prediction_horizon=10,
-      update_strategy=10,
-      learning_rate=ExponentialScheduler(1e-12, factor=0.9999),
-      epsilon=ExponentialScheduler(0.5, factor=0.99),
-      eps_strength=2000, # values depend on setup, might need large values!
-      experience=ExperienceReplay(maxlen=100, sample_size=20, include_latest=10, seed=1),
-      admm_iters=50,
-      rho=0.5,
-      consensus_iters=10)
+# train(centralized_flag=False, 
+#       learning_flag=True, 
+#       numEpisodes=20, 
+#       learning_rate=ExponentialScheduler(1e-10, factor=1),
+#       epsilon=ExponentialScheduler(0.5, factor=0.99),
+#       eps_strength=0.5, # values depend on setup, might need large values!
+#       experience=ExperienceReplay(
+#         maxlen=100, sample_size=10, include_latest=5, seed=1
+#     ),
+#     save_name_info="sc0",
+#     scenario=0,
+#     log_freqs=1,
+# )
+
 
 # comparison:
 # filename = cent_no_learning_1ep_scenario_0, return [460.55373678]

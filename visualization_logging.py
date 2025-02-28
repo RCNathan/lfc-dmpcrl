@@ -192,38 +192,54 @@ filename = r'data\pkls\periodic\tdl67\periodic_ep260' # 67: periodic every 10 ep
 # filename = r"ddpg\lfc_ddpg5_eval_newenv" # unfortunately, we didn't kill 2 birds in 1 stone; updating the env and terminating early..
 # filename = r"ddpg\lfc_ddpg5_eval" # yes, nice. Ok, model quits learning now in the 'best region', and is identical to ddpg4 up till 400 eps in eval
 
+# retroactively finding the trained agents for mpcrl and dmpcrl (scenario 0 and 1), and considering to train ddpg for scenario 0
+filename = r"ddpg\lfc_ddpg6_scenario0_eval" # ddpg for scenario 0 -> is good enough
+# filename = "cent_10ep_scenario_0.2" # too old; retraining now....
+# checking the ones from scenario 1: they are good to go! (i.e to be evaluated!)
+# (d)mpcrl scenario 1:
+filename= r"data from server\batch 3\pkls\tcl13_cent_20ep_scenario_1" # tcl13 for mpcrl [13, 14, 15]
+filename= r"data from server\batch 3\pkls\tdl19_distr_20ep_scenario_1" # tdl16 for dmpcrl [16, 19, 23?] - 
+#       16 is fine, 19 with view_partly=[0, 18] goated, 23 most realistic probs.
+# vis_large_eps(filename, view_partly=[0, 18])
 
+# scenario 0 - (d)mpcrl done:
+# filename= r"data\pkls\sc0_cent_20ep_scenario_0" 
+# filename = r"data\pkls\sc0_distr_20ep_scenario_0"
+
+# scenario 2 - dmpcrl not quite at the performance I want yet..
+filename = r'data\pkls\periodic\tdl68\periodic_ep20' # is the periodic that is running on the server right now.
+
+#################################################################################################################
 ##### evaluate time! #####
 # DDPG
 # filename = r"evaluate_data\ddpg_20eps_ddpg4_scenario1and2" # ah, of course, using the model from ddpg4 is terrible. Look for best_models!
 # filename = r"evaluate_data\ddpg_20eps_ddpg4bestmodel_scenario1and2" # performs better, but still worse than expected, I think due to VecNorm async
-filename = r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_oldenv" # Amazing! definitely improved but still worse than mpcrl, now to test on the new env (as it was trained on old)
+# filename = r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_oldenv" # Amazing! definitely improved but still worse than mpcrl, now to test on the new env (as it was trained on old)
 filename = r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv" # w/o the grc bug.
+filename = r"evaluate_data/ddpg_20eps_ddpg6_scenario0_bestv2_scenario0" # ddpg trained on scenario 0, v2 is best model w/ BestModelFlag false (latest VecNorm env)
+    # scenario 0: Only need 1 ep - not to be included in box/whiskers
 
 # SCMPC - ipopt to avoid infeasibilities (scenario 1 and 2)
+filename = r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10" # which has ns=1 forced. Only need 1 ep - not to be included in box/whiskers
 filename = r"scmpc\ipopt_scmpc_20ep_scenario_1_ns_10" # worse than mpcrl; but alright. Has better cost, worse violations than scenario 2
 filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10" # better at avoiding violations, worse overall performance (cost)
 
-# (D)MPCRL - to be implemented
-filename = r"data\pkls\tcl63_cent_100ep_scenario_2"  # test w this one for cent scenario 2
-filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
+# MPCRL - to run: scenario 1 only.
+filename= r"data\pkls\sc0_cent_20ep_scenario_0" # mpcrl for scenario 0.  Only need 1 ep - not to be included in box/whiskers
+# filename = r"data\pkls\tcl63_cent_100ep_scenario_2"  # test w this one for cent scenario 2
+filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2" # mpcrl for scenario 2
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2_bestep20" # similar performance; have to see avg results over eps
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2_oldenv" # only cost values change, behavior is identical 
 
-filename = r'data\pkls\periodic\tdl68\periodic_ep20'
-# vis_large_eps(filename) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
+# DMPCRL - waiting on server to finish tdl68, to run: scenario 1 and 2.
+filename = r"data\pkls\sc0_distr_20ep_scenario_0" # dmpcrl for scenario 0. Only need 1 ep - not to be included in box/whiskers
+
+
+
+vis_large_eps(filename) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
 
 # # TEMP: testing the visualize for report.
 # # mpcrl, dmpcl, scmpc, ddpg:  ["xkcd:aquamarine", "xkcd:azure", "xkcd:blue", "xkcd:darkblue"] or ["xkcd:azure", "xkcd:blue", "xkcd:darkblue", "xkcd:purple"]
 # filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
 # visualize(filename, color="xkcd:azure") 
-
-# retroactively finding the trained agents for mpcrl and dmpcrl, and considering to train ddpg for scenario 0
-filename = r"ddpg\lfc_ddpg6_scenario0_eval" # ddpg for scenario 0 -> not quite it, training a longer one (suspended - do later....)
-filename = "cent_10ep_scenario_0.2" # too old; retraining now....
-# checking the ones from scenario 1: they are good to go!
-filename= r"data from server\batch 3\pkls\tcl13_cent_20ep_scenario_1" # tcl13 for mpcrl [13, 14, 15]
-filename= r"data from server\batch 3\pkls\tdl23_distr_20ep_scenario_1" # tdl16 for dmpcrl [16, 19, 23?] - 16 is fine, 19 with view_partly=[0, 13] goated, 23 most realistic probs.
-filname= r"data\pkls\sc0_cent_20ep_scenario_2" # scenario 0, mpcrl
-vis_large_eps(filename)
