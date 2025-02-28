@@ -58,7 +58,7 @@ def plot_performance(
         plt.figure(figsize=(5, 4))
         plt.boxplot(R_tot.T, labels=names, showfliers=showfliers)
     else:
-        _, ax = plt.subplots(figsize=(5, 4))
+        _, ax = plt.subplots(figsize=(5, 4), constrained_layout=True)
         bplot = ax.boxplot(R_tot.T, patch_artist=True, tick_labels=names, showfliers=showfliers, 
                            medianprops={'color': 'white', "linewidth": 1.5},
                            boxprops={'facecolor': 'C0', "edgecolor": "white", "linewidth": 0.5},
@@ -77,30 +77,30 @@ def plot_performance(
     x_bnd_l = Model.x_bnd_l
     n = Model.n
     x_bnd = np.tile(x_bnd_l, Model.n).T
-    # sum of steps in an episode that the constraints are violated for x by comparing to Model bounds
-    violations_upper = x >= x_bnd[:, 1] # True if violated
-    violations_lower = x <= x_bnd[:, 0] # True if violated
-    violations = violations_upper | violations_lower # if either is true
-    violations_per_ep = np.sum(violations, axis=(2,3)) # per episode; sum over steps and states -> new shape [file][eps]
+    # # sum of steps in an episode that the constraints are violated for x by comparing to Model bounds
+    # violations_upper = x >= x_bnd[:, 1] # True if violated
+    # violations_lower = x <= x_bnd[:, 0] # True if violated
+    # violations = violations_upper | violations_lower # if either is true
+    # violations_per_ep = np.sum(violations, axis=(2,3)) # per episode; sum over steps and states -> new shape [file][eps]
 
-    # plot amount of violations:
-    if colors == None:
-        plt.figure(figsize=(5, 4))
-        plt.boxplot(violations_per_ep.T, labels=names, showfliers=showfliers)
-    else:
-        _, ax = plt.subplots(figsize=(5, 4))
-        bplot = ax.boxplot(violations_per_ep.T, patch_artist=True, tick_labels=names, showfliers=showfliers,
-                            medianprops={'color': 'white', "linewidth": 1.5},
-                            boxprops={'facecolor': 'C0', "edgecolor": "white", "linewidth": 0.5},
-                            whiskerprops={'color': 'grey', "linewidth": 1},
-                            capprops={'color': 'black', "linewidth": 1},)
-        for patch, color in zip(bplot['boxes'], colors):
-            patch.set_facecolor(color)
-    plt.yscale("log") if logscale else None
-    plt.ylabel("Number of constraint violations per episode")
-    plt.title(f"Performance comparison: constraint violations | {title_info}")
-    wm = plt.get_current_fig_manager() # move figure over
-    wm.window.move(500, 0)
+    # # plot amount of violations:
+    # if colors == None:
+    #     plt.figure(figsize=(5, 4))
+    #     plt.boxplot(violations_per_ep.T, labels=names, showfliers=showfliers)
+    # else:
+    #     _, ax = plt.subplots(figsize=(5, 4))
+    #     bplot = ax.boxplot(violations_per_ep.T, patch_artist=True, tick_labels=names, showfliers=showfliers,
+    #                         medianprops={'color': 'white', "linewidth": 1.5},
+    #                         boxprops={'facecolor': 'C0', "edgecolor": "white", "linewidth": 0.5},
+    #                         whiskerprops={'color': 'grey', "linewidth": 1},
+    #                         capprops={'color': 'black', "linewidth": 1},)
+    #     for patch, color in zip(bplot['boxes'], colors):
+    #         patch.set_facecolor(color)
+    # plt.yscale("log") if logscale else None
+    # plt.ylabel("Number of constraint violations per episode")
+    # plt.title(f"Performance comparison: constraint violations | {title_info}")
+    # wm = plt.get_current_fig_manager() # move figure over
+    # wm.window.move(500, 0)
 
 
     # magnitude of violations
@@ -113,7 +113,7 @@ def plot_performance(
         plt.figure(figsize=(5, 4))
         plt.boxplot(violations_magnitude.T, labels=names, showfliers=showfliers)
     else:
-        _, ax = plt.subplots(figsize=(5, 4))
+        _, ax = plt.subplots(figsize=(5, 4), constrained_layout=True)
         bplot = ax.boxplot(violations_magnitude.T, patch_artist=True, tick_labels=names, showfliers=showfliers,
                             medianprops={'color': 'white', "linewidth": 1.5},
                             boxprops={'facecolor': 'C0', "edgecolor": "white", "linewidth": 0.5},
@@ -125,7 +125,7 @@ def plot_performance(
     plt.ylabel("Magnitude of constraint violations per episode")
     plt.title(f"Performance comparison: constraint violations magnitude | {title_info}")
     wm = plt.get_current_fig_manager() # move figure over
-    wm.window.move(1000, 0)
+    wm.window.move(500, 0)
     
     
     # magnitude of GRC violations (no amount, just magnitude)
@@ -144,7 +144,7 @@ def plot_performance(
         plt.figure(figsize=(5, 4))
         plt.boxplot(grc_violations_magnitude.T, labels=names, showfliers=showfliers)
     else:
-        _, ax = plt.subplots(figsize=(5, 4))
+        _, ax = plt.subplots(figsize=(5, 4), constrained_layout=True)
         bplot = ax.boxplot(grc_violations_magnitude.T, patch_artist=True, tick_labels=names, showfliers=showfliers,
                             medianprops={'color': 'white', "linewidth": 1.5},
                             boxprops={'facecolor': 'C0', "edgecolor": "white", "linewidth": 0.5},
@@ -156,37 +156,37 @@ def plot_performance(
     plt.ylabel("Magnitude of GRC violations per episode")
     plt.title(f"Performance comparison: GRC violations magnitude | {title_info}")
     wm = plt.get_current_fig_manager() # move figure over
-    wm.window.move(500, 300)
+    wm.window.move(1000, 0)
     
     plt.show()
 
 # colors: https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def (scroll down to the bottom) - default is X11/CSS4, other colors use pre-fix xkcd:
-# plot_performance(
-#     file_paths=[
-#         r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
-#         r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
-#         r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
-#         r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
-#     ],
-#     names=[
-#         "MPC-RL", # centralized !!
-#         "DMPC-RL", 
-#         "Sc-MPC",
-#         "DDPG",
-#     ],
-#     colors=[
-#         "xkcd:aquamarine",
-#         "xkcd:azure",
-#         "xkcd:blue",
-#         "xkcd:darkblue",
-#         # "xkcd:purple",
-#     ],
-#     # showfliers=False,
-#     logscale=True,
-#     title_info = "Scenario 2"
-# )
-# Done: plot violations; amount and magnitude (and separate for GRC) - based on Model bounds. (see also vis_large_eps for how-to)
-# TODO: figsize, consider constrained_layout=True, etc.
+plot_performance(
+    file_paths=[
+        r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
+        r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
+        # r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
+        r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
+        r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
+    ],
+    names=[
+        "MPC-RL", # centralized !!
+        "DMPC-RL", 
+        "Sc-MPC",
+        "DDPG",
+    ],
+    colors=[
+        "xkcd:aquamarine",
+        "xkcd:azure",
+        "xkcd:blue",
+        "xkcd:darkblue",
+        # "xkcd:purple",
+    ],
+    # showfliers=False,
+    # logscale=True,
+    title_info = "Scenario 2"
+)
+# TODO: adapt to finalize for report.
 
 
 
@@ -222,18 +222,18 @@ def plot_performance(
 #     title_info = "Scenario 0"
 # )
 
-# sc-mpc: scenario 0 so these are identical of course..
-plot_performance(
-   file_paths=[
-        r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10",
-        r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_5",
-        r"data\pkls\scmpc_test_cent_no_learning_2ep_scenario_0"
-    ],
-    names=[
-        "scmpc10",
-        "scmpc5",
-        "mpcrl"
-    ],
-    title_info = "Scenario 0"
-)
+# # test: see whether sc-mpc: scenario 0 depends on ns (no) and whether it is identical than mpcrl (it is)
+# plot_performance(
+#    file_paths=[
+#         r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10",
+#         r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_5",
+#         r"data\pkls\scmpc_test_cent_no_learning_2ep_scenario_0"
+#     ],
+#     names=[
+#         "scmpc10",
+#         "scmpc5",
+#         "mpcrl"
+#     ],
+#     title_info = "Scenario 0"
+# )
 

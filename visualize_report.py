@@ -5,7 +5,7 @@ import pickle
 from lfc_model import Model
 
 
-def visualize(file: str, color:str ="xkcd:darkblue", view_partly: Tuple = None, scenario: int =  None) -> None:
+def visualize(file: str, color:str ="xkcd:crimson", view_partly: Tuple = None, scenario: int =  None) -> None:
     """Makes plots to visualize TD-error, rewards, states and inputs.
     The idea is to use this one for the evaluate data, which then shows the performance of the model.
     `vis_large_eps` will be used to showcase the behavior over time as it learns."""
@@ -32,13 +32,12 @@ def visualize(file: str, color:str ="xkcd:darkblue", view_partly: Tuple = None, 
     
     centralized_flag = data.get("cent_flag")
     if centralized_flag == False: # i.e: distributed, so TD has shape (n, eps*steps)
-        # TD = np.sum(TD, axis=0) # sum over agents to shape (eps*steps) # no!
         TD =  TD[0, :] # sum over agents to shape (eps*steps)
 
     # bit trickier, TD, Pl and Pl_noise are reshaped later if numEps > 1
     TD = TD.reshape(1, -1)  # e.g (1,800) for 4 eps at 200 steps  | (1, eps*steps)
-    Pl = (np.asarray(data.get("Pl")).squeeze().reshape(1, -1, 3))  #  | (1, eps*steps, 3)
-    Pl_noise = (np.asarray(data.get("Pl_noise")).squeeze().reshape(1, -1, 3))  # | (1, eps*steps, 3)
+    Pl = (np.asarray(data.get("Pl")).squeeze().reshape(1, -1, Model.n))  #  | (1, eps*steps, 3)
+    Pl_noise = (np.asarray(data.get("Pl_noise")).squeeze().reshape(1, -1, Model.n))  # | (1, eps*steps, 3)
 
     if isinstance(data, dict):
         # Find and print all the keys where the value is a list
@@ -62,8 +61,8 @@ def visualize(file: str, color:str ="xkcd:darkblue", view_partly: Tuple = None, 
     numEpisodes = x.shape[0] if len(x.shape) == 3 else 1
 
     if numEpisodes != 1:
-        Pl = Pl[:, :, :].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
-        Pl_noise = Pl_noise[:,:,:].reshape((numEpisodes, -1, 3))  # newShape = (numEps, steps)
+        Pl = Pl[:, :, :].reshape((numEpisodes, -1, Model.n))  # newShape = (numEps, steps)
+        Pl_noise = Pl_noise[:,:,:].reshape((numEpisodes, -1, Model.n))  # newShape = (numEps, steps)
 
     if numEpisodes != 1 and TD.all() != None:
         TD = TD.reshape((numEpisodes, -1))  # newShape = (numEps, steps)
@@ -105,11 +104,11 @@ def visualize(file: str, color:str ="xkcd:darkblue", view_partly: Tuple = None, 
             axs[i, j].hlines(x_bnd[i, :], 0, t[-1], linestyles="--", color="black", label="constraints")  # hlines(y_values, xmin, xmax)
             # axs[i, j].set_ylim([-0.25, 0.25])
             # shaded area between min and max
-            axs[i, j].fill_between(t, xmax[:, 4 * j + i], xmin[:, 4 * j + i], color="gray", alpha=0.5, hatch="//", label="all episodes")
+            axs[i, j].fill_between(t, xmax[:, 4 * j + i], xmin[:, 4 * j + i], color="gray", alpha=0.5, hatch="//", label="envelope")
         # plot inputs
         axs[4, j].plot(t[:-1], umax[:, j], color="gray", linestyle="--")
         axs[4, j].plot(t[:-1], umin[:, j], color="gray", linestyle="--")
-        axs[4, j].plot(t[:-1], u[best_index, :, j], color="xkcd:crimson", label="best episode") # best
+        axs[4, j].plot(t[:-1], u[best_index, :, j], color=color, label="best episode") # best
         axs[4, j].hlines(u_bnd, 0, t[-2], linestyles="--", color="black")  # hlines(y_values, xmin, xmax)
         axs[4, j].fill_between(t[:-1], umax[:, j], umin[:, j], color="gray", alpha=0.5, hatch="//")
         
@@ -316,5 +315,5 @@ def visualize(file: str, color:str ="xkcd:darkblue", view_partly: Tuple = None, 
     
 
 # filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
-# filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
-# visualize(filename)
+filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2"
+visualize(filename, color="xkcd:red") # my favorites: xkcd red and xkcd blue
