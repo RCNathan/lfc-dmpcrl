@@ -26,9 +26,8 @@ def plotDualVars(dist, debug):
     debug_dict = datac["info_dict"]
 
     # get from model
-    model = Model()
-    n = model.n
-    nx_l = model.nx_l
+    n = Model.n
+    nx_l = Model.nx_l
     nx = nx_l * n
     N = info_dict['u_iters'].shape[-1] # control horizon
 
