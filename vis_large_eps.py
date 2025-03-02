@@ -31,7 +31,7 @@ def vis_large_eps(
     TD = np.asarray(data.get("TD", None)) # returns None if TD does not exist
     
     centralized_flag = data.get("cent_flag")
-    if centralized_flag == False: # i.e: distributed, so TD has shape (n, eps*steps)
+    if centralized_flag == False and (TD != None).all(): # i.e: distributed, so TD has shape (n, eps*steps)
         # TD = np.sum(TD, axis=0) # sum over agents to shape (eps*steps) # no!
         TD =  TD[0, :] # sum over agents to shape (eps*steps)
 
