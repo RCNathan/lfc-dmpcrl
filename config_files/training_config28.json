@@ -2,7 +2,7 @@
     {
         "save_name_info": "tdl68",
         "centralized_flag": false, "learning_flag": true, "numEpisodes": 1000,
-        "save_periodically": 10,
+        "scenario": 2, "log_freqs": 1, "save_periodically": 10,
         "learning_rate": {
             "type": "ExponentialScheduler",
             "args": {
