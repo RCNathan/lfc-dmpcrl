@@ -26,7 +26,7 @@ ActType = TypeVar("ActType")
 class LfcLstdQLearningAgentCoordinator(LstdQLearningAgentCoordinator):
     """A coordinator for LSTD-Q learning agents - for the Lfc problem. This agent hence handles load changes."""
 
-    saveRunningData = False  # toggle whether during runtime, every x steps, data gets saved.
+    saveRunningData = False  # toggle whether during runtime, every x steps, data gets saved. [required for plotDualVars]
     plotRunningFlag = False  # toggle whether plotted immediately as well. 
     plotDualVarsFlag = False  # toggle whether dual vars are being plotted at every timestep. 
     small_start_time = time.time() # used for periodical saves
