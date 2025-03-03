@@ -207,7 +207,9 @@ filename= r"data from server\batch 3\pkls\tdl19_distr_20ep_scenario_1" # tdl16 f
 # filename = r"data\pkls\sc0_distr_20ep_scenario_0"
 
 # scenario 2 - dmpcrl not quite at the performance I want yet..
+# tdl68 here is actually tdl67 on new env :/ not tdl68 - asked Sam to rerun.
 filename = r'data\pkls\periodic\tdl68\periodic_ep20' # is the periodic that is running on the server right now.
+filename = r'data\pkls\periodic\tdl68\periodic_ep50' # 50 eps
 
 #################################################################################################################
 ##### evaluate time! #####
@@ -226,16 +228,18 @@ filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10" # better at avoiding viola
 
 # MPCRL 
 filename = r"data\pkls\sc0_cent_20ep_scenario_0" # mpcrl for scenario 0.  Only need 1 ep - not to be included in box/whiskers
-filename = r"evaluate_data\dmpcrl_20eps_tcl13_scenario1"
+filename = r"evaluate_data\dmpcrl_20eps_tcl13_scenario1" # mpcrl for scenario 1
 # filename = r"data\pkls\tcl63_cent_100ep_scenario_2"  # test w this one for cent scenario 2
 filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2" # mpcrl for scenario 2
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2_bestep20" # similar performance; have to see avg results over eps
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2_oldenv" # only cost values change, behavior is identical 
 
-# DMPCRL - waiting on server to finish tdl68, to run: scenario 1 and 2.
+# DMPCRL - waiting on server to finish tdl68, to run: scenario 2.
 filename = r"data\pkls\sc0_distr_20ep_scenario_0" # dmpcrl for scenario 0. Only need 1 ep - not to be included in box/whiskers
+filename = r"evaluate_data\dmpcrl_20eps_tdl19_scenario1" # dmpcrl for scenario 1
 
 
+filename = r'data\pkls\periodic\tdl68\periodic_ep50' # 50 eps - this is actually tdl67 on new env :/ not tdl68
 
 vis_large_eps(filename) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
 
