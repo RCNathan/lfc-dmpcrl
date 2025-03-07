@@ -8,6 +8,7 @@ from lfc_model import Model
 from vis_large_eps import vis_large_eps
 # from plot_performance import plot_performance
 # from visualize_report import visualize as visualize_report
+from plot_dual_vars import plotDualVars
 
 def return_load(step_counter: int) -> np.ndarray:
     """Return loads for given timestep."""
@@ -113,7 +114,7 @@ def analyze_param_differences(param_dict):
 
     return sorted_params
 
-def analyze_relative_param_differences(param_dict):
+def analyze_relative_param_differences(param_dict, view_partly: Tuple = None):
     """
     Computes the maximum absolute and relative difference between the first and last iteration 
     for each parameter in param_dict and returns a sorted list of parameters.
@@ -144,16 +145,20 @@ def analyze_relative_param_differences(param_dict):
         # Parameter: B_1, Max Abs: 3.210000e+00, Argmax: (1,), Relative Change: 1.234567e-01
     """
     differences_dict = {}
+    if view_partly != None:
+        beginEp, endEp = view_partly[0], view_partly[1]
+    else:
+        beginEp, endEp = 0, -1
     for param, data in param_dict.items():
         # Compute the difference between the last and first iteration
         if len(data.shape) == 3:
-            difference = data[-1, :, :] - data[0, :, :]
-            initial_value = data[0, :, :]
-            last_value = data[-1, :, :]
+            difference = data[endEp, :, :] - data[beginEp, :, :]
+            initial_value = data[beginEp, :, :]
+            last_value = data[endEp, :, :]
         elif len(data.shape) == 2:
-            difference = data[-1, :] - data[0, :]
-            initial_value = data[0, :]
-            last_value = data[-1, :]
+            difference = data[endEp, :] - data[beginEp, :]
+            initial_value = data[beginEp, :]
+            last_value = data[endEp, :]
         else:
             raise ValueError(f"Unexpected shape {data.shape} for parameter {param}")
 
@@ -367,6 +372,8 @@ def vis_evaluate_eps(
     show_agent: int = 0, # 0, 1, 2
     grid_on: bool = False,
     color: str = "xkcd:red",
+    fig_size: Tuple = None,
+    hide_legend: bool = False,
 ) -> None:
     """Makes plots to visualize TD-error, rewards, states and inputs"""
 
@@ -441,7 +448,7 @@ def vis_evaluate_eps(
         1,
         constrained_layout=True,
         sharex=True,
-        figsize=(10, 7.5),
+        figsize=(10, 7.5) if fig_size is None else fig_size,
     )  # figsize: (width, height)
     for i in range(Model.nx_l):
         # plot states
@@ -470,6 +477,9 @@ def vis_evaluate_eps(
     axs[1].set_ylim([-1.25, 1.25])
     axs[2].set_ylim([-1.25, 1.25])
     axs[3].set_ylim([-0.125, 0.125])
+    axs[4].set_ylim([-0.35, 0.35])
+    axs[0].set_yticks([-0.2, 0, 0.2])
+    axs[4].set_yticks([-0.3, 0, 0.3])
 
     # only set once | y-axis labels (states, input)
     axs[0].set_ylabel(r"$\Delta f_i$")
@@ -477,7 +487,8 @@ def vis_evaluate_eps(
     axs[2].set_ylabel(r"$\Delta P_{\mathrm{g},i}$")
     axs[3].set_ylabel(r"$\Delta P_{\mathrm{tie},i}$")
     axs[4].set_ylabel(r"$u$")
-    axs[0].legend(loc="lower right")
+    if hide_legend == False:
+        axs[0].legend(loc="lower right")
 
     for i in range(5):
         axs[i].grid(grid_on)
@@ -628,14 +639,15 @@ filename= r"data from server\batch 3\pkls\tdl23_distr_20ep_scenario_1" # tdl16 f
 
 # scenario 2
 filename = r"data\pkls\tcl63_cent_100ep_scenario_2" # 63 = 48 = 48rp..
-filename = r"data\pkls\tcl48_cent_50ep_scenario_2" # 48
+# filename = r"data\pkls\tcl48_cent_50ep_scenario_2" # 48
+filename = r'data\pkls\periodic\tdl67\periodic_ep260' # viewpartly till 60, 86, 88, or ...?
 
 
-# learning plots
+### learning plots ###
 manual_vars = ["V0_0", "V0_2", "x_lb_0", "x_ub_2"]
 param_dict = return_param_dict(filename)
-sorted_params = analyze_relative_param_differences(param_dict) 
-sorted_params = analyze_param_differences(param_dict) # or analyze_param_differences for absolute differences
+sorted_params = analyze_relative_param_differences(param_dict, view_partly=[0, 90]) 
+# sorted_params = analyze_param_differences(param_dict) # or analyze_param_differences for absolute differences
 # plot_4learnables(
 #     sorted_params, 
 #     param_dict, 
@@ -643,8 +655,8 @@ sorted_params = analyze_param_differences(param_dict) # or analyze_param_differe
 #     analyze_method="relative"
 # )
 
-# vis_training_eps(filename) # view_partly=[0,20]
-# plot_costs(filename)
+# vis_training_eps(filename, view_partly=[0,80]) # view_partly=[0,20]
+# plot_costs(filename, view_partly=[0,88])
 # vis_large_eps(filename)
 
 # ddpg scenario 1/2
@@ -653,16 +665,26 @@ filename = r"ddpg\lfc_ddpg5_train"
 # plot_costs(filename, is_ddpg=True)
 # vis_training_eps(filename, show_agent=2)
 
-# evaluation plots
-filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_5"
+### evaluation plots ###
+# filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_5"
 # filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10"
 # plot_costs(filename, is_ddpg=True, every_n=1)
-# vis_evaluate_eps(filename, show_agent=0)
 # visualize_report(filename, color="xkcd:red") # my favorites: xkcd red and xkcd blue
 
-# vis_evaluate_eps(filename)
+# scenario 2 evals
+filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10"
+filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2"
+filename = r"evaluate_data\dmpcrl_20eps_tdl67_scenario2"  # change for the dmpcrl once done!!    
+# # filename = r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv"
+filename = r"evaluate_data\ddpg_20eps_ddpg5_sc_1_and_2_scenario2" # <- somehow they are not the same, just use this one for solve time only.
+# vis_evaluate_eps(filename, show_agent=0, fig_size=(5, 4), hide_legend=True)
+
+
+# ADMM convergence
+plotDualVars(r"dual_vars\dist_av.pkl", r"dual_vars\centdebug_av.pkl")
+
 
 # maybe include in report?
-filename = r"data\pkls\sc0_cent_20ep_scenario_0" # mpcrl training on scenario 0
-filename = r"data\pkls\sc0_distr_20ep_scenario_0"  # dmpcrl training on scenario 0
-vis_training_eps(filename, show_agent=2)
+# filename = r"data\pkls\sc0_cent_20ep_scenario_0" # mpcrl training on scenario 0
+# filename = r"data\pkls\sc0_distr_20ep_scenario_0"  # dmpcrl training on scenario 0
+# vis_training_eps(filename, show_agent=2)

@@ -338,13 +338,14 @@ numSteps = int(t_end / Model.ts)
 # distr no learn
 # train(
 #     centralized_flag=False,
-#     learning_flag=True,
+#     learning_flag=False,
 #     scenario=0,
 #     numEpisodes=1,
-#     numSteps=2,
+#     numSteps=200,
 #     save_name_info="lr_not_saved_correctly_in_periodic",
 #     learning_rate=ExponentialScheduler(1e-20, factor=0.5),
 #     save_periodically=1,
+#     centralized_debug=True,
 # )
 # default: admm_iters=500, rho=0.5, consensus_iters=100 | so far, rho=1 has smallest error in dist obj func vals
 

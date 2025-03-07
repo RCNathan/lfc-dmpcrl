@@ -20,7 +20,7 @@ def print_performance_vals(
     """
     n = len(file_paths)
     # initialize data structures
-    x,u,R = [],[],[]
+    x,u,R,solve_times = [],[],[],[]
 
     # for i in range(n): open and save data
     for i in range(n):
@@ -42,11 +42,47 @@ def print_performance_vals(
     x_down = np.maximum(x_bnd[:, 0] - x, 0)
     violations_magnitude = np.sum(x_up + x_down, axis=(2,3))
 
-    # plot data - box/whisker plot for cost R
-    R_tot = np.sum(np.asarray(R), axis=2)
-
     for i in range(len(file_paths)):
         print(f"{names[i]}: Cost: {np.mean(np.sum(R[i], axis=1))} +- {np.std(np.sum(R[i], axis=1))} --- Violation magnitudes: {np.mean(violations_magnitude[i])} +- {np.std(violations_magnitude[i])}")
+
+def print_solver_times(
+        file_paths: list[str],
+        names: list[str],
+) -> None:
+    
+    """
+    Prints values of performance metrics for each file in file_paths.
+    """
+    n = len(file_paths)
+    # initialize data structures
+    solve_times, mean_solve_times, x_shape = [],[],None
+
+    # for i in range(n): open and save data
+    for i in range(n):
+        with open(file_paths[i] + '.pkl', 'rb') as f:
+            data = pickle.load(f)
+            solver_time = data.get('solver_times', None) # mpcrl, dmpcrl
+            if solver_time is None:
+                solver_time = data.get('elapsed_time', None) # ddpg
+                if type(solver_time) == float: # ddpg
+                    x_shape = data['X'].shape
+                if solver_time is None:
+                    solver_time = data['meta_data'].get("solver_time", None) # scmpc
+                    if solver_time is None:
+                        raise ValueError("No solver times found") # or older version
+        solve_times.append(solver_time)
+    
+    for i in range(n):
+        if type(solve_times[i]) == float: # ddpg
+            mean_solve_time = solve_times[i] / (x_shape[0]*(x_shape[1]-1))
+        elif len(solve_times[i].shape) == 1: # mpcrl and sc-mpc
+            mean_solve_time = np.mean(solve_times[i])
+        elif len(solve_times[i].shape) == 2: # dmpcrl
+            mean_solve_time = np.sum(np.max(solve_times[2], axis=0))
+        else:
+            raise ValueError("Unknown shape of solver times")
+        mean_solve_times.append(mean_solve_time)
+        print(f"{names[i]}: Mean solve time per step: {mean_solve_time:.4f} s")
 
 def plot_performance( 
         file_paths: list[str],
@@ -188,106 +224,102 @@ def plot_performance(
     
     plt.show()
 
+# Names of methods (and colors) are constant
+names=[
+        "MPC-RL", # centralized !!
+        "DMPC-RL", 
+        "Sc-MPC",
+        "DDPG",
+]
 # colors: https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def (scroll down to the bottom) - default is X11/CSS4, other colors use pre-fix xkcd:
+colors=[
+        "xkcd:aquamarine",
+        "xkcd:azure",
+        "xkcd:blue",
+        "xkcd:darkblue",
+] 
 
-# # scenario 1
+### scenario 0  ### -> Only 1 episode needed; not included as box/whiskers: each episode is identical (no uncertainties)
+files_scenario_0 = [
+    r"evaluate_data\dmpcrl_2eps_tcl0_scenario0",
+    r"evaluate_data\dmpcrl_2eps_tdl0_scenario0",
+    r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10",        
+    r"evaluate_data\ddpg_2eps_ddpg6_scenario0_bestv2_scenario0",
+]
+# print_solver_times(
+#     file_paths=files_scenario_0,
+#     names=names,
+# )
+# print_performance_vals(
+#     file_paths=files_scenario_0,
+#     names=names,
+# )
 # plot_performance(
-#     file_paths=[
-#         r"evaluate_data\dmpcrl_20eps_tcl13_scenario1",
-#         r"evaluate_data\dmpcrl_20eps_tdl19_scenario1",
-#         r"scmpc\ipopt_scmpc_20ep_scenario_1_ns_10",
-#         r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",        
-#     ],
-#     names=[
-#         "MPC-RL",
-#         "DMPC-RL", 
-#         "Sc-MPC",
-#         "DDPG",
-#     ],
-#     colors=[
-#         "xkcd:aquamarine",
-#         "xkcd:azure",
-#         "xkcd:blue",
-#         "xkcd:darkblue",
-#     ],
+#     file_paths=files_scenario_0,
+#     names=names,
+#     colors=colors,
+#     # showfliers=False,
+#     # logscale=True,
+#     title_info = "Scenario 0"
+# )
+
+### scenario 1 ###
+files_scenario_1=[
+    r"evaluate_data\dmpcrl_20eps_tcl13_scenario1",
+    r"evaluate_data\dmpcrl_20eps_tdl19_scenario1",
+    r"scmpc\ipopt_scmpc_20ep_scenario_1_ns_10",
+    r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv", # did not have solver-time oops. 
+    # r"evaluate_data\ddpg_20eps_ddpg5_sc_1_and_2_scenario2", # <- somehow they are not the same, just use this one for solve time only.
+]
+# print_solver_times(
+#     file_paths=files_scenario_1,
+#     names=names,
+# )
+# print_performance_vals(
+#     file_paths=files_scenario_1,
+#     names=names,
+# )
+# plot_performance(
+#     file_paths=files_scenario_1,
+#     names=names,
+#     colors=colors,
 #     # showfliers=False,
 #     logscale=True,
-#     # y_lim_tuple = (9*10**2, 1.1*10**4), # for the log scaling (manually skip one outlier)
+#     y_lim_tuple = (9*10**2, 1.1*10**4), # for the log scaling (manually skip one outlier)
 #     # y_lim_tuple = (0, 10**4), # for regular scale (manually skip one outlier)
 #     # y_lim_constraints = (-0.2, 5.2), # for regular scale (manually skip one outlier)
 #     title_info = "Scenario 1"
 # )
 
 
-# # scenario 2
-# plot_performance(
-#     file_paths=[
-#         r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
-#         # r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
-#         r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
-#         r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
-#         r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
-#     ],
-#     names=[
-#         "MPC-RL", # centralized !!
-#         "DMPC-RL", 
-#         "Sc-MPC",
-#         "DDPG",
-#     ],
-#     colors=[
-#         "xkcd:aquamarine",
-#         "xkcd:azure",
-#         "xkcd:blue",
-#         "xkcd:darkblue",
-#         # "xkcd:purple",
-#     ],
-#     # showfliers=False,
-#     logscale=True,
-#     title_info = "Scenario 2"
+### scenario 2 ###
+files_scenario_2 = [
+    r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
+    r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
+    r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
+    # r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
+    r"evaluate_data\ddpg_20eps_ddpg5_sc_1_and_2_scenario2", # <- somehow they are not the same, just use this one for solve time only.
+]
+# print_solver_times(
+#     file_paths=files_scenario_2,
+#     names=names,
 # )
-# # TODO: adapt to finalize for report.
-
-
-# scenario 0 -> Only 1 episode needed; not included as box/whiskers: each episode is identical (no uncertainties)
-print_performance_vals(
-    file_paths=[
-        r"evaluate_data\dmpcrl_2eps_tcl0_scenario0",
-        r"evaluate_data\dmpcrl_2eps_tdl0_scenario0",
-        r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10",        
-        r"evaluate_data\ddpg_2eps_ddpg6_scenario0_bestv2_scenario0"
-    ],
-    names=[
-        "MPC-RL", # centralized !!
-        "DMPC-RL", 
-        "Sc-MPC",
-        "DDPG",
-    ],
+# print_performance_vals(
+#     file_paths=files_scenario_2,
+#     names=names,
+# )
+plot_performance(
+    file_paths=files_scenario_2,
+    names=names,
+    colors=colors,
+    # showfliers=False,
+    logscale=True,
+    y_lim_tuple = (1*10**3,  9*10**4), # for the log scaling (manually skip one outlier)
+    y_lim_constraints=(4*10**-2, 10**2),
+    title_info = "Scenario 2"
 )
+# # TODO: wait for dmpcrl scenario 2 results? :/
 
-# plot_performance(
-#     file_paths=[
-#         r"evaluate_data\dmpcrl_2eps_tcl0_scenario0",
-#         r"evaluate_data\dmpcrl_2eps_tdl0_scenario0",
-#         r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10",        
-#         r"evaluate_data\ddpg_2eps_ddpg6_scenario0_bestv2_scenario0"
-#     ],
-#     names=[
-#         "MPC-RL", # centralized !!
-#         "DMPC-RL", 
-#         "Sc-MPC",
-#         "DDPG",
-#     ],
-#     colors=[
-#         "xkcd:aquamarine",
-#         "xkcd:azure",
-#         "xkcd:blue",
-#         "xkcd:darkblue",
-#         # "xkcd:purple",
-#     ],
-#     # showfliers=False,
-#     # logscale=True,
-#     title_info = "Scenario 0"
-# )
 
 
 

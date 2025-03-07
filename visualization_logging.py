@@ -239,12 +239,20 @@ filename = r"data\pkls\sc0_distr_20ep_scenario_0" # dmpcrl for scenario 0. Only 
 filename = r"evaluate_data\dmpcrl_20eps_tdl19_scenario1" # dmpcrl for scenario 1
 # r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
 
-filename = r'data\pkls\periodic\tdl68\periodic_ep40'
-
-vis_large_eps(filename) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
+filename = r'data\pkls\periodic\tdl68\periodic_ep50' # unfortunately worse than tdl67
+# filename = r"data\pkls\tdl67_distr_50ep_scenario_2" # distributed"
+filename = r'data\pkls\periodic\tdl67\periodic_ep260' # check till 86, 88, 120
+vis_large_eps(filename, view_partly=[0, 120]) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
 
 # # TEMP: testing the visualize for report.
 # # mpcrl, dmpcl, scmpc, ddpg:  ["xkcd:aquamarine", "xkcd:azure", "xkcd:blue", "xkcd:darkblue"] or ["xkcd:azure", "xkcd:blue", "xkcd:darkblue", "xkcd:purple"]
 # filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
 # filename = r"evaluate_data\dmpcrl_10eps_tcl63_scenario2"
 # visualize(filename, color="xkcd:azure") 
+
+
+
+# # some last minute testing n shit
+# filename = r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv"
+# filename = r"evaluate_data\ddpg_20eps_ddpg5_sc_1_and_2_scenario2" # needed to re-run evaluate for solver-times. They are not identical however..
+# vis_large_eps(filename) 
