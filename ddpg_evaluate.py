@@ -156,7 +156,7 @@ def DDPG_evaluate(
 DDPG_evaluate(
     model_path=r"ddpg\best_model\lfc_ddpg6_scenario0\best_model", # r"ddpg\lfc_ddpg6_scenario0_model" vs r"ddpg\best_model\lfc_ddpg6_scenario0\best_model"
     vec_norm_path='ddpg\lfc_ddpg6_scenario0_env.pkl', # 'ddpg\lfc_ddpg4_env.pkl'
-    numEpisodes=20,
+    numEpisodes=2,
     numSteps=1000,
     save_name_info="ddpg6_scenario0_bestv2", # stuff like ddpg4 etc 
     bestModelFlag=False,

@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from lfc_model import Model
+from matplotlib.ticker import LogLocator, LogFormatterSciNotation
 
 
 # file for comparing (box/whisker-plots) the performance of n-different evaluate-pkl
@@ -10,13 +11,53 @@ from lfc_model import Model
 # i.e: def plot_performance(file_paths: List[str]) -> None:
 # and then have n subplots based on how many paths are given
 
-def plot_performance(
+def print_performance_vals(
+        file_paths: list[str],
+        names: list[str],
+) -> None: 
+    """
+    Prints values of performance metrics for each file in file_paths.
+    """
+    n = len(file_paths)
+    # initialize data structures
+    x,u,R = [],[],[]
+
+    # for i in range(n): open and save data
+    for i in range(n):
+        with open(file_paths[i] + '.pkl', 'rb') as f:
+            data = pickle.load(f)
+            tempX = data.get("X")
+            x.append(data["X"].reshape(tempX.shape[0], tempX.shape[1], -1))
+            tempU = data.get("U")
+            u.append(data["U"].reshape(tempU.shape[0], tempU.shape[1], -1))
+            R.append(data.get("R"))
+
+    # constraint_violations
+    x_bnd_l = Model.x_bnd_l
+    n = Model.n
+    x_bnd = np.tile(x_bnd_l, Model.n).T
+
+    # magnitude of violations
+    x_up = np.maximum(x - x_bnd[:, 1], 0)
+    x_down = np.maximum(x_bnd[:, 0] - x, 0)
+    violations_magnitude = np.sum(x_up + x_down, axis=(2,3))
+
+    # plot data - box/whisker plot for cost R
+    R_tot = np.sum(np.asarray(R), axis=2)
+
+    for i in range(len(file_paths)):
+        print(f"{names[i]}: Cost: {np.mean(np.sum(R[i], axis=1))} +- {np.std(np.sum(R[i], axis=1))} --- Violation magnitudes: {np.mean(violations_magnitude[i])} +- {np.std(violations_magnitude[i])}")
+
+def plot_performance( 
         file_paths: list[str],
         names: list[str],
         title_info: str = "",
         colors: list[str] = None, # optional: set colors of boxplots
         showfliers: bool = True, # toggle visibility of outliers
         logscale: bool = False, # toggle logscale on y-axis
+        plotGRC_violations: bool = False, # toggle plotting of GRC violations
+        y_lim_tuple: tuple = None, # set y-limits for cost
+        y_lim_constraints: tuple = None, # set y-limits for constraint violations
 ) -> None: 
     """
     File for plotting box/whisker plots of performance for arbitrary amount of files. \\
@@ -51,6 +92,26 @@ def plot_performance(
         print(f"Mean cost per episode for {names[i]}: {np.mean(np.sum(R[i], axis=1))}")
         print(f"with standard deviation: {np.std(np.sum(R[i], axis=1))}")
 
+    # constraint_violations
+    x_bnd_l = Model.x_bnd_l
+    n = Model.n
+    x_bnd = np.tile(x_bnd_l, Model.n).T
+
+    # magnitude of violations
+    x_up = np.maximum(x - x_bnd[:, 1], 0)
+    x_down = np.maximum(x_bnd[:, 0] - x, 0)
+    violations_magnitude = np.sum(x_up + x_down, axis=(2,3))
+
+    # magnitude of GRC violations (no amount, just magnitude)
+    grc = Model.GRC_l
+    ts = Model.ts
+    x = np.asarray(x)
+    # grc: |Pm(k+1) - Pm(k)|/ts <= grc  --> Pm is 2nd entry for all agents: so [1,5,9]
+    x_grc = 1/ts * x[:, :, 1:, [1,5,9]] - x[:, :, :-1, [1,5,9]]
+    grc_up = np.maximum(x_grc - grc, 0)
+    grc_down = np.maximum(grc - x_grc, 0)
+    grc_violations_magnitude = np.sum(grc_up + grc_down, axis=(2,3))
+
     # plot data - box/whisker plot for cost R
     R_tot = np.sum(np.asarray(R), axis=2)
     if colors == None:
@@ -66,47 +127,15 @@ def plot_performance(
                            capprops={'color': 'black', "linewidth": 1},)
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
-    plt.yscale("log") if logscale else None
-    plt.ylabel("Cost per episode")
-    plt.title(f"Performance comparison: average cost per episode | {title_info}")
+    ax.set_ylabel("Cost per episode")
+    ax.set_title(f"Average cost per episode | {title_info}")
+    if logscale:
+        ax.set_yscale("log")  # Set log scale on y-axis
+        # ax.set_ylabel("Cost per episode (log)")
+    if y_lim_tuple != None:
+        ax.set_ylim(y_lim_tuple)  # 9*10**2, 2*10**4
     wm = plt.get_current_fig_manager() # move figure over
     wm.window.move(-10, 0)
-
-
-    # constraint_violations
-    x_bnd_l = Model.x_bnd_l
-    n = Model.n
-    x_bnd = np.tile(x_bnd_l, Model.n).T
-    # # sum of steps in an episode that the constraints are violated for x by comparing to Model bounds
-    # violations_upper = x >= x_bnd[:, 1] # True if violated
-    # violations_lower = x <= x_bnd[:, 0] # True if violated
-    # violations = violations_upper | violations_lower # if either is true
-    # violations_per_ep = np.sum(violations, axis=(2,3)) # per episode; sum over steps and states -> new shape [file][eps]
-
-    # # plot amount of violations:
-    # if colors == None:
-    #     plt.figure(figsize=(5, 4))
-    #     plt.boxplot(violations_per_ep.T, labels=names, showfliers=showfliers)
-    # else:
-    #     _, ax = plt.subplots(figsize=(5, 4))
-    #     bplot = ax.boxplot(violations_per_ep.T, patch_artist=True, tick_labels=names, showfliers=showfliers,
-    #                         medianprops={'color': 'white', "linewidth": 1.5},
-    #                         boxprops={'facecolor': 'C0', "edgecolor": "white", "linewidth": 0.5},
-    #                         whiskerprops={'color': 'grey', "linewidth": 1},
-    #                         capprops={'color': 'black', "linewidth": 1},)
-    #     for patch, color in zip(bplot['boxes'], colors):
-    #         patch.set_facecolor(color)
-    # plt.yscale("log") if logscale else None
-    # plt.ylabel("Number of constraint violations per episode")
-    # plt.title(f"Performance comparison: constraint violations | {title_info}")
-    # wm = plt.get_current_fig_manager() # move figure over
-    # wm.window.move(500, 0)
-
-
-    # magnitude of violations
-    x_up = np.maximum(x - x_bnd[:, 1], 0)
-    x_down = np.maximum(x_bnd[:, 0] - x, 0)
-    violations_magnitude = np.sum(x_up + x_down, axis=(2,3))
 
     # plot magnitude of violations:
     if colors == None:
@@ -121,53 +150,111 @@ def plot_performance(
                             capprops={'color': 'black', "linewidth": 1},)
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
-    plt.yscale("log") if logscale else None
-    plt.ylabel("Magnitude of constraint violations per episode")
-    plt.title(f"Performance comparison: constraint violations magnitude | {title_info}")
+    ax.set_ylabel("Magnitude of constraint violations per episode")
+    ax.set_title(f"Constraint violations magnitude | {title_info}")
+    if logscale:
+        ax.set_yscale("log")  # Set log scale on y-axis
+        # ax.set_ylabel("Magnitude of constraint violations per episode (log)")
+    if y_lim_constraints != None:
+        ax.set_ylim(y_lim_constraints)  # 9*10**2, 2*10**4
     wm = plt.get_current_fig_manager() # move figure over
-    wm.window.move(500, 0)
-    
-    
-    # magnitude of GRC violations (no amount, just magnitude)
-    grc = Model.GRC_l
-    ts = Model.ts
-    x = np.asarray(x)
-    # grc: |Pm(k+1) - Pm(k)|/ts <= grc  --> Pm is 2nd entry for all agents: so [1,5,9]
-    x_grc = 1/ts * x[:, :, 1:, [1,5,9]] - x[:, :, :-1, [1,5,9]]
-    grc_up = np.maximum(x_grc - grc, 0)
-    grc_down = np.maximum(grc - x_grc, 0)
-    grc_violations_magnitude = np.sum(grc_up + grc_down, axis=(2,3))
+    wm.window.move(500, 0) 
     
     # plot magnitude of GRC violations:
-    if colors == None:
-        # plt.figure(figsize=(4, 3), constrained_layout=True,)
-        plt.figure(figsize=(5, 4))
-        plt.boxplot(grc_violations_magnitude.T, labels=names, showfliers=showfliers)
-    else:
-        _, ax = plt.subplots(figsize=(5, 4), constrained_layout=True)
-        bplot = ax.boxplot(grc_violations_magnitude.T, patch_artist=True, tick_labels=names, showfliers=showfliers,
-                            medianprops={'color': 'white', "linewidth": 1.5},
-                            boxprops={'facecolor': 'C0', "edgecolor": "white", "linewidth": 0.5},
-                            whiskerprops={'color': 'grey', "linewidth": 1},
-                            capprops={'color': 'black', "linewidth": 1},)
-        for patch, color in zip(bplot['boxes'], colors):
-            patch.set_facecolor(color)
-    plt.yscale("log") if logscale else None
-    plt.ylabel("Magnitude of GRC violations per episode")
-    plt.title(f"Performance comparison: GRC violations magnitude | {title_info}")
-    wm = plt.get_current_fig_manager() # move figure over
-    wm.window.move(1000, 0)
+    if plotGRC_violations:
+        if colors == None:
+            # plt.figure(figsize=(4, 3), constrained_layout=True,)
+            plt.figure(figsize=(5, 4))
+            plt.boxplot(grc_violations_magnitude.T, labels=names, showfliers=showfliers)
+        else:
+            _, ax = plt.subplots(figsize=(5, 4), constrained_layout=True)
+            bplot = ax.boxplot(grc_violations_magnitude.T, patch_artist=True, tick_labels=names, showfliers=showfliers,
+                                medianprops={'color': 'white', "linewidth": 1.5},
+                                boxprops={'facecolor': 'C0', "edgecolor": "white", "linewidth": 0.5},
+                                whiskerprops={'color': 'grey', "linewidth": 1},
+                                capprops={'color': 'black', "linewidth": 1},)
+            for patch, color in zip(bplot['boxes'], colors):
+                patch.set_facecolor(color)
+        plt.yscale("log") if logscale else None
+        if logscale:
+            plt.gca().yaxis.set_major_locator(LogLocator(base=10.0, subs=None, numticks=10))  # Major ticks at powers of 10
+            plt.gca().yaxis.set_minor_locator(LogLocator(base=10.0, subs='auto', numticks=10))  # Minor ticks in between
+            # Set a formatter to show labels
+            plt.gca().yaxis.set_major_formatter(LogFormatterSciNotation())  # Uses scientific notation (10^x format)
+        plt.ylabel("Magnitude of GRC violations per episode")
+        plt.title(f"Performance comparison: GRC violations magnitude | {title_info}")
+        wm = plt.get_current_fig_manager() # move figure over
+        wm.window.move(1000, 0)
     
     plt.show()
 
 # colors: https://matplotlib.org/stable/users/explain/colors/colors.html#colors-def (scroll down to the bottom) - default is X11/CSS4, other colors use pre-fix xkcd:
-plot_performance(
+
+# # scenario 1
+# plot_performance(
+#     file_paths=[
+#         r"evaluate_data\dmpcrl_20eps_tcl13_scenario1",
+#         r"evaluate_data\dmpcrl_20eps_tdl19_scenario1",
+#         r"scmpc\ipopt_scmpc_20ep_scenario_1_ns_10",
+#         r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",        
+#     ],
+#     names=[
+#         "MPC-RL",
+#         "DMPC-RL", 
+#         "Sc-MPC",
+#         "DDPG",
+#     ],
+#     colors=[
+#         "xkcd:aquamarine",
+#         "xkcd:azure",
+#         "xkcd:blue",
+#         "xkcd:darkblue",
+#     ],
+#     # showfliers=False,
+#     logscale=True,
+#     # y_lim_tuple = (9*10**2, 1.1*10**4), # for the log scaling (manually skip one outlier)
+#     # y_lim_tuple = (0, 10**4), # for regular scale (manually skip one outlier)
+#     # y_lim_constraints = (-0.2, 5.2), # for regular scale (manually skip one outlier)
+#     title_info = "Scenario 1"
+# )
+
+
+# # scenario 2
+# plot_performance(
+#     file_paths=[
+#         r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
+#         # r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
+#         r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
+#         r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
+#         r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
+#     ],
+#     names=[
+#         "MPC-RL", # centralized !!
+#         "DMPC-RL", 
+#         "Sc-MPC",
+#         "DDPG",
+#     ],
+#     colors=[
+#         "xkcd:aquamarine",
+#         "xkcd:azure",
+#         "xkcd:blue",
+#         "xkcd:darkblue",
+#         # "xkcd:purple",
+#     ],
+#     # showfliers=False,
+#     logscale=True,
+#     title_info = "Scenario 2"
+# )
+# # TODO: adapt to finalize for report.
+
+
+# scenario 0 -> Only 1 episode needed; not included as box/whiskers: each episode is identical (no uncertainties)
+print_performance_vals(
     file_paths=[
-        r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
-        r"evaluate_data\dmpcrl_20eps_tcl63_scenario2",
-        # r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
-        r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10",
-        r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv",
+        r"evaluate_data\dmpcrl_2eps_tcl0_scenario0",
+        r"evaluate_data\dmpcrl_2eps_tdl0_scenario0",
+        r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10",        
+        r"evaluate_data\ddpg_2eps_ddpg6_scenario0_bestv2_scenario0"
     ],
     names=[
         "MPC-RL", # centralized !!
@@ -175,21 +262,32 @@ plot_performance(
         "Sc-MPC",
         "DDPG",
     ],
-    colors=[
-        "xkcd:aquamarine",
-        "xkcd:azure",
-        "xkcd:blue",
-        "xkcd:darkblue",
-        # "xkcd:purple",
-    ],
-    # showfliers=False,
-    # logscale=True,
-    title_info = "Scenario 2"
 )
-# TODO: adapt to finalize for report.
 
-
-
+# plot_performance(
+#     file_paths=[
+#         r"evaluate_data\dmpcrl_2eps_tcl0_scenario0",
+#         r"evaluate_data\dmpcrl_2eps_tdl0_scenario0",
+#         r"scmpc\ipopt_scmpc_2ep_scenario_0_ns_10",        
+#         r"evaluate_data\ddpg_2eps_ddpg6_scenario0_bestv2_scenario0"
+#     ],
+#     names=[
+#         "MPC-RL", # centralized !!
+#         "DMPC-RL", 
+#         "Sc-MPC",
+#         "DDPG",
+#     ],
+#     colors=[
+#         "xkcd:aquamarine",
+#         "xkcd:azure",
+#         "xkcd:blue",
+#         "xkcd:darkblue",
+#         # "xkcd:purple",
+#     ],
+#     # showfliers=False,
+#     # logscale=True,
+#     title_info = "Scenario 0"
+# )
 
 
 
@@ -236,4 +334,3 @@ plot_performance(
 #     ],
 #     title_info = "Scenario 0"
 # )
-

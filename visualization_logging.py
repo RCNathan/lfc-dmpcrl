@@ -1,5 +1,5 @@
 from vis_large_eps import vis_large_eps
-from visualize_report import visualize
+# from visualize_report import visualize
 
 """
 File intended to be used for logging visualization info.
@@ -237,9 +237,9 @@ filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2" # mpcrl for scenario 2
 # DMPCRL - waiting on server to finish tdl68, to run: scenario 2.
 filename = r"data\pkls\sc0_distr_20ep_scenario_0" # dmpcrl for scenario 0. Only need 1 ep - not to be included in box/whiskers
 filename = r"evaluate_data\dmpcrl_20eps_tdl19_scenario1" # dmpcrl for scenario 1
+# r"evaluate_data\dmpcrl_20eps_tdl67_scenario2",  # change for the dmpcrl once done!!    
 
-
-filename = r'data\pkls\periodic\tdl68\periodic_ep50' # 50 eps - this is actually tdl67 on new env :/ not tdl68
+filename = r'data\pkls\periodic\tdl68\periodic_ep40'
 
 vis_large_eps(filename) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
 

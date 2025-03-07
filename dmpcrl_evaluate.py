@@ -285,24 +285,43 @@ def dmpcrl_evaluate(
 # filename = r"data\pkls\periodic\tdl67\periodic_ep120" # distributed periodic
 # filename = r"data\pkls\tdl67_distr_50ep_scenario_2" # distributed
 
-print("Scenario 1")
+
+print("Scenario 0")
 dmpcrl_evaluate(
-    filename= r"data from server\batch 3\pkls\tcl13_cent_20ep_scenario_1", # tcl13 for mpcrl scenario 1
-    numEpisodes=20,
-    numSteps=1000,
-    scenario=1,
-    save_name_info = "tcl13",
+    filename= r"data\pkls\sc0_cent_20ep_scenario_0", # MPC-RL trained on scenario 0
+    numEpisodes=2,
+    scenario=0,
+    save_name_info = "tcl0",
 )
 
 dmpcrl_evaluate(
-    filename= r"data from server\batch 3\pkls\tdl19_distr_20ep_scenario_1", # tdl16 for dmpcrl, use best_ep 18
-    numEpisodes=20,
-    numSteps=1000,
-    scenario=1,
-    save_name_info = "tdl19",
-    best_ep=18,
-    log_freqs=1,
+    filename= r"data\pkls\sc0_distr_20ep_scenario_0", # DMPC-RL trained on scenario 0
+    numEpisodes=2,
+    scenario=0,
+    save_name_info = "tdl0",
+    log_freqs=10,
 )
+
+
+# print("Scenario 1")
+# dmpcrl_evaluate(
+#     filename= r"data from server\batch 3\pkls\tcl13_cent_20ep_scenario_1", # tcl13 for mpcrl scenario 1
+#     numEpisodes=20,
+#     numSteps=1000,
+#     scenario=1,
+#     save_name_info = "tcl13",
+# )
+
+# dmpcrl_evaluate(
+#     filename= r"data from server\batch 3\pkls\tdl19_distr_20ep_scenario_1", # tdl16 for dmpcrl, use best_ep 18
+#     numEpisodes=20,
+#     numSteps=1000,
+#     scenario=1,
+#     save_name_info = "tdl19",
+#     best_ep=18,
+#     log_freqs=1,
+# )
+
 
 # print("Scenario 2")
 # dmpcrl_evaluate(

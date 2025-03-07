@@ -245,12 +245,12 @@ def train_ddpg(
         print("Plotting for", saveloc)
         vis_large_eps(f"{saveloc}_{env_type}")
 
-# call the training function
 # Simulation parameters
 steps_per_episode = 1000 # total timesteps for simulation, should be identical to lfc-dmpcrl case
 num_episodes = 10 # how many episodes to train for
 numEvals = 1 # how many evaluations to perform during training (default 10)
 
+# call the training function
 if __name__ == "__main__":
     print("Executing from __main__")
     train_ddpg(

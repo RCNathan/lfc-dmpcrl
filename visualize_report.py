@@ -31,7 +31,7 @@ def visualize(file: str, color:str ="xkcd:crimson", view_partly: Tuple = None, s
     TD = np.asarray(data.get("TD", None)) # returns None if TD does not exist
     
     centralized_flag = data.get("cent_flag")
-    if centralized_flag == False: # i.e: distributed, so TD has shape (n, eps*steps)
+    if centralized_flag == False and (TD != None).all(): # i.e: distributed, so TD has shape (n, eps*steps)
         TD =  TD[0, :] # sum over agents to shape (eps*steps)
 
     # bit trickier, TD, Pl and Pl_noise are reshaped later if numEps > 1
@@ -314,6 +314,9 @@ def visualize(file: str, color:str ="xkcd:crimson", view_partly: Tuple = None, s
     plt.show()
     
 
-# filename = r'data\pkls\tcl48_cent_50ep_scenario_2'
-# filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2"
-# visualize(filename, color="xkcd:red") # my favorites: xkcd red and xkcd blue
+# filename = r'data\pkls\tcl48_cent_50ep_scenario_2' # train data
+# # filename = r"evaluate_data\dmpcrl_20eps_tcl63_scenario2" # eval data
+filename = r"evaluate_data\dmpcrl_20eps_tdl67_scenario2"  # change for the dmpcrl once done!!    
+# filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_5"
+# filename = r"scmpc\ipopt_scmpc_20ep_scenario_2_ns_10"
+visualize(filename, color="xkcd:red") # my favorites: xkcd red and xkcd blue

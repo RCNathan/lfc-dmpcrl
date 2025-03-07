@@ -12,7 +12,7 @@ numSteps = int(t_end / Model.ts) # default 1000 steps
 # scenario 0 | no perturbations on A, B, F (env no noise on loads)
 print("Scenario 0")
 evaluate_scmpc(
-    numEpisodes=2,
+    numEpisodes=20,
     numSteps=numSteps, 
     scenario=0, # scenario 0 forces n_scenarios = 1!
     n_scenarios=10, # artificial; will be 1.
@@ -20,15 +20,15 @@ evaluate_scmpc(
     solver="ipopt",
     save_name_info="ipopt"
 )
-evaluate_scmpc(
-    numEpisodes=2,
-    numSteps=numSteps, 
-    scenario=0, # scenario 0 forces n_scenarios = 1!
-    n_scenarios=5, # artificial; will be 1.
-    make_plots=False,
-    solver="ipopt",
-    save_name_info="ipopt"
-)
+# evaluate_scmpc(
+#     numEpisodes=2,
+#     numSteps=numSteps, 
+#     scenario=0, # scenario 0 forces n_scenarios = 1!
+#     n_scenarios=5, # artificial; will be 1.
+#     make_plots=False,
+#     solver="ipopt",
+#     save_name_info="ipopt"
+# )
 
 # # scenario 1 | no perturbations on A, B, F, but noises on load (Pl)
 # print("Scenario 1")
