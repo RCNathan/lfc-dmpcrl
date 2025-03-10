@@ -1,0 +1,38 @@
+[
+    {
+        "save_name_info": "tdl70",
+        "centralized_flag": false, "learning_flag": true, "numEpisodes": 150, "save_periodically": 10, 
+        "scenario": 2, "log_freqs": 1, 
+        "learning_rate": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 1e-12,
+                "factor": 1.0 
+            }
+        },
+        "update_strategy": {
+            "type": "UpdateStrategy",
+            "args": {
+                "frequency": 10,
+                "skip_first": 100
+            }
+        },
+        "epsilon": {
+            "type": "ExponentialScheduler",
+            "args": {
+                "init_value": 0.9,
+                "factor": 0.99998
+            }
+        },
+        "eps_strength": 0.7,
+        "experience": {
+            "type": "ExperienceReplay",
+            "args": {
+                "maxlen": 1000,
+                "sample_size": 200,
+                "include_latest": 100,
+                "seed": 1
+            }
+        }
+    }
+]

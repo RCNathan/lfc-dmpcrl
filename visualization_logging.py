@@ -255,4 +255,8 @@ vis_large_eps(filename, view_partly=[0, 120]) # filename, view_partly=[0,8]     
 # # some last minute testing n shit
 # filename = r"evaluate_data\ddpg_20eps_ddpg5_scenario1and2_newenv"
 # filename = r"evaluate_data\ddpg_20eps_ddpg5_sc_1_and_2_scenario2" # needed to re-run evaluate for solver-times. They are not identical however..
-# vis_large_eps(filename) 
+
+filename = r'data\pkls\periodic\tdl68\periodic_ep80' # tdl68: server
+# filename = r"data\pkls\periodic\periodic_ep60" # tdl70: laptop (config 30)
+# tdl69 on pc!
+vis_large_eps(filename) 
