@@ -242,7 +242,7 @@ filename = r"evaluate_data\dmpcrl_20eps_tdl19_scenario1" # dmpcrl for scenario 1
 filename = r'data\pkls\periodic\tdl68\periodic_ep50' # unfortunately worse than tdl67
 # filename = r"data\pkls\tdl67_distr_50ep_scenario_2" # distributed"
 filename = r'data\pkls\periodic\tdl67\periodic_ep260' # check till 86, 88, 120
-vis_large_eps(filename, view_partly=[0, 120]) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
+vis_large_eps(filename, view_partly=[0, 82]) # filename, view_partly=[0,8]       | or use visualize() to get the plots specifically made for the thesis report.
 
 # # TEMP: testing the visualize for report.
 # # mpcrl, dmpcl, scmpc, ddpg:  ["xkcd:aquamarine", "xkcd:azure", "xkcd:blue", "xkcd:darkblue"] or ["xkcd:azure", "xkcd:blue", "xkcd:darkblue", "xkcd:purple"]

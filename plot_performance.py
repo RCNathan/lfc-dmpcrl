@@ -163,8 +163,8 @@ def plot_performance(
                            capprops={'color': 'black', "linewidth": 1},)
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
-    ax.set_ylabel("Cost per episode")
-    ax.set_title(f"Average cost per episode | {title_info}")
+    ax.set_ylabel(r"$J_\text{eval}$")
+    ax.set_title(f"Cost per episode | {title_info}")
     if logscale:
         ax.set_yscale("log")  # Set log scale on y-axis
         # ax.set_ylabel("Cost per episode (log)")
@@ -186,7 +186,7 @@ def plot_performance(
                             capprops={'color': 'black', "linewidth": 1},)
         for patch, color in zip(bplot['boxes'], colors):
             patch.set_facecolor(color)
-    ax.set_ylabel("Magnitude of constraint violations per episode")
+    ax.set_ylabel(r"$\eta$")
     ax.set_title(f"Constraint violations magnitude | {title_info}")
     if logscale:
         ax.set_yscale("log")  # Set log scale on y-axis
@@ -287,7 +287,7 @@ files_scenario_1=[
 #     logscale=True,
 #     y_lim_tuple = (9*10**2, 1.1*10**4), # for the log scaling (manually skip one outlier)
 #     # y_lim_tuple = (0, 10**4), # for regular scale (manually skip one outlier)
-#     # y_lim_constraints = (-0.2, 5.2), # for regular scale (manually skip one outlier)
+#     y_lim_constraints = (-0.2, 5.2), # for regular scale (manually skip one outlier)
 #     title_info = "Scenario 1"
 # )
 

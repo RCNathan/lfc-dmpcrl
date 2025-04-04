@@ -60,7 +60,7 @@ def return_param_dict(file):
     param_dict = data["param_dict"]
     return param_dict
 
-def analyze_param_differences(param_dict):  
+def analyze_param_differences(param_dict, view_partly: Tuple = None):  
     """
     Computes the maximum absolute difference between the first and last iteration 
     for each parameter in param_dict and returns a sorted list of parameters.
@@ -87,12 +87,17 @@ def analyze_param_differences(param_dict):
         # Parameter: B_1, Max: 5.234567e-01, Argmax: (1,)
     """  
     differences_dict = {}
+    
+    if view_partly != None:
+        beginEp, endEp = view_partly[0], view_partly[1]
+    else:
+        beginEp, endEp = 0, -1
     for param, data in param_dict.items():
         # Compute the difference between the last and first iteration
         if len(data.shape) == 3:
-            difference = data[-1, :, :] - data[0, :, :]
+            difference = data[endEp, :, :] - data[beginEp, :, :]
         elif len(data.shape) == 2:
-            difference = data[-1, :] - data[0, :]
+            difference = data[endEp, :] - data[beginEp, :]
         else:
             raise ValueError(f"Unexpected shape {data.shape} for parameter {param}")
 
@@ -192,6 +197,27 @@ def analyze_relative_param_differences(param_dict, view_partly: Tuple = None):
 
     return sorted_params
 
+def title_from_param(param) -> str:
+    mapping = {
+        "b_0": r"$b_1$",
+        "V_0": r"$V_1$",
+        "A_0": r"$A_1$",
+        "B_0": r"$B_1$",
+        "b_1": r"$b_2$",
+        "V_1": r"$V_2$",
+        "A_1": r"$A_2$",
+        "B_1": r"$B_2$",
+        "b_2": r"$b_3$",
+        "V_2": r"$V_3$",
+        "A_2": r"$A_3$",
+        "B_2": r"$B_3$",
+        "A_c_2_0": r"$A_{31}$",
+        "A_c_0_2": r"$A_{13}$",
+        # Add more mappings as needed
+    }
+    
+    return mapping.get(param, param)
+
 def plot_4learnables(sorted_params, param_dict, top_n=4, manual_vars=None, analyze_method="relative"):
     """
     Plots the trajectories of the top 4 learnable parameters over time.
@@ -231,8 +257,8 @@ def plot_4learnables(sorted_params, param_dict, top_n=4, manual_vars=None, analy
             raise ValueError(f"Unexpected shape {data.shape} for parameter {param}")
 
         # Plot the trajectory
-        ax.plot(trajectory, label=f"{param} @ {index}", linewidth=2)
-        ax.set_title(param)
+        ax.plot(trajectory, label=f"Element {index}", linewidth=2)
+        ax.set_title(f"{title_from_param(param)}, element {index}")
         # ax.legend()
         ax.grid(True)
 
@@ -242,7 +268,7 @@ def plot_4learnables(sorted_params, param_dict, top_n=4, manual_vars=None, analy
 
     # Display the figure
     # plt.suptitle(f"Using the max {analyze_method} difference")
-    plt.suptitle(f"Evolution of the top {top_n} learnable parameters by max {analyze_method} difference")
+    plt.suptitle(f"Evolution of the top {top_n} learnable parameters by maximum {analyze_method} difference")
     plt.show()
 
 def vis_training_eps(
@@ -611,7 +637,7 @@ def plot_costs(
         # axs[1].plot(violations_magnitude[::10], linestyle="--", color=color)
         axs[1].set_xlabel("Episodes")
         axs[1].set_title("Magnitude of constraint violations per episode")
-        axs[1].set_xticks(range(0, numEpisodes+1, 5))
+        # axs[1].set_xticks(range(0, numEpisodes+1, 5))
     # axs[1].set_ylim(bottom=0)
     # axs[0].set_ylim(bottom=0, top=1.1 * np.max(Rcumsum[:, -1]))
     # axs[0].margins(y=0.5)
@@ -630,39 +656,48 @@ def plot_costs(
 # plot_load_disturbance()
 
 # scenario 0
-filename = r"data\pkls\sc0_cent_20ep_scenario_0", # mpcrl training on scenario 0
-filename = r"data\pkls\sc0_distr_20ep_scenario_0",  # dmpcrl training on scenario 0
+filename = r"data\pkls\sc0_cent_20ep_scenario_0" # mpcrl training on scenario 0
+filename = r"data\pkls\sc0_distr_20ep_scenario_0"  # dmpcrl training on scenario 0
 
 # scenario 1
 filename= r"data from server\batch 3\pkls\tcl13_cent_20ep_scenario_1" # tcl13 for mpcrl [13, 14, 15]
 filename= r"data from server\batch 3\pkls\tdl23_distr_20ep_scenario_1" # tdl16 for dmpcrl [16, 19, 23?] - 
 
 # scenario 2
-filename = r"data\pkls\tcl63_cent_100ep_scenario_2" # 63 = 48 = 48rp..
-# filename = r"data\pkls\tcl48_cent_50ep_scenario_2" # 48
-filename = r'data\pkls\periodic\tdl67\periodic_ep260' # viewpartly till 60, 86, 88, or ...?
+# filename = r"data\pkls\tcl63_cent_100ep_scenario_2" # 63 = 48 = 48rp..
+filename = r"data\pkls\tcl48_cent_50ep_scenario_2" # 48 
+filename = r'data\pkls\periodic\tdl67\periodic_ep90' # -> switched from ep260 to ep90 as I'd been using view_partly 0, 90 anyway.
+
 
 
 ### learning plots ###
 manual_vars = ["V0_0", "V0_2", "x_lb_0", "x_ub_2"]
 param_dict = return_param_dict(filename)
-sorted_params = analyze_relative_param_differences(param_dict, view_partly=[0, 90]) 
-# sorted_params = analyze_param_differences(param_dict) # or analyze_param_differences for absolute differences
+sorted_params = analyze_param_differences(param_dict) # or analyze_param_differences for absolute differences
+# sorted_params = analyze_relative_param_differences(param_dict, view_partly=[0, 90]) 
+# sorted_params = analyze_relative_param_differences(param_dict) 
 # plot_4learnables(
 #     sorted_params, 
 #     param_dict, 
 #     # manual_vars=manual_vars, 
-#     analyze_method="relative"
+#     analyze_method="absolute" # relative or absolute
 # )
 
-# vis_training_eps(filename, view_partly=[0,80]) # view_partly=[0,20]
-# plot_costs(filename, view_partly=[0,88])
+# vis_training_eps(filename) # view_partly=[0,20] , view_partly=[0,80]
+# plot_costs(filename) # , view_partly=[0,88]
 # vis_large_eps(filename)
+
+# ddpg scenario 0
+filename = r"ddpg\lfc_ddpg6_scenario0_eval"
+plot_costs(filename, is_ddpg=True, every_n=1)
+filename = r"ddpg\lfc_ddpg6_scenario0_train"
+plot_costs(filename, is_ddpg=True, every_n=10)
 
 # ddpg scenario 1/2
 filename = r"ddpg\lfc_ddpg5_eval"
+# plot_costs(filename, is_ddpg=True, every_n=1)
 filename = r"ddpg\lfc_ddpg5_train"
-# plot_costs(filename, is_ddpg=True)
+# plot_costs(filename, is_ddpg=True, every_n=10)
 # vis_training_eps(filename, show_agent=2)
 
 ### evaluation plots ###
